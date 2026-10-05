@@ -22,7 +22,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setErrorMessage('E-mail ou senha inválidos. Verifique os dados e tente novamente.');
+      setErrorMessage(`Erro de autenticação: ${error.message}`);
       setLoading(false);
       return;
     }
