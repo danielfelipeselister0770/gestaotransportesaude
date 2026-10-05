@@ -1,4 +1,4 @@
-import { CarFront, ClipboardList, Gauge, LogOut, MapPinned, Users, Wrench } from 'lucide-react';
+import { CarFront, ClipboardList, Gauge, LogOut, MapPinned, Users, Wrench, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
@@ -38,7 +38,7 @@ export default async function Home() {
     supabase.from('occurrences').select('id', { count: 'exact', head: true }).in('status', ['OPEN', 'IN_REVIEW']),
   ]);
 
-  const cards = [
+  const cards: Array<[string, number, LucideIcon]> = [
     ['Viagens hoje', trips.count ?? 0, CarFront],
     ['Passageiros cadastrados nas viagens', passengers.count ?? 0, Users],
     ['Solicitações pendentes', requests.count ?? 0, ClipboardList],
