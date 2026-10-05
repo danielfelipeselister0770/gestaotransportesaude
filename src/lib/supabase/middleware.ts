@@ -12,17 +12,13 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll(cookiesToSet, headers) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options?: Record<string, unknown> }>, _headers: Headers) {
           cookiesToSet.forEach(({ name, value, options }) => {
             request.cookies.set(name, value);
             response.cookies.set(name, value, options);
           });
-
-          Object.entries(headers).forEach(([key, value]) => {
-            response.headers.set(key, value);
-          });
         },
-      },
+      } as any,
     }
   );
 
