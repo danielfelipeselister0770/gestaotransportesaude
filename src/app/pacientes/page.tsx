@@ -125,7 +125,7 @@ export default function PatientsPage() {
     if (error) {
       setMessage(`Erro ao carregar pacientes: ${error.message}`);
     } else {
-      setPatients((data ?? []) as Patient[]);
+      setPatients((data ?? []) as unknown as Patient[]);
     }
     setLoading(false);
   }
@@ -137,7 +137,7 @@ export default function PatientsPage() {
       .eq('active', true)
       .order('name');
 
-    setMunicipalities((data ?? []) as Municipality[]);
+    setMunicipalities((data ?? []) as unknown as Municipality[]);
   }
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function PatientsPage() {
     if (error) {
       setMessage(`Não foi possível carregar o histórico: ${error.message}`);
     } else {
-      setHistory((data ?? []) as PatientHistory[]);
+      setHistory((data ?? []) as unknown as PatientHistory[]);
     }
 
     setLoadingHistory(false);
@@ -270,7 +270,7 @@ export default function PatientsPage() {
           return;
         }
 
-        const updated = data as Patient;
+        const updated = data as unknown as Patient;
         setPatients((current) => current.map((p) => (p.id === updated.id ? updated : p)));
         setEditingPatient(null);
         setShowForm(false);
@@ -289,7 +289,7 @@ export default function PatientsPage() {
           return;
         }
 
-        const created = data as Patient;
+        const created = data as unknown as Patient;
         setPatients((current) =>
           [...current, created].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
         );
