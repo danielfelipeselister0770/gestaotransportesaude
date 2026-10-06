@@ -1,0 +1,200 @@
+'use client';
+
+import { FormEvent, useEffect, useState } from 'react';
+import Link from 'next/link';
+import { AlertTriangle, Pencil, Plus, Search, X } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+
+type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
+type Trip = { id: string; date: string; origin: string; destination: string };
+type Status = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CANCELLED';
+type Occurrence = {
+  id: string; vehicle_id: string; trip_id: string | null; date: string; type: string;
+  description: string; status: Status; responsible: string | null; observations: string | null;
+  vehicle?: Vehicle | null; trip?: Trip | null;
+};
+
+const statusLabels: Record<Status, string> = {
+  OPEN: 'Aberta',
+  IN_REVIEW: 'Em análise',
+  RESOLVED: 'Resolvida',
+  CANCELLED: 'Cancelada',
+};
+
+export default function OcorrenciasPage() {
+  const supabase = createClient();
+  const [rows, setRows] = useState<Occurrence[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<'ALL' | Status>('ALL');
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<Occurrence | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function loadData() {
+    setLoading(true);
+    const [occurrenceResult, vehicleResult, tripResult] = await Promise.all([
+      supabase.from('occurrences')
+        .select('id,vehicle_id,trip_id,date,type,description,status,responsible,observations,vehicle:vehicles(id,plate,brand,model),trip:trips(id,date,origin,destination)')
+        .order('date', { ascending: false }),
+      supabase.from('vehicles').select('id,plate,brand,model').order('plate'),
+      supabase.from('trips').select('id,date,origin,destination').order('date', { ascending: false }).limit(100),
+    ]);
+
+    if (occurrenceResult.error) setMessage(`Erro ao carregar ocorrências: ${occurrenceResult.error.message}`);
+    else {
+      const normalized = (occurrenceResult.data ?? []).map((row) => ({
+        ...row,
+        vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
+        trip: Array.isArray(row.trip) ? row.trip[0] ?? null : row.trip,
+      })) as Occurrence[];
+      setRows(normalized);
+    }
+    if (vehicleResult.error) setMessage(`Erro ao carregar veículos: ${vehicleResult.error.message}`);
+    else setVehicles((vehicleResult.data ?? []) as Vehicle[]);
+    if (tripResult.error) setMessage(`Erro ao carregar viagens: ${tripResult.error.message}`);
+    else setTrips((tripResult.data ?? []) as Trip[]);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadData(); }, []);
+
+  function openNew() { setEditing(null); setShowForm(true); setMessage(''); }
+  function openEdit(row: Occurrence) { setEditing(row); setShowForm(true); setMessage(''); }
+
+  async function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
+    const form = new FormData(event.currentTarget);
+    const payload = {
+      vehicle_id: String(form.get('vehicle_id') ?? ''),
+      trip_id: String(form.get('trip_id') ?? '') || null,
+      date: String(form.get('date') ?? ''),
+      type: String(form.get('type') ?? '').trim(),
+      description: String(form.get('description') ?? '').trim(),
+      status: String(form.get('status') ?? 'OPEN') as Status,
+      responsible: String(form.get('responsible') ?? '').trim() || null,
+      observations: String(form.get('observations') ?? '').trim() || null,
+    };
+
+    if (!payload.vehicle_id || !payload.date || !payload.type || !payload.description) {
+      setMessage('Informe veículo, data, tipo e descrição.');
+      setSaving(false);
+      return;
+    }
+
+    const result = editing
+      ? await supabase.from('occurrences').update(payload).eq('id', editing.id)
+      : await supabase.from('occurrences').insert(payload);
+
+    if (result.error) setMessage(`Não foi possível salvar: ${result.error.message}`);
+    else {
+      setShowForm(false);
+      setEditing(null);
+      setMessage(editing ? 'Ocorrência atualizada.' : 'Ocorrência registrada.');
+      await loadData();
+    }
+    setSaving(false);
+  }
+
+  const filtered = rows.filter((row) => {
+    const q = search.toLowerCase();
+    const matchesSearch =
+      (row.vehicle?.plate ?? '').toLowerCase().includes(q) ||
+      row.type.toLowerCase().includes(q) ||
+      row.description.toLowerCase().includes(q) ||
+      (row.responsible ?? '').toLowerCase().includes(q);
+    return matchesSearch && (status === 'ALL' || row.status === status);
+  });
+
+  function statusClass(value: Status) {
+    return value === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700' :
+      value === 'IN_REVIEW' ? 'bg-blue-50 text-blue-700' :
+      value === 'CANCELLED' ? 'bg-slate-100 text-slate-600' :
+      'bg-red-50 text-red-700';
+  }
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-white p-5 md:block">
+        <div className="mb-8 text-xl font-bold">🚐 Transporte Saúde</div>
+        <nav className="space-y-1 text-sm">
+          {[['Dashboard','/'],['Pacientes','/pacientes'],['Solicitações','/solicitacoes'],['Agenda / Viagens','/viagens'],['Veículos','/veiculos'],['Motoristas','/motoristas'],['Abastecimentos','/abastecimentos'],['Manutenções','/manutencoes'],['Ocorrências','/ocorrencias'],['Relatórios','/relatorios'],['Configurações','/configuracoes']].map(([label, href]) => (
+            <Link key={label} href={href} className={`block rounded-lg px-3 py-2 ${label === 'Ocorrências' ? 'bg-slate-100 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>{label}</Link>
+          ))}
+        </nav>
+      </aside>
+
+      <section className="md:ml-64 p-4 md:p-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">Ocorrências</h1>
+              <p className="text-sm text-slate-500">Registre problemas, incidentes e situações da frota e das viagens.</p>
+            </div>
+            <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><Plus size={18} /> Nova ocorrência</button>
+          </div>
+
+          {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
+
+          <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_180px]">
+            <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
+              <Search size={18} className="text-slate-400" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por placa, tipo, descrição ou responsável" className="w-full outline-none text-sm" />
+            </div>
+            <select value={status} onChange={(e) => setStatus(e.target.value as 'ALL' | Status)} className="rounded-xl border bg-white px-3 py-2 text-sm">
+              <option value="ALL">Todos os status</option>
+              {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+
+          {showForm && (
+            <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-semibold">{editing ? 'Editar ocorrência' : 'Nova ocorrência'}</h2>
+                <button type="button" onClick={() => setShowForm(false)}><X size={20} /></button>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <label className="text-sm">Veículo<select name="vehicle_id" required defaultValue={editing?.vehicle_id ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Selecione</option>{vehicles.map((v) => <option key={v.id} value={v.id}>{v.plate} {[v.brand, v.model].filter(Boolean).join(' ')}</option>)}</select></label>
+                <label className="text-sm">Viagem relacionada<select name="trip_id" defaultValue={editing?.trip_id ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Nenhuma</option>{trips.map((t) => <option key={t.id} value={t.id}>{t.date} • {t.origin} → {t.destination}</option>)}</select></label>
+                <label className="text-sm">Data<input name="date" type="datetime-local" required defaultValue={editing?.date?.slice(0,16) ?? new Date().toISOString().slice(0,16)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                <label className="text-sm">Tipo<input name="type" required placeholder="Atraso, acidente, pane..." defaultValue={editing?.type ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                <label className="text-sm sm:col-span-2 lg:col-span-4">Descrição<textarea name="description" required rows={3} defaultValue={editing?.description ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                <label className="text-sm">Status<select name="status" defaultValue={editing?.status ?? 'OPEN'} className="mt-1 w-full rounded-lg border px-3 py-2">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                <label className="text-sm">Responsável<input name="responsible" defaultValue={editing?.responsible ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                <label className="text-sm sm:col-span-2">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+              </div>
+              <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar'}</button></div>
+            </form>
+          )}
+
+          <div className="overflow-hidden rounded-xl border bg-white">
+            {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando...</div> :
+              filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma ocorrência encontrada.</div> :
+              <div className="divide-y">{filtered.map((row) => (
+                <div key={row.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-red-50 p-2 text-red-600"><AlertTriangle size={20} /></div>
+                    <div>
+                      <div className="font-semibold text-slate-900">{row.vehicle?.plate ?? 'Veículo'} • {row.type}</div>
+                      <div className="text-sm text-slate-600">{row.description}</div>
+                      <div className="text-xs text-slate-500">{new Date(row.date).toLocaleString('pt-BR')}{row.trip ? ` • Viagem ${row.trip.origin} → ${row.trip.destination}` : ''}{row.responsible ? ` • ${row.responsible}` : ''}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClass(row.status)}`}>{statusLabels[row.status]}</span>
+                    <button onClick={() => openEdit(row)} className="rounded-lg border p-2"><Pencil size={16} /></button>
+                  </div>
+                </div>
+              ))}</div>
+            }
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
