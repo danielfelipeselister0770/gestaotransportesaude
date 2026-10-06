@@ -53,9 +53,6 @@ export async function POST(request: Request) {
     const { error: updateError } = await admin.auth.admin.updateUserById(driver.profile_id, { password, email_confirm: true });
     if (updateError) return NextResponse.json({ error: 'Não foi possível definir a senha definitiva: ' + updateError.message }, { status: 400 });
 
-    const { error: profileError } = await admin.from('profiles').update({ must_change_password: false }).eq('id', driver.profile_id);
-    if (profileError) return NextResponse.json({ error: 'Senha criada, mas não foi possível concluir a ativação: ' + profileError.message }, { status: 500 });
-
     const { error: tokenError } = await admin.from('drivers').update({ access_token_used_at: new Date().toISOString() }).eq('id', driver.id);
     if (tokenError) return NextResponse.json({ error: 'Senha criada, mas não foi possível concluir a ativação: ' + tokenError.message }, { status: 500 });
 
