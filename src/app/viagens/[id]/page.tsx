@@ -27,7 +27,7 @@ type Trip = {
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   observations: string | null;
   driver: { name: string } | null;
-  vehicle: { plate: string; brand: string | null; model: string | null; current_mileage: number } | null;
+  vehicle: { id: string; plate: string; brand: string | null; model: string | null; current_mileage: number } | null;
 };
 
 const statusLabels = {
@@ -58,7 +58,7 @@ export default function TripDetailPage() {
     setLoading(true);
     const [tripResult, passengersResult] = await Promise.all([
       supabase.from('trips')
-        .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(plate,brand,model,current_mileage)')
+        .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
         .eq('id', tripId).single(),
       supabase.from('trip_passengers')
         .select('id,patient_id,request_id,companion,boarding_status,observations,patient:patients(name)')
@@ -128,7 +128,7 @@ export default function TripDetailPage() {
     if (error) setMessage(`Não foi possível salvar: ${error.message}`);
     else {
       if (initial !== null) await supabase.from('mileage_records').insert({
-        vehicle_id: trip.vehicle?.plate ? undefined : undefined,
+        vehicle_id: trip.vehicle?.id,
         trip_id: trip.id,
         date: new Date().toISOString(),
         mileage: initial,
@@ -169,7 +169,7 @@ export default function TripDetailPage() {
     }
 
     const { error } = await supabase.from('occurrences').insert({
-      vehicle_id: trip.vehicle ? null : null,
+      vehicle_id: trip.vehicle?.id ?? null,
       trip_id: trip.id,
       date: new Date().toISOString(),
       type: occurrenceType,
