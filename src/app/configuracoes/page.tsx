@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, Pencil, Plus, Save, ShieldCheck, UserCog, X } from 'lucide-react';
+import { Pencil, Plus, Save, ShieldCheck, Trash2, UserCog, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Role = 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA';
