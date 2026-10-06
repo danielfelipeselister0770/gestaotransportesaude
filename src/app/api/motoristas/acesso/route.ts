@@ -7,6 +7,10 @@ function hashToken(token: string) {
   return createHash('sha256').update(token).digest('hex');
 }
 
+function hashTemporaryPassword(password: string) {
+  return createHash('sha256').update(password).digest('hex');
+}
+
 function createTemporaryPassword() {
   return randomBytes(9).toString('base64url').replace(/[-_]/g, 'A');
 }
@@ -34,7 +38,7 @@ export async function POST(request: Request) {
     if (!serviceKey) return NextResponse.json({ error: 'Configuração segura do servidor ausente.' }, { status: 500 });
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
     const { data: driver } = await admin.from('drivers')
-      .select('id,profile_id,access_token_expires_at,access_token_used_at')
+      .select('id,profile_id,temporary_password_hash,access_token_expires_at,access_token_used_at')
       .eq('access_token_hash', hashToken(token))
       .maybeSingle();
 
@@ -46,9 +50,9 @@ export async function POST(request: Request) {
     const email = authUser.user?.email;
     if (userError || !email) return NextResponse.json({ error: 'Não foi possível localizar a conta do motorista.' }, { status: 404 });
 
-    const publicClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } });
-    const { error: passwordError } = await publicClient.auth.signInWithPassword({ email, password: temporaryPassword });
-    if (passwordError) return NextResponse.json({ error: 'Senha provisória incorreta.' }, { status: 401 });
+    if (!driver.temporary_password_hash || hashTemporaryPassword(temporaryPassword) !== driver.temporary_password_hash) {
+      return NextResponse.json({ error: 'Senha provisória incorreta.' }, { status: 401 });
+    }
 
     const { error: updateError } = await admin.auth.admin.updateUserById(driver.profile_id, { password, email_confirm: true });
     if (updateError) return NextResponse.json({ error: 'Não foi possível definir a senha definitiva: ' + updateError.message }, { status: 400 });
@@ -188,6 +192,7 @@ export async function POST(request: Request) {
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const { error: tokenError } = await admin.from('drivers').update({
     access_token_hash: hashToken(token),
+    temporary_password_hash: hashTemporaryPassword(temporaryPassword),
     access_token_expires_at: expiresAt.toISOString(),
     access_token_used_at: null,
   }).eq('id', driver.id);
