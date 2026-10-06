@@ -78,6 +78,12 @@ export default function ConfiguracoesPage() {
   const [message, setMessage] = useState('');
 
   const isAdmin = currentProfile?.role === 'ADMIN';
+  const canCreateUsers = currentProfile?.role === 'ADMIN' || currentProfile?.role === 'GESTOR';
+  const availableMunicipalities = isAdmin
+    ? municipalities
+    : currentProfile?.municipality_id
+      ? [{ id: currentProfile.municipality_id, name: 'Minha prefeitura', cnpj: null, city: null, state: null, active: true, created_at: '' } as Municipality]
+      : [];
 
   async function loadData() {
     setLoading(true);
@@ -321,6 +327,15 @@ export default function ConfiguracoesPage() {
             </section>
           )}
 
+          {canCreateUsers && !isAdmin && currentProfile?.municipality_id && (
+            <section className="mb-6 rounded-xl border bg-white shadow-sm">
+              <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div><h2 className="font-semibold">Usuários da minha prefeitura</h2><p className="text-xs text-slate-500">Como gestor, você pode cadastrar operadores e motoristas na sua própria prefeitura.</p></div>
+                <button onClick={() => openUserModal(currentProfile.municipality_id!)} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Plus size={16} /> Novo usuário</button>
+              </div>
+            </section>
+          )}
+
           {isAdmin && (
             <section className="mb-6 rounded-xl border bg-white shadow-sm">
               <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -431,7 +446,7 @@ export default function ConfiguracoesPage() {
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
               <form onSubmit={saveNewUser} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
-                  <div><h2 className="text-lg font-semibold">Novo usuário</h2><p className="text-xs text-slate-500">{municipalities.find((m) => m.id === userMunicipalityId)?.name}</p></div>
+                  <div><h2 className="text-lg font-semibold">Novo usuário</h2><p className="text-xs text-slate-500">{municipalities.find((m) => m.id === userMunicipalityId)?.name ?? (userMunicipalityId === currentProfile?.municipality_id ? currentProfile?.name?.includes('') ? 'Minha prefeitura' : 'Minha prefeitura' : '')}</p></div>
                   <button type="button" onClick={closeUserModal}><X size={20} /></button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -439,7 +454,7 @@ export default function ConfiguracoesPage() {
                   <label className="text-sm">CPF<input value={userCpf} onChange={(e) => setUserCpf(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
                   <label className="text-sm">Telefone<input value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
                   <label className="text-sm sm:col-span-2">E-mail de acesso<input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="usuario@prefeitura.gov.br" /></label>
-                  <label className="text-sm">Perfil<select value={userRole} onChange={(e) => setUserRole(e.target.value as Role)} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="GESTOR">Gestor</option><option value="OPERADOR">Operador</option><option value="MOTORISTA">Motorista</option></select></label>
+                  <label className="text-sm">Perfil<select value={userRole} onChange={(e) => setUserRole(e.target.value as Role)} className="mt-1 w-full rounded-lg border px-3 py-2">{isAdmin && <option value="GESTOR">Gestor</option>}<option value="OPERADOR">Operador</option><option value="MOTORISTA">Motorista</option></select></label>
                   <label className="text-sm">Senha inicial<input type="password" minLength={8} value={userPassword} onChange={(e) => setUserPassword(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Mínimo 8 caracteres" /></label>
                 </div>
                 <p className="mt-4 text-xs text-slate-500">A conta será criada com e-mail confirmado e a senha inicial deverá ser trocada no primeiro acesso.</p>
