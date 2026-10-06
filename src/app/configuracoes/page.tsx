@@ -10,6 +10,7 @@ type Municipality = { id: string; name: string; cnpj: string | null; city: strin
 
 type Profile = {
   id: string;
+  municipality_id: string | null;
   name: string;
   cpf: string | null;
   phone: string | null;
