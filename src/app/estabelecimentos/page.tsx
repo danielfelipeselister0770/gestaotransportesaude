@@ -1,7 +1,6 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import Link from 'next/link';
 import { Building2, Pencil, Plus, Search, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -24,13 +23,6 @@ type Establishment = {
 };
 
 type Municipality = { id: string; name: string; active: boolean };
-
-const nav = [
-  ['Dashboard','/'],['Pacientes','/pacientes'],['Solicitações','/solicitacoes'],['Agenda / Viagens','/viagens'],
-  ['Veículos','/veiculos'],['Motoristas','/motoristas'],['Estabelecimentos de Saúde','/estabelecimentos'],
-  ['Abastecimentos','/abastecimentos'],['Manutenções','/manutencoes'],['Ocorrências','/ocorrencias'],
-  ['Relatórios','/relatorios'],['Configurações','/configuracoes']
-];
 
 export default function EstablishmentsPage() {
   const supabase = createClient();
@@ -188,18 +180,7 @@ export default function EstablishmentsPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-white p-5 md:block">
-        <div className="mb-8 text-xl font-bold">🚐 Transporte Saúde</div>
-        <nav className="space-y-1 text-sm">
-          {nav.map(([label, href]) => (
-            <Link key={label} href={href} className={'block rounded-lg px-3 py-2 ' + (label === 'Estabelecimentos de Saúde' ? 'bg-slate-100 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50')}>
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <section className="md:ml-64 p-4 md:p-8">
+<section className=" p-4 md:p-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
