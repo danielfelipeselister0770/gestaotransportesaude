@@ -143,6 +143,39 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED') {
+      const { data: linkedPassengers, error: passengersError } = await supabase
+        .from('trip_passengers')
+        .select('request_id')
+        .eq('trip_id', trip.id)
+        .not('request_id', 'is', null);
+
+      if (passengersError) {
+        setMessage(`Viagem concluída, mas não foi possível localizar as solicitações vinculadas: ${passengersError.message}`);
+        setSaving(false);
+        await loadData();
+        return;
+      }
+
+      const requestIds = [...new Set((linkedPassengers ?? [])
+        .map((item) => item.request_id)
+        .filter((id): id is string => Boolean(id)))];
+
+      if (requestIds.length > 0) {
+        const { error: requestsError } = await supabase
+          .from('transport_requests')
+          .update({ status: 'COMPLETED' })
+          .in('id', requestIds);
+
+        if (requestsError) {
+          setMessage(`Viagem concluída, mas não foi possível atualizar as solicitações para Concluída: ${requestsError.message}`);
+          setSaving(false);
+          await loadData();
+          return;
+        }
+      }
+    }
+
     if (trip.initial_mileage === null && initial !== null && trip.vehicle?.id) {
       const { error: mileageError } = await supabase.from('mileage_records').insert({
         vehicle_id: trip.vehicle.id,
