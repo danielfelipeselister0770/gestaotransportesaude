@@ -11,15 +11,12 @@ function hashTemporaryPassword(password: string) {
   return createHash('sha256').update(password).digest('hex');
 }
 
-function createTemporaryPassword() {
-  return randomBytes(9).toString('base64url').replace(/[-_]/g, 'A');
-}
-
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as {
     action?: 'generate' | 'validate' | 'activate' | 'complete';
     driverId?: string;
     email?: string;
+    temporaryPassword?: string;
     token?: string;
     temporaryPassword?: string;
     password?: string;
@@ -132,7 +129,9 @@ export async function POST(request: Request) {
 
   const driverId = body?.driverId?.trim();
   const email = body?.email?.trim().toLowerCase();
+  const temporaryPassword = body?.temporaryPassword ?? '';
   if (!driverId) return NextResponse.json({ error: 'Motorista é obrigatório.' }, { status: 400 });
+  if (temporaryPassword.length < 8) return NextResponse.json({ error: 'A senha provisória deve ter pelo menos 8 caracteres.' }, { status: 400 });
 
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) return NextResponse.json({ error: 'Configuração segura do servidor ausente.' }, { status: 500 });
@@ -151,7 +150,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Informe o e-mail que o motorista usará para entrar no sistema.' }, { status: 400 });
   }
 
-  const temporaryPassword = createTemporaryPassword();
   let authUserId = driver.profile_id;
 
   if (driver.profile_id) {
