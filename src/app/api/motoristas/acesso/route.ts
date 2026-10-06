@@ -13,7 +13,7 @@ function createTemporaryPassword() {
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as {
-    action?: 'generate' | 'validate' | 'complete';
+    action?: 'generate' | 'validate' | 'activate' | 'complete';
     driverId?: string;
     email?: string;
     token?: string;
