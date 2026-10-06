@@ -38,7 +38,10 @@ export default async function Home() {
   const [{ data: profile }, trips, passengers, requests, vehicles, maintenances, occurrences, upcomingTripsResult] = await Promise.all([
     userId ? supabase.from('profiles').select('name, role').eq('id', userId).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from('trips').select('id', { count: 'exact', head: true }).eq('date', today),
-    supabase.from('trip_passengers').select('id', { count: 'exact', head: true }),
+    supabase
+      .from('trip_passengers')
+      .select('id, trips!inner(status)', { count: 'exact', head: true })
+      .in('trips.status', ['SCHEDULED', 'IN_PROGRESS']),
     supabase.from('transport_requests').select('id', { count: 'exact', head: true }).in('status', ['REQUESTED', 'APPROVED']),
     supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('status', 'AVAILABLE'),
     supabase.from('maintenances').select('id', { count: 'exact', head: true }).in('status', ['SCHEDULED', 'IN_PROGRESS']),
