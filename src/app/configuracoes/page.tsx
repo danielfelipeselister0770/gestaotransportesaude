@@ -2,11 +2,11 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Check, Pencil, Save, ShieldCheck, UserCog, X } from 'lucide-react';
+import { Check, Pencil, Plus, Save, ShieldCheck, UserCog, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Role = 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA';
-type Profile = {
+type Municipality = { id: string; name: string; cnpj: string | null; city: string | null; state: string | null; active: boolean; created_at: string; };\n\ntype Profile = {
   id: string;
   name: string;
   cpf: string | null;
@@ -32,7 +32,7 @@ const roleDescriptions: Record<Role, string> = {
 
 export default function ConfiguracoesPage() {
   const supabase = createClient();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);\n  const [municipalities, setMunicipalities] = useState<Municipality[]>([]);\n  const [municipalityEditing, setMunicipalityEditing] = useState<Municipality | null>(null);\n  const [municipalityName, setMunicipalityName] = useState('');\n  const [municipalityCnpj, setMunicipalityCnpj] = useState('');\n  const [municipalityCity, setMunicipalityCity] = useState('');\n  const [municipalityState, setMunicipalityState] = useState('');\n  const [municipalityActive, setMunicipalityActive] = useState(true);
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState<Profile | null>(null);
@@ -72,7 +72,7 @@ export default function ConfiguracoesPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  function openEdit(profile: Profile) {
+  function openMunicipality(municipality?: Municipality) {\n    setMunicipalityEditing(municipality ?? null);\n    setMunicipalityName(municipality?.name ?? '');\n    setMunicipalityCnpj(municipality?.cnpj ?? '');\n    setMunicipalityCity(municipality?.city ?? '');\n    setMunicipalityState(municipality?.state ?? '');\n    setMunicipalityActive(municipality?.active ?? true);\n    setMessage('');\n  }\n\n  async function saveMunicipality(event: FormEvent<HTMLFormElement>) {\n    event.preventDefault();\n    if (!isAdmin || !municipalityName.trim()) return;\n    setSaving(true); setMessage('');\n    const payload = { name: municipalityName.trim(), cnpj: municipalityCnpj.trim() || null, city: municipalityCity.trim() || null, state: municipalityState.trim().toUpperCase() || null, active: municipalityActive };\n    const result = municipalityEditing\n      ? await supabase.from('municipalities').update(payload).eq('id', municipalityEditing.id)\n      : await supabase.from('municipalities').insert(payload);\n    if (result.error) setMessage(`Não foi possível salvar a prefeitura: ${result.error.message}`);\n    else { setMessage(municipalityEditing ? 'Prefeitura atualizada com sucesso.' : 'Prefeitura cadastrada com sucesso.'); setMunicipalityEditing(null); await loadData(); }\n    setSaving(false);\n  }\n\n  function openEdit(profile: Profile) {
     setEditing(profile);
     setName(profile.name);
     setCpf(profile.cpf ?? '');
@@ -178,7 +178,7 @@ export default function ConfiguracoesPage() {
             </section>
           )}
 
-          <section className="rounded-xl border bg-white shadow-sm">
+          {isAdmin && (\n            <section className="mb-6 rounded-xl border bg-white shadow-sm">\n              <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">\n                <div><h2 className="font-semibold">Prefeituras / Municípios</h2><p className="text-xs text-slate-500">Cadastre e ative as prefeituras atendidas pelo sistema.</p></div>\n                <button onClick={() => openMunicipality()} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Plus size={16} /> Nova prefeitura</button>\n              </div>\n              {municipalities.length === 0 ? <div className="p-6 text-sm text-slate-500">Nenhuma prefeitura cadastrada.</div> : <div className="divide-y">\n                {municipalities.map((municipality) => (\n                  <div key={municipality.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">\n                    <div><div className="font-medium text-slate-900">{municipality.name}</div><div className="text-xs text-slate-500">{municipality.city || 'Cidade não informada'}{municipality.state ? ` / ${municipality.state}` : ''}{municipality.cnpj ? ` • CNPJ ${municipality.cnpj}` : ''}</div></div>\n                    <div className="flex items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${municipality.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{municipality.active ? 'Ativa' : 'Inativa'}</span><button onClick={() => openMunicipality(municipality)} className="rounded-lg border p-2" title="Editar prefeitura"><Pencil size={16} /></button></div>\n                  </div>\n                ))}\n              </div>}\n            </section>\n          )}\n\n          <section className="rounded-xl border bg-white shadow-sm">
             <div className="flex flex-col gap-2 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="font-semibold">Usuários</h2>
@@ -221,7 +221,7 @@ export default function ConfiguracoesPage() {
             </div>
           </section>
 
-          {editing && (
+          {isAdmin && municipalityEditing !== undefined && (\n            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">\n              <form onSubmit={saveMunicipality} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">\n                <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => setMunicipalityEditing(null)}><X size={20} /></button></div>\n                <div className="grid gap-4 sm:grid-cols-2">\n                  <label className="text-sm sm:col-span-2">Nome da prefeitura<input value={municipalityName} onChange={(e) => setMunicipalityName(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Prefeitura Municipal de ..." /></label>\n                  <label className="text-sm">CNPJ<input value={municipalityCnpj} onChange={(e) => setMunicipalityCnpj(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>\n                  <label className="text-sm">Cidade<input value={municipalityCity} onChange={(e) => setMunicipalityCity(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>\n                  <label className="text-sm">UF<input maxLength={2} value={municipalityState} onChange={(e) => setMunicipalityState(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 uppercase" /></label>\n                  <label className="text-sm">Status<select value={municipalityActive ? 'true' : 'false'} onChange={(e) => setMunicipalityActive(e.target.value === 'true')} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="true">Ativa</option><option value="false">Inativa</option></select></label>\n                </div>\n                <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => setMunicipalityEditing(null)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>\n              </form>\n            </div>\n          )}\n\n          {editing && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
               <form onSubmit={saveProfile} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
