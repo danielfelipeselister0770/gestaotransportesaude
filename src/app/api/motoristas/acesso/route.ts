@@ -194,7 +194,7 @@ export async function POST(request: Request) {
 
   if (tokenError) return NextResponse.json({ error: 'Não foi possível gerar o link de acesso: ' + tokenError.message }, { status: 500 });
 
-  const origin = new URL(request.url).origin;
+  const origin = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://orange-rat-645078.hostingersite.com';
   const accessLink = origin + '/motorista/primeiro-acesso?token=' + encodeURIComponent(token);
   const { data: authUser } = await admin.auth.admin.getUserById(authUserId!);
 
