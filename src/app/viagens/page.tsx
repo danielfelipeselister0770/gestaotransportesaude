@@ -328,7 +328,7 @@ export default function TripsPage() {
               <div className="divide-y">
                 {trips.map((trip) => (
                   <div key={trip.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
-                    <div>
+                    <Link href={`/viagens/${trip.id}`} className="block rounded-lg hover:bg-slate-50 md:p-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-slate-800">{trip.date.split('-').reverse().join('/')} às {trip.departure_time.slice(0,5)}</span>
                         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClasses[trip.status]}`}>{statusLabels[trip.status]}</span>
@@ -339,7 +339,7 @@ export default function TripsPage() {
                         <span>{trip.vehicle?.plate ?? 'Veículo não informado'}</span>
                         <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count} passageiro(s)</span>
                       </div>
-                    </div>
+                    </Link>
                     <div className="flex gap-2">
                       {trip.status === 'SCHEDULED' && <button onClick={() => updateTripStatus(trip.id, 'IN_PROGRESS')} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700">Iniciar</button>}
                       {trip.status === 'IN_PROGRESS' && <button onClick={() => updateTripStatus(trip.id, 'COMPLETED')} className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"><Check size={14}/> Concluir</button>}
