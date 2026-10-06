@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Download, FileSpreadsheet, Fuel, Gauge, Search, Wrench } from 'lucide-react';
+import { BarChart3, Download, FileSpreadsheet, Fuel, Gauge, Search, Wrench, type LucideIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
@@ -187,7 +187,7 @@ export default function RelatoriosPage() {
               ['Passageiros', totals.passengers, Gauge],
               ['KM rodados', totals.km.toLocaleString('pt-BR'), Gauge],
               ['Custo total', money(totals.totalCost), BarChart3],
-            ].map(([label, value, Icon]) => (
+            ] as Array<[string, string | number, LucideIcon]>).map(([label, value, Icon]) => (
               <div key={String(label)} className="rounded-xl border bg-white p-5 shadow-sm">
                 <Icon size={20} className="mb-3 text-slate-500" />
                 <div className="text-2xl font-bold text-slate-900">{value}</div>
