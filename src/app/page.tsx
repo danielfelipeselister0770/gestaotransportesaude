@@ -2,22 +2,6 @@ import { CarFront, ClipboardList, Gauge, LogOut, MapPinned, Users, Wrench, type 
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
-const nav = [
-  ['Dashboard', '/'],
-  ['Pacientes', '/pacientes'],
-  ['Solicitações', '/solicitacoes'],
-  ['Agenda / Viagens', '/viagens'],
-  ['Veículos', '/veiculos'],
-  ['Motoristas', '/motoristas'],
-  ['Estabelecimentos de Saúde', '/estabelecimentos'],
-  ['Profissionais SUS', '/profissionais'],
-  ['Abastecimentos', '/abastecimentos'],
-  ['Manutenções', '/manutencoes'],
-  ['Ocorrências', '/ocorrencias'],
-  ['Relatórios', '/relatorios'],
-  ['Configurações', '/configuracoes'],
-];
-
 const roleLabels: Record<string, string> = {
   ADMIN: 'Administrador',
   GESTOR: 'Gestor',
@@ -89,18 +73,7 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-white p-5 md:block">
-        <div className="mb-8 text-xl font-bold">🚐 Transporte Saúde</div>
-        <nav className="space-y-1 text-sm">
-          {nav.map(([label, href], index) => (
-            <Link key={label} href={href} className={`block rounded-lg px-3 py-2 ${index === 0 ? 'bg-slate-100 font-semibold text-slate-900' : 'text-slate-600 hover:bg-slate-50'}`}>
-              {label}
-            </Link>
-          ))}
-        </nav>
-      </aside>
-
-      <section className="md:ml-64">
+<section className="">
         <header className="flex items-center justify-between border-b bg-white px-6 py-5">
           <div>
             <div className="flex items-center gap-2 text-sm text-slate-500"><MapPinned size={16} /> Gestão municipal de transporte em saúde</div>
