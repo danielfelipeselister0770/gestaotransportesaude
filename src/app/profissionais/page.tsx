@@ -79,8 +79,8 @@ export default function ProfessionalsPage() {
     event.preventDefault();
     if(!canManage)return;
     const form=new FormData(event.currentTarget);
-    const cns=String(form.get('cns')??'').replace(/\\D/g,'');
-    const cbo=String(form.get('cbo')??'').replace(/\\D/g,'');
+    const cns=String(form.get('cns')??'').replace(/\D/g,'');
+    const cbo=String(form.get('cbo')??'').replace(/\D/g,'');
     if(cns && cns.length!==15){setMessage('O CNS deve conter 15 dígitos.');return;}
     if(cbo && cbo.length!==6){setMessage('O CBO deve conter 6 dígitos.');return;}
 
