@@ -163,7 +163,6 @@ export default function RequestsPage() {
                   {request.status === 'REQUESTED' && <><button onClick={() => updateStatus(request.id,'APPROVED')} className="flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-emerald-700"><Check size={14}/> Aprovar</button>
                     <button onClick={() => updateStatus(request.id,'DENIED')} className="flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50"><X size={14}/> Negar</button></>}
                   {(request.status === 'REQUESTED' || request.status === 'APPROVED') && <button onClick={() => updateStatus(request.id,'CANCELLED')} className="rounded-lg border px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50">Cancelar</button>}
-                  {request.status === 'APPROVED' && <button onClick={() => updateStatus(request.id,'SCHEDULED')} className="rounded-lg bg-violet-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-violet-700">Agendar</button>}
                 </div>
               </div>)}
           </div>
