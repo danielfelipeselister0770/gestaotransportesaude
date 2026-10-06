@@ -82,9 +82,18 @@ export default function AbastecimentosPage() {
       return;
     }
 
-    const result = editing
-      ? await supabase.from('fuelings').update(payload).eq('id', editing.id)
-      : await supabase.from('fuelings').insert(payload);
+    let result;
+    if (editing) {
+      result = await supabase.from('fuelings').update(payload).eq('id', editing.id);
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setMessage('Sessão expirada. Entre novamente para registrar o abastecimento.');
+        setSaving(false);
+        return;
+      }
+      result = await supabase.from('fuelings').insert({ ...payload, created_by: user.id });
+    }
 
     if (result.error) {
       setMessage(`Não foi possível salvar: ${result.error.message}`);
