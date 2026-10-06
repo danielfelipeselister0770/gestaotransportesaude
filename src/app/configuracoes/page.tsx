@@ -50,6 +50,7 @@ export default function ConfiguracoesPage() {
   const [cpf, setCpf] = useState('');
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState<Role>('OPERADOR');
+  const [municipalityId, setMunicipalityId] = useState('');
   const [active, setActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -64,7 +65,7 @@ export default function ConfiguracoesPage() {
     setCurrentUserId(userId);
 
     const profileResult = await supabase.from('profiles')
-      .select('id,name,cpf,phone,role,active,created_at')
+      .select('id,municipality_id,name,cpf,phone,role,active,created_at')
       .order('name');
 
     if (profileResult.error) {
@@ -77,6 +78,12 @@ export default function ConfiguracoesPage() {
     const me = rows.find((row) => row.id === userId) ?? null;
     setProfiles(rows);
     setCurrentProfile(me);
+    if (me?.role === 'ADMIN') {
+      const municipalityResult = await supabase.from('municipalities').select('id,name,cnpj,city,state,active,created_at').order('name');
+      if (!municipalityResult.error) setMunicipalities((municipalityResult.data ?? []) as Municipality[]);
+    } else {
+      setMunicipalities([]);
+    }
     setLoading(false);
   }
 
@@ -112,6 +119,7 @@ export default function ConfiguracoesPage() {
     setCpf(profile.cpf ?? '');
     setPhone(profile.phone ?? '');
     setRole(profile.role);
+    setMunicipalityId(profile.municipality_id ?? '');
     setActive(profile.active);
     setMessage('');
   }
@@ -132,6 +140,7 @@ export default function ConfiguracoesPage() {
       cpf: cpf.trim() || null,
       phone: phone.trim() || null,
       role,
+      municipality_id: role === 'ADMIN' ? null : (municipalityId || null),
       active,
     }).eq('id', editing.id);
 
@@ -306,6 +315,7 @@ export default function ConfiguracoesPage() {
                   <label className="text-sm">Perfil<select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={!isAdmin} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100">
                     {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select><span className="mt-1 block text-xs text-slate-500">{roleDescriptions[role]}</span></label>
+                  <label className="text-sm">Prefeitura<select value={municipalityId} onChange={(e) => setMunicipalityId(e.target.value)} disabled={!isAdmin || role === 'ADMIN'} required={role !== 'ADMIN'} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100"><option value="">Selecione a prefeitura</option>{municipalities.filter((m) => m.active).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select><span className="mt-1 block text-xs text-slate-500">Gestores e operadores devem pertencer a uma prefeitura.</span></label>
                   <label className="text-sm">Status<select value={active ? 'true' : 'false'} onChange={(e) => setActive(e.target.value === 'true')} disabled={!isAdmin} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100">
                     <option value="true">Ativo</option><option value="false">Inativo</option>
                   </select></label>
