@@ -12,7 +12,7 @@ function adminClient() {
   });
 }
 
-async function getAdminProfile() {
+async function getCurrentProfile() {
   const server = createServerClient();
   const { data: claimsData } = await server.auth.getClaims();
   const userId = claimsData?.claims?.sub as string | undefined;
@@ -24,13 +24,13 @@ async function getAdminProfile() {
     .eq('id', userId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'ADMIN') return null;
+  if (!profile || !['ADMIN', 'GESTOR'].includes(profile.role)) return null;
   return profile;
 }
 
 export async function POST(request: Request) {
-  const adminProfile = await getAdminProfile();
-  if (!adminProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const currentProfile = await getCurrentProfile();
+  if (!currentProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
 
   const body = await request.json().catch(() => null) as {
     action?: 'create' | 'delete';
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   if (action === 'delete') {
     const userId = body?.userId?.trim();
     if (!userId) return NextResponse.json({ error: 'Usuário é obrigatório.' }, { status: 400 });
-    if (userId === adminProfile.id) return NextResponse.json({ error: 'Você não pode excluir seu próprio usuário.' }, { status: 400 });
+    if (userId === currentProfile.id) return NextResponse.json({ error: 'Você não pode excluir seu próprio usuário.' }, { status: 400 });
 
     const { data: target } = await admin
       .from('profiles')
@@ -59,6 +59,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (!target) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+    if (currentProfile.role === 'GESTOR' && target.municipality_id !== currentProfile.municipality_id) return NextResponse.json({ error: 'O gestor só pode excluir usuários da própria prefeitura.' }, { status: 403 });
     if (target.role === 'ADMIN') return NextResponse.json({ error: 'Usuários ADMIN não podem ser excluídos por esta tela.' }, { status: 400 });
 
     // Desvincula relações operacionais antes de remover a conta Auth.
@@ -83,6 +84,10 @@ export async function POST(request: Request) {
   }
   if (!['GESTOR', 'OPERADOR', 'MOTORISTA'].includes(role)) {
     return NextResponse.json({ error: 'Perfil de usuário inválido.' }, { status: 400 });
+  }
+  if (currentProfile.role === 'GESTOR') {
+    if (role === 'GESTOR') return NextResponse.json({ error: 'O gestor não pode cadastrar outro gestor.' }, { status: 403 });
+    if (municipalityId !== currentProfile.municipality_id) return NextResponse.json({ error: 'O gestor só pode cadastrar usuários na própria prefeitura.' }, { status: 403 });
   }
   if (password.length < 8) return NextResponse.json({ error: 'A senha inicial deve ter pelo menos 8 caracteres.' }, { status: 400 });
 
