@@ -163,15 +163,24 @@ export default function TripDetailPage() {
       // O KM final informado na viagem passa a ser a quilometragem atual do veículo,
       // mesmo que a viagem ainda não tenha sido concluída. Assim, todas as telas
       // que consultam vehicles.current_mileage passam a refletir o valor mais recente.
-      const { error: vehicleError } = await supabase.from('vehicles')
+      const { data: updatedVehicle, error: vehicleError } = await supabase.from('vehicles')
         .update({
           current_mileage: final,
           ...(status === 'COMPLETED' ? { status: 'AVAILABLE' } : {}),
         })
-        .eq('id', trip.vehicle.id);
+        .eq('id', trip.vehicle.id)
+        .select('id,current_mileage,status')
+        .maybeSingle();
 
       if (vehicleError) {
         setMessage(`Viagem salva, mas não foi possível atualizar o KM do veículo: ${vehicleError.message}`);
+        setSaving(false);
+        await loadData();
+        return;
+      }
+
+      if (!updatedVehicle || Number(updatedVehicle.current_mileage) !== final) {
+        setMessage('A viagem foi salva, mas o KM do veículo não foi atualizado. Verifique as permissões do cadastro de veículos.');
         setSaving(false);
         await loadData();
         return;
