@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Copy, KeyRound, MessageCircle, Pencil, Plus, Search, UserRound, X } from 'lucide-react';
+import { AlertTriangle, Copy, Eye, EyeOff, KeyRound, MessageCircle, Pencil, Plus, Search, UserRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Driver = {
@@ -29,6 +29,8 @@ export default function DriversPage() {
   const [message, setMessage] = useState('');
   const [accessDriver, setAccessDriver] = useState<Driver | null>(null);
   const [accessEmail, setAccessEmail] = useState('');
+  const [temporaryPassword, setTemporaryPassword] = useState('');
+  const [showTemporaryPassword, setShowTemporaryPassword] = useState(false);
   const [generatingAccess, setGeneratingAccess] = useState(false);
   const [accessData, setAccessData] = useState<AccessData | null>(null);
 
@@ -75,12 +77,13 @@ export default function DriversPage() {
   }
 
   function openAccess(d: Driver) {
-    setAccessDriver(d); setAccessEmail(''); setAccessData(null); setMessage('');
+    setAccessDriver(d); setAccessEmail(''); setTemporaryPassword(''); setShowTemporaryPassword(false); setAccessData(null); setMessage('');
   }
 
   async function generateAccess() {
     if (!accessDriver) return;
     if (!accessDriver.profile_id && !accessEmail.trim()) return;
+    if (temporaryPassword.length < 8) { setMessage('A senha provisória deve ter pelo menos 8 caracteres.'); return; }
     setGeneratingAccess(true); setMessage('');
     try {
       const response = await fetch('/api/motoristas/acesso', {
@@ -90,6 +93,7 @@ export default function DriversPage() {
           action: 'generate',
           driverId: accessDriver.id,
           email: accessEmail.trim() || undefined,
+          temporaryPassword,
         }),
       });
       const result = await response.json().catch(() => ({}));
@@ -186,6 +190,13 @@ export default function DriversPage() {
           {!accessDriver.profile_id && <label className="block text-sm">E-mail que o motorista usará para entrar
             <input type="email" value={accessEmail} onChange={e => setAccessEmail(e.target.value)} placeholder="motorista@prefeitura.gov.br" className="mt-1 w-full rounded-lg border px-3 py-2"/>
           </label>}
+          <label className="mt-4 block text-sm">Senha provisória definida pelo gestor
+            <div className="mt-1 flex gap-2">
+              <input type={showTemporaryPassword ? 'text' : 'password'} value={temporaryPassword} onChange={e => setTemporaryPassword(e.target.value)} placeholder="Digite uma senha com pelo menos 8 caracteres" className="w-full rounded-lg border px-3 py-2 font-mono"/>
+              <button type="button" onClick={() => setShowTemporaryPassword(v => !v)} className="rounded-lg border px-3" title={showTemporaryPassword ? 'Ocultar senha' : 'Mostrar senha'}>{showTemporaryPassword ? <EyeOff size={17}/> : <Eye size={17}/>}</button>
+            </div>
+            <span className="mt-1 block text-xs text-slate-500">Essa senha será usada somente no primeiro acesso e deverá ser trocada pelo motorista.</span>
+          </label>
           <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Nenhum e-mail será enviado. O gestor receberá aqui um link e uma senha provisória para entregar ao motorista.</div>
           <button type="button" disabled={generatingAccess || (!accessDriver.profile_id && !accessEmail.trim())} onClick={generateAccess} className="mt-4 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{generatingAccess ? 'Gerando...' : accessDriver.profile_id ? 'Gerar novo acesso' : 'Criar acesso provisório'}</button>
         </> : <>
