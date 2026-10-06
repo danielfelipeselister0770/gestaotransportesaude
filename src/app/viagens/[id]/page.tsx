@@ -159,32 +159,51 @@ export default function TripDetailPage() {
       }
     }
 
-    if (status === 'COMPLETED' && final !== null && trip.vehicle?.id) {
-      const { error: mileageError } = await supabase.from('mileage_records').insert({
-        vehicle_id: trip.vehicle.id,
-        trip_id: trip.id,
-        date: new Date().toISOString(),
-        mileage: final,
-        source: 'TRIP',
-        observations: 'Quilometragem final da viagem',
-      });
+    if (final !== null && trip.vehicle?.id) {
+      // O KM final informado na viagem passa a ser a quilometragem atual do veículo,
+      // mesmo que a viagem ainda não tenha sido concluída. Assim, todas as telas
+      // que consultam vehicles.current_mileage passam a refletir o valor mais recente.
+      const { error: vehicleError } = await supabase.from('vehicles')
+        .update({
+          current_mileage: final,
+          ...(status === 'COMPLETED' ? { status: 'AVAILABLE' } : {}),
+        })
+        .eq('id', trip.vehicle.id);
 
-      if (mileageError) {
-        setMessage(`Viagem concluída, mas não foi possível registrar o KM final: ${mileageError.message}`);
+      if (vehicleError) {
+        setMessage(`Viagem salva, mas não foi possível atualizar o KM do veículo: ${vehicleError.message}`);
         setSaving(false);
         await loadData();
         return;
       }
 
-      const { error: vehicleError } = await supabase.from('vehicles')
-        .update({ current_mileage: final, status: 'AVAILABLE' })
-        .eq('id', trip.vehicle.id);
+      if (status === 'COMPLETED') {
+        const { data: existingFinalRecord } = await supabase.from('mileage_records')
+          .select('id')
+          .eq('trip_id', trip.id)
+          .eq('source', 'TRIP')
+          .eq('observations', 'Quilometragem final da viagem')
+          .maybeSingle();
 
-      if (vehicleError) {
-        setMessage(`Viagem concluída, mas não foi possível atualizar o veículo: ${vehicleError.message}`);
-        setSaving(false);
-        await loadData();
-        return;
+        const mileagePayload = {
+          vehicle_id: trip.vehicle.id,
+          trip_id: trip.id,
+          date: new Date().toISOString(),
+          mileage: final,
+          source: 'TRIP',
+          observations: 'Quilometragem final da viagem',
+        };
+
+        const mileageResult = existingFinalRecord
+          ? await supabase.from('mileage_records').update(mileagePayload).eq('id', existingFinalRecord.id)
+          : await supabase.from('mileage_records').insert(mileagePayload);
+
+        if (mileageResult.error) {
+          setMessage(`Viagem concluída, mas não foi possível registrar o KM final: ${mileageResult.error.message}`);
+          setSaving(false);
+          await loadData();
+          return;
+        }
       }
     }
 
