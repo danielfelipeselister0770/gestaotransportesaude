@@ -340,7 +340,7 @@ export default function PatientsPage() {
       return;
     }
 
-    const updated = data as Patient;
+    const updated = data as unknown as Patient;
     setPatients((current) => current.map((p) => (p.id === updated.id ? updated : p)));
     setSelectedPatient(updated);
     await loadHistory(updated);
