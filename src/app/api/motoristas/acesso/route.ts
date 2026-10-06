@@ -18,7 +18,6 @@ export async function POST(request: Request) {
     email?: string;
     temporaryPassword?: string;
     token?: string;
-    temporaryPassword?: string;
     password?: string;
   } | null;
 
