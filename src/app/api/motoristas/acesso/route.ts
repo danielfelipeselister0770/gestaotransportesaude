@@ -17,6 +17,8 @@ export async function POST(request: Request) {
     driverId?: string;
     email?: string;
     token?: string;
+    temporaryPassword?: string;
+    password?: string;
   } | null;
 
   const action = body?.action ?? 'generate';
