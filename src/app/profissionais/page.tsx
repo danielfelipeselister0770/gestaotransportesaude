@@ -110,12 +110,30 @@ export default function ProfessionalsPage() {
     setSaving(true);setMessage('');
     let professionalId=editing?.id;
 
-    const professionalResult=editing
-      ? await supabase.from('health_professionals').update(professionalPayload).eq('id',editing.id)
-      : await supabase.from('health_professionals').insert(professionalPayload).select('id').single();
-
-    if(professionalResult.error){setMessage('Não foi possível salvar o profissional: '+professionalResult.error.message);setSaving(false);return;}
-    professionalId=editing ? editing.id : professionalResult.data.id;
+    if(editing){
+      const professionalResult=await supabase
+        .from('health_professionals')
+        .update(professionalPayload)
+        .eq('id',editing.id);
+      if(professionalResult.error){
+        setMessage('Não foi possível salvar o profissional: '+professionalResult.error.message);
+        setSaving(false);
+        return;
+      }
+      professionalId=editing.id;
+    } else {
+      const professionalResult=await supabase
+        .from('health_professionals')
+        .insert(professionalPayload)
+        .select('id')
+        .single();
+      if(professionalResult.error || !professionalResult.data){
+        setMessage('Não foi possível salvar o profissional: '+(professionalResult.error?.message ?? 'ID não retornado.'));
+        setSaving(false);
+        return;
+      }
+      professionalId=professionalResult.data.id;
+    }
 
     if(healthUnitId){
       const linkPayload={
