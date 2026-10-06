@@ -363,7 +363,7 @@ export default function ConfiguracoesPage() {
               <ShieldCheck className="mt-0.5 shrink-0 text-amber-700" size={20} />
               <div className="text-sm text-amber-900">
                 <div className="font-semibold">Criação de acesso</div>
-                <p className="mt-1">A criação de login e senha acontece no Supabase Auth. Esta tela administra o perfil e as permissões depois que o acesso autenticado existir.</p>
+                <p className="mt-1">O cadastro de usuários é feito dentro de cada prefeitura. A conta de acesso é criada com segurança e a senha inicial deve ser trocada no primeiro acesso.</p>
               </div>
             </div>
           </section>
@@ -380,6 +380,30 @@ export default function ConfiguracoesPage() {
                   <label className="text-sm">Status<select value={municipalityActive ? 'true' : 'false'} onChange={(e) => setMunicipalityActive(e.target.value === 'true')} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="true">Ativa</option><option value="false">Inativa</option></select></label>
                 </div>
                 <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>
+              </form>
+            </div>
+          )}
+
+          {isAdmin && userModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
+              <form onSubmit={saveNewUser} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+                <div className="mb-5 flex items-center justify-between">
+                  <div><h2 className="text-lg font-semibold">Novo usuário</h2><p className="text-xs text-slate-500">{municipalities.find((m) => m.id === userMunicipalityId)?.name}</p></div>
+                  <button type="button" onClick={closeUserModal}><X size={20} /></button>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="text-sm sm:col-span-2">Nome<input value={userName} onChange={(e) => setUserName(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                  <label className="text-sm">CPF<input value={userCpf} onChange={(e) => setUserCpf(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                  <label className="text-sm">Telefone<input value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                  <label className="text-sm sm:col-span-2">E-mail de acesso<input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="usuario@prefeitura.gov.br" /></label>
+                  <label className="text-sm">Perfil<select value={userRole} onChange={(e) => setUserRole(e.target.value as Role)} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="GESTOR">Gestor</option><option value="OPERADOR">Operador</option><option value="MOTORISTA">Motorista</option></select></label>
+                  <label className="text-sm">Senha inicial<input type="password" minLength={8} value={userPassword} onChange={(e) => setUserPassword(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Mínimo 8 caracteres" /></label>
+                </div>
+                <p className="mt-4 text-xs text-slate-500">A conta será criada com e-mail confirmado e a senha inicial deverá ser trocada no primeiro acesso.</p>
+                <div className="mt-6 flex justify-end gap-2">
+                  <button type="button" onClick={closeUserModal} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
+                  <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Cadastrando...' : 'Cadastrar usuário'}</button>
+                </div>
               </form>
             </div>
           )}
