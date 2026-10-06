@@ -61,7 +61,7 @@ export default function TripsPage() {
     setLoading(true);
     const [requestsResult, driversResult, vehiclesResult, tripsResult] = await Promise.all([
       supabase.from('transport_requests')
-        .select('id,date,time,origin,destination,purpose,needs_companion,patient:patients(name)')
+        .select('id,patient_id,date,time,origin,destination,purpose,needs_companion,patient:patients(name)')
         .eq('status', 'APPROVED')
         .order('date', { ascending: true }).order('time', { ascending: true }),
       supabase.from('drivers').select('id,name').eq('active', true).order('name'),
@@ -185,7 +185,7 @@ export default function TripsPage() {
 
     const passengerRows = selectedRequests.map((request) => ({
       trip_id: trip.id,
-      patient_id: (request as RequestRow & { patient_id?: string }).patient_id,
+      patient_id: (request as RequestRow & { patient_id: string }).patient_id,
       request_id: request.id,
       companion: request.needs_companion,
       boarding_status: 'EXPECTED',
@@ -194,7 +194,7 @@ export default function TripsPage() {
     const { error: passengersError } = await supabase.from('trip_passengers').insert(passengerRows);
 
     if (passengersError) {
-      await supabase.from('trips').delete().eq('id', trip.id);
+      await supabase.from('trips').update({ status: 'CANCELLED' }).eq('id', trip.id);
       setMessage(`Não foi possível adicionar os passageiros: ${passengersError.message}`);
       setSaving(false);
       return;
