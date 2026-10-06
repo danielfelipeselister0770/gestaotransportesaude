@@ -28,6 +28,26 @@ type Trip = {
   observations: string | null;
   driver: { name: string } | null;
   vehicle: { id: string; plate: string; brand: string | null; model: string | null; current_mileage: number } | null;
+  operational_status: string;
+  started_at: string | null;
+  arrived_origin_at: string | null;
+  departed_origin_at: string | null;
+  arrived_destination_at: string | null;
+  return_started_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
+  estimated_arrival_at: string | null;
+  estimated_return_at: string | null;
+  route_distance_km: number | null;
+  estimated_duration_minutes: number | null;
+};
+
+type TripEvent = {
+  id: string;
+  event_type: string;
+  occurred_at: string;
+  notes: string | null;
 };
 
 const statusLabels = {
@@ -45,6 +65,7 @@ export default function TripDetailPage() {
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [events, setEvents] = useState<TripEvent[]>([]);
   const [initialMileage, setInitialMileage] = useState('');
   const [finalMileage, setFinalMileage] = useState('');
   const [observation, setObservation] = useState('');
@@ -56,13 +77,17 @@ export default function TripDetailPage() {
 
   async function loadData() {
     setLoading(true);
-    const [tripResult, passengersResult] = await Promise.all([
+    const [tripResult, passengersResult, eventsResult] = await Promise.all([
       supabase.from('trips')
-        .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
+        .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,operational_status,started_at,arrived_origin_at,departed_origin_at,arrived_destination_at,return_started_at,completed_at,cancelled_at,cancellation_reason,estimated_arrival_at,estimated_return_at,route_distance_km,estimated_duration_minutes,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
         .eq('id', tripId).single(),
       supabase.from('trip_passengers')
         .select('id,patient_id,request_id,companion,boarding_status,observations,patient:patients(name)')
         .eq('trip_id', tripId).order('created_at'),
+      supabase.from('trip_events')
+        .select('id,event_type,occurred_at,notes')
+        .eq('trip_id', tripId)
+        .order('occurred_at', { ascending: false }),
     ]);
 
     if (tripResult.error) setMessage(`Erro ao carregar viagem: ${tripResult.error.message}`);
@@ -87,6 +112,10 @@ export default function TripDetailPage() {
       })) as Passenger[];
       setPassengers(normalized);
     }
+
+    if (eventsResult.error) setMessage(`Erro ao carregar histórico operacional: ${eventsResult.error.message}`);
+    else setEvents((eventsResult.data ?? []) as TripEvent[]);
+
     setLoading(false);
   }
 
@@ -318,6 +347,33 @@ export default function TripDetailPage() {
         </header>
 
         {message && <div className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
+
+        <section className="mb-5 rounded-xl border bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="font-semibold">Acompanhamento operacional</h2>
+              <p className="text-sm text-slate-500">Último status: <strong className="text-slate-700">{trip.operational_status}</strong></p>
+            </div>
+            <div className="flex flex-wrap gap-3 text-sm">
+              <span className="rounded-lg bg-slate-50 px-3 py-2">Chegada: <strong>{trip.estimated_arrival_at ? new Date(trip.estimated_arrival_at).toLocaleString('pt-BR') : '—'}</strong></span>
+              <span className="rounded-lg bg-slate-50 px-3 py-2">Retorno: <strong>{trip.estimated_return_at ? new Date(trip.estimated_return_at).toLocaleString('pt-BR') : '—'}</strong></span>
+              <span className="rounded-lg bg-slate-50 px-3 py-2">Distância: <strong>{trip.route_distance_km != null ? `${trip.route_distance_km} km` : '—'}</strong></span>
+            </div>
+          </div>
+          {events.length > 0 && (
+            <div className="mt-5 border-t pt-4">
+              <div className="mb-3 text-sm font-medium">Histórico da viagem</div>
+              <div className="space-y-2">
+                {events.map((event) => (
+                  <div key={event.id} className="flex flex-col gap-1 rounded-lg bg-slate-50 px-3 py-2 text-sm md:flex-row md:items-center md:justify-between">
+                    <span className="font-medium">{event.event_type}</span>
+                    <span className="text-slate-500">{new Date(event.occurred_at).toLocaleString('pt-BR')}{event.notes ? ` • ${event.notes}` : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
 
         <div className="grid gap-5 lg:grid-cols-3">
           <section className="rounded-xl border bg-white shadow-sm lg:col-span-2">
