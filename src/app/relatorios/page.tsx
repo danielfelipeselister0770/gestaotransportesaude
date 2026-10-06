@@ -151,6 +151,13 @@ export default function RelatoriosPage() {
     URL.revokeObjectURL(url);
   }
 
+  const kpis: Array<[string, string | number, LucideIcon]> = [
+    ['Viagens', totals.trips, BarChart3],
+    ['Passageiros', totals.passengers, Gauge],
+    ['KM rodados', totals.km.toLocaleString('pt-BR'), Gauge],
+    ['Custo total', money(totals.totalCost), BarChart3],
+  ];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-white p-5 md:block">
@@ -182,12 +189,7 @@ export default function RelatoriosPage() {
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              ['Viagens', totals.trips, BarChart3],
-              ['Passageiros', totals.passengers, Gauge],
-              ['KM rodados', totals.km.toLocaleString('pt-BR'), Gauge],
-              ['Custo total', money(totals.totalCost), BarChart3],
-            ] as Array<[string, string | number, LucideIcon]>).map(([label, value, Icon]) => (
+            {kpis.map(([label, value, Icon]) => (
               <div key={String(label)} className="rounded-xl border bg-white p-5 shadow-sm">
                 <Icon size={20} className="mb-3 text-slate-500" />
                 <div className="text-2xl font-bold text-slate-900">{value}</div>
