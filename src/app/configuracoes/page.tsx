@@ -330,8 +330,9 @@ export default function ConfiguracoesPage() {
                       </div>
                       {isOpen && (
                         <div className="border-t bg-slate-50 p-4">
-                          <div className="mb-3 flex items-center justify-between">
+                          <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div><h3 className="font-semibold text-slate-900">Usuários da prefeitura</h3><p className="text-xs text-slate-500">Gestores, operadores e motoristas vinculados a esta prefeitura.</p></div>
+                            <button onClick={() => openUserModal(municipality.id)} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"><Plus size={16} /> Novo usuário</button>
                           </div>
                           {municipalityUsers.length === 0 ? <div className="rounded-lg border bg-white p-4 text-sm text-slate-500">Nenhum usuário vinculado. Edite um usuário existente para vinculá-lo a esta prefeitura.</div> : <div className="divide-y rounded-lg border bg-white">
                             {municipalityUsers.map((profile) => (
