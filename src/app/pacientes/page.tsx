@@ -64,8 +64,6 @@ type PatientHistory = {
   new_data: Record<string, unknown> | null;
 };
 
-type FormValues = Omit<Patient, 'id' | 'municipality_id' | 'created_at' | 'updated_at' | 'deactivated_at'>;
-
 const patientFields = [
   'id',
   'municipality_id',
@@ -97,33 +95,6 @@ const patientFields = [
   'updated_at',
   'deactivated_at',
 ].join(',');
-
-const emptyForm: FormValues = {
-  name: '',
-  cpf: null,
-  birth_date: null,
-  phone: null,
-  address: null,
-  city: null,
-  cns: null,
-  sex: null,
-  nationality: null,
-  race_color: null,
-  ethnicity: null,
-  cep: null,
-  residence_municipality: null,
-  residence_municipality_ibge: null,
-  street: null,
-  street_number: null,
-  neighborhood: null,
-  address_complement: null,
-  wheelchair: false,
-  reduced_mobility: false,
-  stretcher: false,
-  needs_companion: false,
-  observations: null,
-  active: true,
-};
 
 export default function PatientsPage() {
   const supabase = createClient();
@@ -555,7 +526,7 @@ function PatientForm({
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   onCancel: () => void;
 }) {
-  const value = (key: keyof FormValues) => {
+  const value = (key: keyof Patient) => {
     const current = patient?.[key as keyof Patient];
     return current == null ? '' : String(current);
   };
@@ -818,11 +789,11 @@ function Badge({ children, tone = 'normal' }: { children: React.ReactNode; tone?
 }
 
 function digits(value: FormDataEntryValue | string | null): string {
-  return String(value ?? '').replace(/\\D/g, '');
+  return String(value ?? '').replace(/\D/g, '');
 }
 
 function isValidCpf(value: string): boolean {
-  if (!/^\\d{11}$/.test(value) || /^(\\d)\\1{10}$/.test(value)) return false;
+  if (!/^\d{11}$/.test(value) || /^(\d)\1{10}$/.test(value)) return false;
   let sum = 0;
   for (let i = 0; i < 9; i += 1) sum += Number(value[i]) * (10 - i);
   let digit = (sum * 10) % 11;
@@ -836,7 +807,7 @@ function isValidCpf(value: string): boolean {
 }
 
 function isValidCns(value: string): boolean {
-  if (!/^\\d{15}$/.test(value) || /^0{15}$/.test(value)) return false;
+  if (!/^\d{15}$/.test(value) || /^0{15}$/.test(value)) return false;
   return validateCnsStandard(value) || validateCnsProvisional(value);
 }
 
@@ -865,20 +836,20 @@ function validateCnsProvisional(cns: string): boolean {
 function formatCpf(value: string | null): string {
   if (!value) return '';
   const d = digits(value);
-  return d.length === 11 ? d.replace(/^(\\d{3})(\\d{3})(\\d{3})(\\d{2})$/, '$1.$2.$3-$4') : value;
+  return d.length === 11 ? d.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4') : value;
 }
 
 function formatCns(value: string | null): string {
   if (!value) return '';
   const d = digits(value);
-  return d.length === 15 ? d.replace(/^(\\d{3})(\\d{4})(\\d{4})(\\d{4})$/, '$1 $2 $3 $4') : value;
+  return d.length === 15 ? d.replace(/^(\d{3})(\d{4})(\d{4})(\d{4})$/, '$1 $2 $3 $4') : value;
 }
 
 function formatPhone(value: string | null): string {
   if (!value) return '';
   const d = digits(value);
-  if (d.length === 11) return d.replace(/^(\\d{2})(\\d{5})(\\d{4})$/, '($1) $2-$3');
-  if (d.length === 10) return d.replace(/^(\\d{2})(\\d{4})(\\d{4})$/, '($1) $2-$3');
+  if (d.length === 11) return d.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+  if (d.length === 10) return d.replace(/^(\d{2})(\d{4})(\d{4})$/, '($1) $2-$3');
   return value;
 }
 
@@ -893,7 +864,7 @@ function formatDateTime(value: string): string {
 }
 
 function labelValue(value: string | null): string {
-  return value ? value.replaceAll('_', ' ').toLowerCase().replace(/(^| )\\S/g, (letter) => letter.toUpperCase()) : 'Não informado';
+  return value ? value.replaceAll('_', ' ').toLowerCase().replace(/(^| )\S/g, (letter) => letter.toUpperCase()) : 'Não informado';
 }
 
 function historyLabel(action: PatientHistory['action']): string {
