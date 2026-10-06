@@ -119,7 +119,12 @@ export default function TripDetailPage() {
     setLoading(false);
   }
 
-  useEffect(() => { if (tripId) loadData(); }, [tripId]);
+  useEffect(() => {
+    if (!tripId) return;
+    loadData();
+    const interval = window.setInterval(loadData, 30000);
+    return () => window.clearInterval(interval);
+  }, [tripId]);
 
   async function saveMileage(status?: Trip['status']) {
     if (!trip) return;
