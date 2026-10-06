@@ -340,7 +340,12 @@ export default function DriverPortalPage() {
                   )}
                 </div>
               </div>
-            ))}
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
           </div>
         )}
 
