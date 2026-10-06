@@ -69,14 +69,14 @@ export default function PatientsPage() {
       phone: String(form.get('phone') ?? '').trim() || null,
       address: String(form.get('address') ?? '').trim() || null,
       city: String(form.get('city') ?? '').trim() || null,
-      cns: String(form.get('cns') ?? '').replace(/\\D/g, '') || null,
+      cns: String(form.get('cns') ?? '').replace(/\D/g, '') || null,
       sex: String(form.get('sex') ?? '') || null,
       nationality: String(form.get('nationality') ?? '') || null,
       race_color: String(form.get('race_color') ?? '') || null,
       ethnicity: String(form.get('ethnicity') ?? '').trim() || null,
-      cep: String(form.get('cep') ?? '').replace(/\\D/g, '') || null,
+      cep: String(form.get('cep') ?? '').replace(/\D/g, '') || null,
       residence_municipality: String(form.get('residence_municipality') ?? '').trim() || null,
-      residence_municipality_ibge: String(form.get('residence_municipality_ibge') ?? '').replace(/\\D/g, '') || null,
+      residence_municipality_ibge: String(form.get('residence_municipality_ibge') ?? '').replace(/\D/g, '') || null,
       street: String(form.get('street') ?? '').trim() || null,
       street_number: String(form.get('street_number') ?? '').trim() || null,
       neighborhood: String(form.get('neighborhood') ?? '').trim() || null,
@@ -91,7 +91,7 @@ export default function PatientsPage() {
       const { data, error } = await supabase
         .from('patients')
         .insert(patientData)
-        .select('id,name,cpf,birth_date,phone,city,wheelchair,reduced_mobility,stretcher,needs_companion,active')
+        .select('id,name,cpf,birth_date,phone,city,cns,sex,nationality,race_color,ethnicity,cep,residence_municipality,residence_municipality_ibge,street,street_number,neighborhood,address_complement,wheelchair,reduced_mobility,stretcher,needs_companion,active')
         .single();
 
       if (error) {
@@ -231,6 +231,10 @@ export default function PatientsPage() {
 
 function Field({ name, label, type = 'text', placeholder, required }: { name: string; label: string; type?: string; placeholder?: string; required?: boolean }) {
   return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input name={name} type={type} placeholder={placeholder} required={required} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200" /></label>;
+}
+
+function SelectField({ name, label, options }: { name: string; label: string; options: [string, string][] }) {
+  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><select name={name} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200">{options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}</select></label>;
 }
 
 function Check({ name, label }: { name: string; label: string }) {
