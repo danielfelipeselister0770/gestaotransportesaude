@@ -35,7 +35,7 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      if (type === 'invite') {
+      if (type === 'invite' || type === 'recovery') {
         window.location.replace('/motorista/definir-senha');
         return;
       }
