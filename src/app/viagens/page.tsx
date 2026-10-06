@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { CalendarDays, Check, Plus, Search, Users, X } from 'lucide-react';
+import { CalendarDays, Plus, Users, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type RequestRow = {
@@ -158,6 +158,27 @@ export default function TripsPage() {
 
     setSaving(true);
 
+    const { data: conflictTrips } = await supabase.from('trips')
+      .select('id,driver_id,vehicle_id,departure_time,status')
+      .eq('date', date)
+      .in('status', ['SCHEDULED', 'IN_PROGRESS'])
+      .or(`driver_id.eq.${driverId},vehicle_id.eq.${vehicleId}`);
+
+    const driverConflict = (conflictTrips ?? []).find((item) => item.driver_id === driverId);
+    const vehicleConflict = (conflictTrips ?? []).find((item) => item.vehicle_id === vehicleId);
+
+    if (driverConflict) {
+      setMessage('O motorista já possui uma viagem agendada ou em andamento nesta data.');
+      setSaving(false);
+      return;
+    }
+
+    if (vehicleConflict) {
+      setMessage('O veículo já possui uma viagem agendada ou em andamento nesta data.');
+      setSaving(false);
+      return;
+    }
+
     const { data: userResult } = await supabase.auth.getUser();
     if (!userResult.user) {
       setMessage('Sessão expirada. Faça login novamente.');
@@ -217,9 +238,74 @@ export default function TripsPage() {
   }
 
   async function updateTripStatus(id: string, status: TripRow['status']) {
-    const { error } = await supabase.from('trips').update({ status }).eq('id', id);
-    if (error) setMessage(`Não foi possível atualizar a viagem: ${error.message}`);
-    else await loadData();
+    setMessage('');
+
+    const { data: currentTrip, error: tripLoadError } = await supabase.from('trips')
+      .select('id,vehicle_id,initial_mileage,status')
+      .eq('id', id)
+      .single();
+
+    if (tripLoadError || !currentTrip) {
+      setMessage(`Não foi possível localizar a viagem: ${tripLoadError?.message ?? 'erro desconhecido'}`);
+      return;
+    }
+
+    if (status === 'IN_PROGRESS') {
+      const { data: vehicle } = await supabase.from('vehicles')
+        .select('id,current_mileage,status')
+        .eq('id', currentTrip.vehicle_id)
+        .single();
+
+      if (!vehicle || vehicle.status !== 'AVAILABLE') {
+        setMessage('O veículo não está disponível para iniciar esta viagem.');
+        return;
+      }
+
+      const { error } = await supabase.from('trips').update({
+        status,
+        initial_mileage: currentTrip.initial_mileage ?? vehicle.current_mileage,
+      }).eq('id', id);
+
+      if (error) {
+        setMessage(`Não foi possível iniciar a viagem: ${error.message}`);
+        return;
+      }
+
+      const { error: vehicleError } = await supabase.from('vehicles')
+        .update({ status: 'IN_USE' })
+        .eq('id', vehicle.id);
+
+      if (vehicleError) {
+        setMessage(`Viagem iniciada, mas não foi possível atualizar o veículo: ${vehicleError.message}`);
+        await loadData();
+        return;
+      }
+    } else if (status === 'CANCELLED') {
+      const { error } = await supabase.from('trips').update({ status }).eq('id', id);
+      if (error) {
+        setMessage(`Não foi possível cancelar a viagem: ${error.message}`);
+        return;
+      }
+
+      const { data: activeTrip } = await supabase.from('trips')
+        .select('id')
+        .eq('vehicle_id', currentTrip.vehicle_id)
+        .in('status', ['SCHEDULED', 'IN_PROGRESS'])
+        .neq('id', id)
+        .limit(1);
+
+      if (!activeTrip?.length) {
+        await supabase.from('vehicles').update({ status: 'AVAILABLE' }).eq('id', currentTrip.vehicle_id);
+      }
+    } else {
+      const { error } = await supabase.from('trips').update({ status }).eq('id', id);
+      if (error) {
+        setMessage(`Não foi possível atualizar a viagem: ${error.message}`);
+        return;
+      }
+    }
+
+    await loadData();
   }
 
   return (
@@ -342,7 +428,7 @@ export default function TripsPage() {
                     </Link>
                     <div className="flex gap-2">
                       {trip.status === 'SCHEDULED' && <button onClick={() => updateTripStatus(trip.id, 'IN_PROGRESS')} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700">Iniciar</button>}
-                      {trip.status === 'IN_PROGRESS' && <button onClick={() => updateTripStatus(trip.id, 'COMPLETED')} className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-medium text-white hover:bg-emerald-700"><Check size={14}/> Concluir</button>}
+                      
                       {(trip.status === 'SCHEDULED' || trip.status === 'IN_PROGRESS') && <button onClick={() => updateTripStatus(trip.id, 'CANCELLED')} className="rounded-lg border px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">Cancelar</button>}
                     </div>
                   </div>
