@@ -13,8 +13,23 @@ export default function AuthCallbackPage() {
     async function finishAuthentication() {
       const search = new URLSearchParams(window.location.search);
       const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const code = search.get('code');
       const tokenHash = search.get('token_hash');
       const type = (search.get('type') ?? hash.get('type')) as EmailOtpType | null;
+
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+        if (error) {
+          setMessage(`Não foi possível confirmar o acesso: ${error.message}`);
+          return;
+        }
+
+        // Recovery links using PKCE return a code instead of token_hash/type.
+        // After exchanging it, the authenticated session is ready for the password screen.
+        window.location.replace('/motorista/definir-senha');
+        return;
+      }
 
       if (tokenHash && type) {
         const { error } = await supabase.auth.verifyOtp({
