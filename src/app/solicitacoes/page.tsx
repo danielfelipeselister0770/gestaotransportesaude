@@ -72,36 +72,101 @@ export default function RequestsPage() {
   useEffect(() => { loadData(); }, []);
 
   async function createRequest(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setMessage('');
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
     const form = new FormData(event.currentTarget);
-    const { data: userResult } = await supabase.auth.getUser();
-    if (!userResult.user) { setMessage('Sessão expirada. Faça login novamente.'); setSaving(false); return; }
 
-    const { error } = await supabase.from('transport_requests').insert({
-      patient_id: String(form.get('patient_id') ?? ''), requested_by: userResult.user.id,
-      date: String(form.get('date') ?? ''), time: String(form.get('time') ?? ''),
-      origin: String(form.get('origin') ?? '').trim(), destination: String(form.get('destination') ?? '').trim(),
-      health_unit_id: String(form.get('health_unit_id') ?? '') || null,
-      purpose: String(form.get('purpose') ?? '').trim() || null,
-      needs_companion: form.get('needs_companion') === 'on',
-      observations: String(form.get('observations') ?? '').trim() || null, status: 'REQUESTED',
-    });
-    if (error) setMessage(`Não foi possível criar a solicitação: ${error.message}`);
-    else { event.currentTarget.reset(); setShowForm(false); setMessage('Solicitação criada com sucesso.'); await loadData(); }
-    setSaving(false);
+    try {
+      const { data: userResult } = await supabase.auth.getUser();
+      if (!userResult.user) {
+        setMessage('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const patientId = String(form.get('patient_id') ?? '');
+      const healthUnitId = String(form.get('health_unit_id') ?? '') || null;
+      const requestData = {
+        patient_id: patientId,
+        requested_by: userResult.user.id,
+        date: String(form.get('date') ?? ''),
+        time: String(form.get('time') ?? ''),
+        origin: String(form.get('origin') ?? '').trim(),
+        destination: String(form.get('destination') ?? '').trim(),
+        health_unit_id: healthUnitId,
+        purpose: String(form.get('purpose') ?? '').trim() || null,
+        needs_companion: form.get('needs_companion') === 'on',
+        observations: String(form.get('observations') ?? '').trim() || null,
+        status: 'REQUESTED' as const,
+      };
+
+      const { data, error } = await supabase
+        .from('transport_requests')
+        .insert(requestData)
+        .select('id,date,time,origin,destination,purpose,needs_companion,observations,status')
+        .single();
+
+      if (error) {
+        setMessage(`Não foi possível criar a solicitação: ${error.message}`);
+        return;
+      }
+
+      const patient = patients.find((item) => item.id === patientId);
+      const healthUnit = healthUnits.find((item) => item.id === healthUnitId);
+
+      if (data) {
+        const newRequest: RequestRow = {
+          ...data,
+          status: data.status as RequestStatus,
+          patient: patient ? { name: patient.name } : null,
+          health_unit: healthUnit ? { name: healthUnit.name } : null,
+        };
+
+        setRequests((current) =>
+          [...current, newRequest].sort((a, b) =>
+            `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`)
+          )
+        );
+      }
+
+      event.currentTarget.reset();
+      setShowForm(false);
+      setMessage('Solicitação criada com sucesso.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function updateStatus(id: string, status: RequestStatus) {
     setMessage('');
     const payload: Record<string, unknown> = { status };
+
     if (status === 'APPROVED') {
       const { data: userResult } = await supabase.auth.getUser();
-      if (!userResult.user) { setMessage('Sessão expirada. Faça login novamente.'); return; }
-      payload.approved_by = userResult.user.id; payload.approved_at = new Date().toISOString();
+      if (!userResult.user) {
+        setMessage('Sessão expirada. Faça login novamente.');
+        return;
+      }
+      payload.approved_by = userResult.user.id;
+      payload.approved_at = new Date().toISOString();
     }
-    const { error } = await supabase.from('transport_requests').update(payload).eq('id', id);
-    if (error) setMessage(`Não foi possível atualizar a solicitação: ${error.message}`);
-    else await loadData();
+
+    const { error } = await supabase
+      .from('transport_requests')
+      .update(payload)
+      .eq('id', id);
+
+    if (error) {
+      setMessage(`Não foi possível atualizar a solicitação: ${error.message}`);
+      return;
+    }
+
+    setRequests((current) =>
+      current.map((request) =>
+        request.id === id ? { ...request, status } : request
+      )
+    );
+    setMessage(`Solicitação ${statusLabels[status].toLowerCase()} com sucesso.`);
   }
 
   const filtered = requests.filter((request) => {
