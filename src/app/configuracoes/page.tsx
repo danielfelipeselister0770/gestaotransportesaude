@@ -8,6 +8,16 @@ import { createClient } from '@/lib/supabase/client';
 type Role = 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA';
 type Municipality = { id: string; name: string; cnpj: string | null; city: string | null; state: string | null; active: boolean; created_at: string; };
 
+type Driver = {
+  id: string;
+  municipality_id: string | null;
+  profile_id: string | null;
+  name: string;
+  cpf: string | null;
+  phone: string | null;
+  active: boolean;
+};
+
 type Profile = {
   id: string;
   municipality_id: string | null;
@@ -36,6 +46,7 @@ const roleDescriptions: Record<Role, string> = {
 export default function ConfiguracoesPage() {
   const supabase = createClient();
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [municipalityEditing, setMunicipalityEditing] = useState<Municipality | null>(null);
   const [municipalityModalOpen, setMunicipalityModalOpen] = useState(false);
@@ -89,10 +100,15 @@ export default function ConfiguracoesPage() {
     setProfiles(rows);
     setCurrentProfile(me);
     if (me?.role === 'ADMIN') {
-      const municipalityResult = await supabase.from('municipalities').select('id,name,cnpj,city,state,active,created_at').order('name');
+      const [municipalityResult, driverResult] = await Promise.all([
+        supabase.from('municipalities').select('id,name,cnpj,city,state,active,created_at').order('name'),
+        supabase.from('drivers').select('id,municipality_id,profile_id,name,cpf,phone,active').order('name'),
+      ]);
       if (!municipalityResult.error) setMunicipalities((municipalityResult.data ?? []) as Municipality[]);
+      if (!driverResult.error) setDrivers((driverResult.data ?? []) as Driver[]);
     } else {
       setMunicipalities([]);
+      setDrivers([]);
     }
     setLoading(false);
   }
@@ -314,6 +330,7 @@ export default function ConfiguracoesPage() {
               {municipalities.length === 0 ? <div className="p-6 text-sm text-slate-500">Nenhuma prefeitura cadastrada.</div> : <div className="divide-y">
                 {municipalities.map((municipality) => {
                   const municipalityUsers = profiles.filter((profile) => profile.municipality_id === municipality.id);
+                  const municipalityDrivers = drivers.filter((driver) => driver.municipality_id === municipality.id);
                   const isOpen = selectedMunicipalityId === municipality.id;
                   return (
                     <div key={municipality.id}>
@@ -324,7 +341,8 @@ export default function ConfiguracoesPage() {
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${municipality.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{municipality.active ? 'Ativa' : 'Inativa'}</span>
-                          <button onClick={() => setSelectedMunicipalityId(isOpen ? null : municipality.id)} className="rounded-lg border px-3 py-2 text-sm font-medium">{isOpen ? 'Ocultar usuários' : `Usuários (${municipalityUsers.length})`}</button>
+                          <button onClick={() => setSelectedMunicipalityId(isOpen ? null : municipality.id)} className="rounded-lg border px-3 py-2 text-sm font-medium">{isOpen ? 'Ocultar detalhes' : `Usuários (${municipalityUsers.length})`}</button>
+                          <span className="rounded-lg border bg-slate-50 px-3 py-2 text-sm font-medium">Motoristas ({municipalityDrivers.length})</span>
                           <button onClick={() => openMunicipality(municipality)} className="rounded-lg border p-2" title="Editar prefeitura"><Pencil size={16} /></button>
                         </div>
                       </div>
@@ -349,6 +367,31 @@ export default function ConfiguracoesPage() {
                               </div>
                             ))}
                           </div>}
+
+                          <div className="mt-4">
+                            <div className="mb-3">
+                              <h3 className="font-semibold text-slate-900">Motoristas da prefeitura</h3>
+                              <p className="text-xs text-slate-500">Todo motorista cadastrado na operação desta prefeitura aparece aqui automaticamente, inclusive quando o cadastro foi feito pelo gestor.</p>
+                            </div>
+                            {municipalityDrivers.length === 0 ? (
+                              <div className="rounded-lg border bg-white p-4 text-sm text-slate-500">Nenhum motorista cadastrado nesta prefeitura.</div>
+                            ) : (
+                              <div className="divide-y rounded-lg border bg-white">
+                                {municipalityDrivers.map((driver) => (
+                                  <div key={driver.id} className="flex flex-col gap-2 p-4 md:flex-row md:items-center md:justify-between">
+                                    <div>
+                                      <div className="font-medium text-slate-900">{driver.name}</div>
+                                      <div className="text-xs text-slate-500">{driver.cpf || 'CPF não informado'}{driver.phone ? ` • ${driver.phone}` : ''}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${driver.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{driver.active ? 'Ativo' : 'Inativo'}</span>
+                                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${driver.profile_id ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{driver.profile_id ? 'Acesso vinculado' : 'Sem acesso'}</span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
