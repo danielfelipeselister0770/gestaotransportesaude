@@ -40,6 +40,7 @@ export default function DriverPortalPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [finishMileage, setFinishMileage] = useState('');
   const [message, setMessage] = useState('');
+  const [viewMode, setViewMode] = useState<'TODAY' | 'SCHEDULE'>('TODAY');
 
   async function loadData() {
     setLoading(true);
@@ -67,11 +68,24 @@ export default function DriverPortalPage() {
 
     setDriverName(driver.name);
 
-    const { data, error } = await supabase
+    const today = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+
+    let tripsQuery = supabase
       .from('trips')
       .select('id,date,departure_time,origin,destination,status,initial_mileage,vehicle:vehicles(plate)')
       .eq('driver_id', driver.id)
-      .in('status', ['SCHEDULED', 'IN_PROGRESS'])
+      .in('status', ['SCHEDULED', 'IN_PROGRESS']);
+
+    tripsQuery = viewMode === 'TODAY'
+      ? tripsQuery.eq('date', today)
+      : tripsQuery.gte('date', today);
+
+    const { data, error } = await tripsQuery
       .order('date', { ascending: true })
       .order('departure_time', { ascending: true });
 
@@ -166,7 +180,7 @@ export default function DriverPortalPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [viewMode]);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -195,10 +209,25 @@ export default function DriverPortalPage() {
       <section className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
         {message && <div className="rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
+        <div className="flex flex-wrap gap-2 rounded-xl border bg-white p-2 shadow-sm">
+          <button
+            onClick={() => setViewMode('TODAY')}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === 'TODAY' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            Hoje
+          </button>
+          <button
+            onClick={() => setViewMode('SCHEDULE')}
+            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === 'SCHEDULE' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            Minha programação
+          </button>
+        </div>
+
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Minhas viagens</h1>
-            <p className="text-sm text-slate-500">Confira e acompanhe as viagens atribuídas a você.</p>
+            <h1 className="text-2xl font-bold">Minha programação</h1>
+            <p className="text-sm text-slate-500">Consulte as viagens de hoje ou as próximas viagens já programadas para você.</p>
           </div>
           <button onClick={loadData} className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">
             <RefreshCw size={16} /> Atualizar
@@ -210,8 +239,8 @@ export default function DriverPortalPage() {
         ) : trips.length === 0 ? (
           <div className="rounded-xl border bg-white p-8 text-center">
             <CalendarDays className="mx-auto mb-3 text-slate-400" size={32} />
-            <p className="font-medium">Nenhuma viagem pendente</p>
-            <p className="mt-1 text-sm text-slate-500">Quando uma viagem for atribuída a você, ela aparecerá aqui.</p>
+            <p className="font-medium">{viewMode === 'TODAY' ? 'Nenhuma viagem para hoje' : 'Nenhuma viagem programada'}</p>
+            <p className="mt-1 text-sm text-slate-500">{viewMode === 'TODAY' ? 'Consulte a aba “Minha programação” para ver as próximas viagens.' : 'Quando uma viagem for atribuída a você, ela aparecerá aqui.'}</p>
           </div>
         ) : (
           <div className="grid gap-4 lg:grid-cols-2">
