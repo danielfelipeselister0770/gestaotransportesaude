@@ -118,6 +118,18 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED' && final === null) {
+      setMessage('Informe a quilometragem final antes de concluir a viagem.');
+      setSaving(false);
+      return;
+    }
+
+    if (status === 'COMPLETED' && trip.status !== 'IN_PROGRESS') {
+      setMessage('Somente uma viagem em andamento pode ser concluída.');
+      setSaving(false);
+      return;
+    }
+
     const { error } = await supabase.from('trips').update({
       initial_mileage: initial,
       final_mileage: final,
@@ -125,32 +137,67 @@ export default function TripDetailPage() {
       ...(status ? { status } : {}),
     }).eq('id', trip.id);
 
-    if (error) setMessage(`Não foi possível salvar: ${error.message}`);
-    else {
-      if (initial !== null) await supabase.from('mileage_records').insert({
-        vehicle_id: trip.vehicle?.id,
+    if (error) {
+      setMessage(`Não foi possível salvar: ${error.message}`);
+      setSaving(false);
+      return;
+    }
+
+    if (trip.initial_mileage === null && initial !== null && trip.vehicle?.id) {
+      const { error: mileageError } = await supabase.from('mileage_records').insert({
+        vehicle_id: trip.vehicle.id,
         trip_id: trip.id,
         date: new Date().toISOString(),
         mileage: initial,
         source: 'TRIP',
         observations: 'Quilometragem inicial da viagem',
       });
-      if (status === 'COMPLETED' && final !== null) {
-        await supabase.from('mileage_records').insert({
-          trip_id: trip.id,
-          date: new Date().toISOString(),
-          mileage: final,
-          source: 'TRIP',
-          observations: 'Quilometragem final da viagem',
-        });
+      if (mileageError) {
+        setMessage(`Viagem salva, mas não foi possível registrar o KM inicial: ${mileageError.message}`);
+        setSaving(false);
+        return;
       }
-      setMessage(status === 'COMPLETED' ? 'Viagem concluída com sucesso.' : 'Dados da viagem salvos.');
-      await loadData();
     }
+
+    if (status === 'COMPLETED' && final !== null && trip.vehicle?.id) {
+      const { error: mileageError } = await supabase.from('mileage_records').insert({
+        vehicle_id: trip.vehicle.id,
+        trip_id: trip.id,
+        date: new Date().toISOString(),
+        mileage: final,
+        source: 'TRIP',
+        observations: 'Quilometragem final da viagem',
+      });
+
+      if (mileageError) {
+        setMessage(`Viagem concluída, mas não foi possível registrar o KM final: ${mileageError.message}`);
+        setSaving(false);
+        await loadData();
+        return;
+      }
+
+      const { error: vehicleError } = await supabase.from('vehicles')
+        .update({ current_mileage: final, status: 'AVAILABLE' })
+        .eq('id', trip.vehicle.id);
+
+      if (vehicleError) {
+        setMessage(`Viagem concluída, mas não foi possível atualizar o veículo: ${vehicleError.message}`);
+        setSaving(false);
+        await loadData();
+        return;
+      }
+    }
+
+    setMessage(status === 'COMPLETED' ? 'Viagem concluída com sucesso.' : 'Dados da viagem salvos.');
+    await loadData();
     setSaving(false);
   }
 
   async function updatePassenger(id: string, boarding_status: Passenger['boarding_status']) {
+    if (trip?.status === 'COMPLETED' || trip?.status === 'CANCELLED') {
+      setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
+      return;
+    }
     const { error } = await supabase.from('trip_passengers').update({ boarding_status }).eq('id', id);
     if (error) setMessage(`Não foi possível atualizar o passageiro: ${error.message}`);
     else setPassengers((current) => current.map((item) => item.id === id ? { ...item, boarding_status } : item));
@@ -239,7 +286,7 @@ export default function TripDetailPage() {
               <Field label="KM inicial" type="number" value={initialMileage} onChange={setInitialMileage}/>
               <Field label="KM final" type="number" value={finalMileage} onChange={setFinalMileage}/>
               <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">Observações</span><textarea value={observation} onChange={(e) => setObservation(e.target.value)} rows={3} className="w-full rounded-lg border px-3 py-2.5 text-sm"/></label>
-              <button onClick={() => saveMileage()} disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><Save size={16}/> Salvar</button>
+              <button onClick={() => saveMileage()} disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><Save size={16}/> Salvar</button>
               {trip.status === 'IN_PROGRESS' && <button onClick={() => saveMileage('COMPLETED')} disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><Check size={16}/> Salvar e concluir viagem</button>}
             </div>
           </section>
