@@ -20,7 +20,7 @@ async function getCurrentProfile() {
 
   const { data: profile } = await server
     .from('profiles')
-    .select('id,role')
+    .select('id,role,municipality_id')
     .eq('id', userId)
     .maybeSingle();
 
