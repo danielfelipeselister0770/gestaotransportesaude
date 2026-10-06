@@ -9,6 +9,7 @@ const nav = [
   ['Agenda / Viagens', '/viagens'],
   ['Veículos', '/veiculos'],
   ['Motoristas', '/motoristas'],
+  ['Estabelecimentos de Saúde', '/estabelecimentos'],
   ['Abastecimentos', '/abastecimentos'],
   ['Manutenções', '/manutencoes'],
   ['Ocorrências', '/ocorrencias'],
