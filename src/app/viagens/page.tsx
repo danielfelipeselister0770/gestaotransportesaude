@@ -221,6 +221,7 @@ export default function TripsPage() {
       trip_id: trip.id,
       patient_id: (request as RequestRow & { patient_id: string }).patient_id,
       request_id: request.id,
+      municipality_id: driverData.municipality_id,
       companion: request.needs_companion,
       boarding_status: 'EXPECTED',
     }));
