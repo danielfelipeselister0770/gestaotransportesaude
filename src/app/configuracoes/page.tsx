@@ -173,6 +173,30 @@ export default function ConfiguracoesPage() {
     setSaving(false);
   }
 
+  async function deleteUser(profile: Profile) {
+    if (profile.id === currentUserId) {
+      setMessage('Você não pode excluir seu próprio usuário.');
+      return;
+    }
+    if (!window.confirm('Excluir o usuário ' + profile.name + '? Esta ação remove o acesso ao sistema.')) return;
+
+    setSaving(true);
+    setMessage('');
+    const response = await fetch('/api/usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', userId: profile.id }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) setMessage(result.error ?? 'Não foi possível excluir o usuário.');
+    else {
+      setMessage('Usuário excluído com sucesso.');
+      await loadData();
+    }
+    setSaving(false);
+  }
+
   function openEdit(profile: Profile) {
     setEditing(profile);
     setName(profile.name);
