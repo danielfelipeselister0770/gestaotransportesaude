@@ -186,11 +186,24 @@ export default function TripsPage() {
       return;
     }
 
+    const { data: driverData } = await supabase
+      .from('drivers')
+      .select('municipality_id')
+      .eq('id', driverId)
+      .maybeSingle();
+
+    if (!driverData?.municipality_id) {
+      setMessage('O motorista selecionado não está vinculado a uma prefeitura.');
+      setSaving(false);
+      return;
+    }
+
     const { data: trip, error: tripError } = await supabase.from('trips').insert({
       date,
       departure_time: departureTime,
       driver_id: driverId,
       vehicle_id: vehicleId,
+      municipality_id: driverData.municipality_id,
       origin,
       destination,
       status: 'SCHEDULED',
