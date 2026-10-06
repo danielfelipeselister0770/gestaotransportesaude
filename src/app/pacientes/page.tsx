@@ -50,7 +50,7 @@ export default function PatientsPage() {
     setMessage('');
     const form = new FormData(event.currentTarget);
 
-    const { error } = await supabase.from('patients').insert({
+    const patientData = {
       name: String(form.get('name') ?? '').trim(),
       cpf: String(form.get('cpf') ?? '').trim() || null,
       birth_date: String(form.get('birth_date') ?? '') || null,
@@ -61,16 +61,32 @@ export default function PatientsPage() {
       reduced_mobility: form.get('reduced_mobility') === 'on',
       stretcher: form.get('stretcher') === 'on',
       needs_companion: form.get('needs_companion') === 'on',
-    });
+    };
 
-    if (error) setMessage(`Não foi possível cadastrar: ${error.message}`);
-    else {
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .insert(patientData)
+        .select('id,name,cpf,birth_date,phone,city,wheelchair,reduced_mobility,stretcher,needs_companion,active')
+        .single();
+
+      if (error) {
+        setMessage(`Não foi possível cadastrar: ${error.message}`);
+        return;
+      }
+
+      if (data) {
+        setPatients((current) =>
+          [...current, data as Patient].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
+        );
+      }
+
       event.currentTarget.reset();
       setShowForm(false);
       setMessage('Paciente cadastrado com sucesso.');
-      await loadPatients();
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   const filtered = patients.filter((patient) =>
