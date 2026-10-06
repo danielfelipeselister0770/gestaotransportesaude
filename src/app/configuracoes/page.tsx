@@ -123,6 +123,56 @@ export default function ConfiguracoesPage() {
     setSaving(false);
   }
 
+  function openUserModal(municipalityId: string) {
+    setUserMunicipalityId(municipalityId);
+    setUserName('');
+    setUserCpf('');
+    setUserPhone('');
+    setUserEmail('');
+    setUserPassword('');
+    setUserRole('OPERADOR');
+    setUserModalOpen(true);
+    setMessage('');
+  }
+
+  function closeUserModal() {
+    setUserModalOpen(false);
+    setMessage('');
+  }
+
+  async function saveNewUser(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!userMunicipalityId) return;
+    setSaving(true);
+    setMessage('');
+
+    const response = await fetch('/api/usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        municipalityId: userMunicipalityId,
+        name: userName,
+        cpf: userCpf,
+        phone: userPhone,
+        email: userEmail,
+        password: userPassword,
+        role: userRole,
+      }),
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setMessage(result.error ?? 'Não foi possível cadastrar o usuário.');
+    } else {
+      setMessage('Usuário cadastrado com sucesso.');
+      setUserModalOpen(false);
+      setSelectedMunicipalityId(userMunicipalityId);
+      await loadData();
+    }
+    setSaving(false);
+  }
+
   function openEdit(profile: Profile) {
     setEditing(profile);
     setName(profile.name);
