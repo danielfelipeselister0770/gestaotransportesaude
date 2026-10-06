@@ -48,6 +48,14 @@ export default function ConfiguracoesPage() {
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState<Profile | null>(null);
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [userMunicipalityId, setUserMunicipalityId] = useState('');
+  const [userName, setUserName] = useState('');
+  const [userCpf, setUserCpf] = useState('');
+  const [userPhone, setUserPhone] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [userPassword, setUserPassword] = useState('');
+  const [userRole, setUserRole] = useState<Role>('OPERADOR');
   const [name, setName] = useState('');
   const [cpf, setCpf] = useState('');
   const [phone, setPhone] = useState('');
