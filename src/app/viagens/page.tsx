@@ -371,7 +371,7 @@ export default function TripsPage() {
 
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-                <button disabled={saving || selectedPassengerCount === 0} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+                <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-60">
                   {saving ? 'Salvando...' : 'Criar viagem'}
                 </button>
               </div>
