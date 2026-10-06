@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, CarFront, CheckCircle2, LogOut, MapPin, Play, RefreshCw, UserRound } from 'lucide-react';
+import { CalendarDays, CarFront, CheckCircle2, ChevronDown, ChevronUp, LogOut, MapPin, Play, RefreshCw, UserRound } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Trip = {
@@ -41,6 +41,7 @@ export default function DriverPortalPage() {
   const [finishMileage, setFinishMileage] = useState('');
   const [message, setMessage] = useState('');
   const [viewMode, setViewMode] = useState<'TODAY' | 'SCHEDULE'>('TODAY');
+  const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
 
   async function loadData() {
     setLoading(true);
@@ -189,6 +190,23 @@ export default function DriverPortalPage() {
 
   const selectedTripData = trips.find((trip) => trip.id === selectedTrip);
 
+  const groupedTrips = trips.reduce<Record<string, Trip[]>>((groups, trip) => {
+    (groups[trip.date] ??= []).push(trip);
+    return groups;
+  }, {});
+
+  function toggleDate(date: string) {
+    setExpandedDates((current) => ({ ...current, [date]: current[date] === false ? true : false }));
+  }
+
+  function formatDate(date: string) {
+    return new Date(date + 'T12:00:00').toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+    });
+  }
+
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b bg-white">
@@ -243,8 +261,30 @@ export default function DriverPortalPage() {
             <p className="mt-1 text-sm text-slate-500">{viewMode === 'TODAY' ? 'Consulte a aba “Minha programação” para ver as próximas viagens.' : 'Quando uma viagem for atribuída a você, ela aparecerá aqui.'}</p>
           </div>
         ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {trips.map((trip) => (
+          <div className="space-y-5">
+            {Object.entries(groupedTrips).map(([date, dateTrips]) => {
+              const expanded = expandedDates[date] !== false;
+              return (
+                <section key={date} className="overflow-hidden rounded-xl border bg-white shadow-sm">
+                  <button
+                    onClick={() => toggleDate(date)}
+                    className="flex w-full items-center justify-between gap-4 border-b bg-slate-50 px-5 py-4 text-left"
+                  >
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {date === new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date()) ? 'Hoje' : 'Programação'}
+                      </div>
+                      <div className="mt-1 text-base font-bold capitalize text-slate-900">{formatDate(date)}</div>
+                      <div className="mt-1 text-xs text-slate-500">
+                        {dateTrips.length} {dateTrips.length === 1 ? 'viagem' : 'viagens'} programada{dateTrips.length === 1 ? '' : 's'}
+                      </div>
+                    </div>
+                    {expanded ? <ChevronUp size={19} /> : <ChevronDown size={19} />}
+                  </button>
+
+                  {expanded && (
+                    <div className="grid gap-4 p-4 lg:grid-cols-2">
+                      {dateTrips.map((trip) => (
               <div key={trip.id} className={`rounded-xl border bg-white p-5 shadow-sm ${selectedTrip === trip.id ? 'ring-2 ring-slate-300' : ''}`}>
                 <button onClick={() => loadPassengers(trip.id)} className="w-full text-left">
                   <div className="flex items-start justify-between gap-3">
