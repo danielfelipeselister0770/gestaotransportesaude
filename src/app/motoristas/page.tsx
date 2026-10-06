@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Copy, KeyRound, Pencil, Plus, Search, UserRound, X } from 'lucide-react';
+import { AlertTriangle, Copy, KeyRound, MessageCircle, Pencil, Plus, Search, UserRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Driver = {
@@ -109,6 +109,32 @@ export default function DriversPage() {
     setMessage('Copiado.');
   }
 
+  function sendWhatsApp() {
+    if (!accessDriver || !accessData) return;
+    const phone = (accessDriver.phone ?? '').replace(/\D/g, '');
+    if (!phone) {
+      setMessage('Cadastre o telefone do motorista antes de enviar pelo WhatsApp.');
+      return;
+    }
+    const normalizedPhone = phone.length === 10 || phone.length === 11 ? '55' + phone : phone;
+    const message = [
+      '🚐 *Acesso ao Sistema de Transporte Saúde*',
+      '',
+      `Olá, ${accessDriver.name}!`,
+      '',
+      'Seu acesso ao sistema foi criado.',
+      '',
+      `🔗 *Primeiro acesso:* ${accessData.accessLink}`,
+      `👤 *Usuário:* ${accessData.email ?? 'Não informado'}`,
+      `🔑 *Senha provisória:* ${accessData.temporaryPassword}`,
+      '',
+      'Ao entrar, você deverá criar sua senha definitiva.',
+      '',
+      '⚠️ Não compartilhe esses dados com outras pessoas.'
+    ].join('\n');
+    window.open(`https://wa.me/${normalizedPhone}?text=${encodeURIComponent(message)}`, '_blank');
+  }
+
   const filtered = drivers.filter(d => {
     const q = search.toLowerCase();
     return d.name.toLowerCase().includes(q) || (d.cpf ?? '').toLowerCase().includes(q) || (d.cnh ?? '').toLowerCase().includes(q);
@@ -172,7 +198,12 @@ export default function DriversPage() {
             <div><label className="text-xs font-semibold uppercase text-slate-500">Senha provisória</label><div className="mt-1 flex gap-2"><input readOnly value={accessData.temporaryPassword} className="w-full rounded-lg border bg-slate-50 px-3 py-2 font-mono"/><button type="button" onClick={() => copyText(accessData.temporaryPassword)} className="rounded-lg border px-3"><Copy size={16}/></button></div></div>
             <div><label className="text-xs font-semibold uppercase text-slate-500">Link de primeiro acesso</label><div className="mt-1 flex gap-2"><input readOnly value={accessData.accessLink} className="w-full rounded-lg border bg-slate-50 px-3 py-2 text-xs"/><button type="button" onClick={() => copyText(accessData.accessLink)} className="rounded-lg border px-3"><Copy size={16}/></button></div></div>
           </div>
-          <button type="button" onClick={() => { setAccessDriver(null); setAccessData(null); }} className="mt-5 rounded-lg border px-4 py-2 text-sm">Fechar</button>
+          <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+            <button type="button" onClick={sendWhatsApp} className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700">
+              <MessageCircle size={17}/> Enviar pelo WhatsApp
+            </button>
+            <button type="button" onClick={() => { setAccessDriver(null); setAccessData(null); }} className="rounded-lg border px-4 py-2 text-sm">Fechar</button>
+          </div>
         </>}
       </div>}
 
