@@ -10,6 +10,7 @@ const nav = [
   ['Veículos', '/veiculos'],
   ['Motoristas', '/motoristas'],
   ['Estabelecimentos de Saúde', '/estabelecimentos'],
+  ['Profissionais SUS', '/profissionais'],
   ['Abastecimentos', '/abastecimentos'],
   ['Manutenções', '/manutencoes'],
   ['Ocorrências', '/ocorrencias'],
