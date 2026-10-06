@@ -20,7 +20,10 @@ type Establishment = {
   phone: string | null;
   active: boolean;
   is_secretariat: boolean;
+  municipality_id: string | null;
 };
+
+type Municipality = { id: string; name: string; active: boolean };
 
 const nav = [
   ['Dashboard','/'],['Pacientes','/pacientes'],['Solicitações','/solicitacoes'],['Agenda / Viagens','/viagens'],
@@ -35,6 +38,7 @@ export default function EstablishmentsPage() {
   const [role, setRole] = useState<Role | null>(null);
   const [municipalityName, setMunicipalityName] = useState('');
   const [municipalityId, setMunicipalityId] = useState<string | null>(null);
+  const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [search, setSearch] = useState('');
   const [editing, setEditing] = useState<Establishment | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -67,6 +71,11 @@ export default function EstablishmentsPage() {
     setRole(profile.role as Role);
     setMunicipalityId(profile.municipality_id);
 
+    if (profile.role === 'ADMIN') {
+      const { data: municipalityRows } = await supabase.from('municipalities').select('id,name,active').eq('active', true).order('name');
+      setMunicipalities((municipalityRows ?? []) as Municipality[]);
+    }
+
     if (profile.municipality_id) {
       const { data: municipality } = await supabase
         .from('municipalities')
@@ -80,7 +89,7 @@ export default function EstablishmentsPage() {
 
     const result = await supabase
       .from('health_units')
-      .select('id,name,type,subtype,cnes,cnpj,management,address,city,phone,active,is_secretariat')
+      .select('id,name,type,subtype,cnes,cnpj,management,address,city,phone,active,is_secretariat,municipality_id')
       .order('name');
 
     if (result.error) setMessage('Erro ao carregar estabelecimentos: ' + result.error.message);
@@ -144,9 +153,19 @@ export default function EstablishmentsPage() {
       return;
     }
 
+    const selectedMunicipalityId = role === 'ADMIN'
+      ? String(form.get('municipality_id') ?? '') || null
+      : municipalityId;
+
+    if (!selectedMunicipalityId) {
+      setMessage('Selecione a prefeitura do estabelecimento.');
+      setSaving(false);
+      return;
+    }
+
     const result = editing
-      ? await supabase.from('health_units').update(payload).eq('id', editing.id)
-      : await supabase.from('health_units').insert({ ...payload, ...(municipalityId ? { municipality_id: municipalityId } : {}) });
+      ? await supabase.from('health_units').update({ ...payload, municipality_id: selectedMunicipalityId }).eq('id', editing.id)
+      : await supabase.from('health_units').insert({ ...payload, municipality_id: selectedMunicipalityId });
 
     if (result.error) {
       setMessage('Não foi possível salvar: ' + result.error.message);
@@ -212,6 +231,12 @@ export default function EstablishmentsPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {role === 'ADMIN' && <label className="text-sm sm:col-span-2 lg:col-span-4">Prefeitura
+                  <select name="municipality_id" required defaultValue={editing?.municipality_id ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2">
+                    <option value="">Selecione a prefeitura</option>
+                    {municipalities.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                  </select>
+                </label>}
                 <label className="text-sm sm:col-span-2 lg:col-span-3">Nome do estabelecimento
                   <input name="name" required defaultValue={editing?.name ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Secretaria Municipal de Saúde" />
                 </label>
@@ -273,7 +298,7 @@ export default function EstablishmentsPage() {
                           {item.is_secretariat && <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">Secretaria de Saúde</span>}
                         </div>
                         <div className="mt-1 text-sm text-slate-500">
-                          {[item.type, item.subtype, item.cnes && 'CNES ' + item.cnes, item.cnpj && 'CNPJ ' + item.cnpj].filter(Boolean).join(' • ') || 'Sem identificação SUS cadastrada'}
+                          {[item.type, item.subtype, item.cnes && 'CNES ' + item.cnes, item.cnpj && 'CNPJ ' + item.cnpj, role === 'ADMIN' && municipalities.find((m) => m.id === item.municipality_id)?.name].filter(Boolean).join(' • ') || 'Sem identificação SUS cadastrada'}
                         </div>
                         <div className="mt-1 text-xs text-slate-400">{[item.city, item.address, item.phone].filter(Boolean).join(' • ') || 'Sem endereço/telefone informado'}</div>
                       </div>
