@@ -39,6 +39,7 @@ export default function ConfiguracoesPage() {
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [municipalityEditing, setMunicipalityEditing] = useState<Municipality | null>(null);
   const [municipalityModalOpen, setMunicipalityModalOpen] = useState(false);
+  const [selectedMunicipalityId, setSelectedMunicipalityId] = useState<string | null>(null);
   const [municipalityName, setMunicipalityName] = useState('');
   const [municipalityCnpj, setMunicipalityCnpj] = useState('');
   const [municipalityCity, setMunicipalityCity] = useState('');
@@ -225,52 +226,51 @@ export default function ConfiguracoesPage() {
           {isAdmin && (
             <section className="mb-6 rounded-xl border bg-white shadow-sm">
               <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div><h2 className="font-semibold">Prefeituras / Municípios</h2><p className="text-xs text-slate-500">Cadastre e ative as prefeituras atendidas pelo sistema.</p></div>
+                <div><h2 className="font-semibold">Prefeituras / Municípios</h2><p className="text-xs text-slate-500">Cada prefeitura concentra seus usuários e sua operação.</p></div>
                 <button onClick={() => openMunicipality()} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Plus size={16} /> Nova prefeitura</button>
               </div>
               {municipalities.length === 0 ? <div className="p-6 text-sm text-slate-500">Nenhuma prefeitura cadastrada.</div> : <div className="divide-y">
-                {municipalities.map((municipality) => (
-                  <div key={municipality.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-                    <div><div className="font-medium text-slate-900">{municipality.name}</div><div className="text-xs text-slate-500">{municipality.city || 'Cidade não informada'}{municipality.state ? ` / ${municipality.state}` : ''}{municipality.cnpj ? ` • CNPJ ${municipality.cnpj}` : ''}</div></div>
-                    <div className="flex items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${municipality.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{municipality.active ? 'Ativa' : 'Inativa'}</span><button onClick={() => openMunicipality(municipality)} className="rounded-lg border p-2" title="Editar prefeitura"><Pencil size={16} /></button></div>
-                  </div>
-                ))}
+                {municipalities.map((municipality) => {
+                  const municipalityUsers = profiles.filter((profile) => profile.municipality_id === municipality.id);
+                  const isOpen = selectedMunicipalityId === municipality.id;
+                  return (
+                    <div key={municipality.id}>
+                      <div className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                        <div>
+                          <div className="font-medium text-slate-900">{municipality.name}</div>
+                          <div className="text-xs text-slate-500">{municipality.city || 'Cidade não informada'}{municipality.state ? ` / ${municipality.state}` : ''}{municipality.cnpj ? ` • CNPJ ${municipality.cnpj}` : ''}</div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${municipality.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{municipality.active ? 'Ativa' : 'Inativa'}</span>
+                          <button onClick={() => setSelectedMunicipalityId(isOpen ? null : municipality.id)} className="rounded-lg border px-3 py-2 text-sm font-medium">{isOpen ? 'Ocultar usuários' : `Usuários (${municipalityUsers.length})`}</button>
+                          <button onClick={() => openMunicipality(municipality)} className="rounded-lg border p-2" title="Editar prefeitura"><Pencil size={16} /></button>
+                        </div>
+                      </div>
+                      {isOpen && (
+                        <div className="border-t bg-slate-50 p-4">
+                          <div className="mb-3 flex items-center justify-between">
+                            <div><h3 className="font-semibold text-slate-900">Usuários da prefeitura</h3><p className="text-xs text-slate-500">Gestores, operadores e motoristas vinculados a esta prefeitura.</p></div>
+                          </div>
+                          {municipalityUsers.length === 0 ? <div className="rounded-lg border bg-white p-4 text-sm text-slate-500">Nenhum usuário vinculado. Edite um usuário existente para vinculá-lo a esta prefeitura.</div> : <div className="divide-y rounded-lg border bg-white">
+                            {municipalityUsers.map((profile) => (
+                              <div key={profile.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                                <div><div className="font-medium text-slate-900">{profile.name}{profile.id === currentUserId ? ' (você)' : ''}</div><div className="text-xs text-slate-500">{profile.cpf || 'CPF não informado'}{profile.phone ? ` • ${profile.phone}` : ''}</div></div>
+                                <div className="flex items-center gap-3">
+                                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium">{roleLabels[profile.role]}</span>
+                                  <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${profile.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{profile.active ? 'Ativo' : 'Inativo'}</span>
+                                  <button onClick={() => openEdit(profile)} className="rounded-lg border p-2" title="Editar"><Pencil size={16} /></button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>}
             </section>
           )}
-
-          <section className="rounded-xl border bg-white shadow-sm">
-            <div className="flex flex-col gap-2 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="font-semibold">Usuários</h2>
-                <p className="text-xs text-slate-500">Perfis vinculados ao acesso do sistema.</p>
-              </div>
-              {isAdmin && <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700"><ShieldCheck size={14} /> Você é ADMIN</span>}
-            </div>
-
-            {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando...</div> :
-              profiles.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhum perfil encontrado.</div> :
-              <div className="divide-y">
-                {profiles.map((profile) => (
-                  <div key={profile.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <div className="font-medium text-slate-900">{profile.name}{profile.id === currentUserId ? ' (você)' : ''}</div>
-                      <div className="text-xs text-slate-500">{profile.cpf || 'CPF não informado'}{profile.phone ? ` • ${profile.phone}` : ''}</div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium">{roleLabels[profile.role]}</span>
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${profile.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
-                        {profile.active ? 'Ativo' : 'Inativo'}
-                      </span>
-                      {(isAdmin || (currentUserId === profile.id)) && (
-                        <button onClick={() => openEdit(profile)} className="rounded-lg border p-2" title="Editar"><Pencil size={16} /></button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            }
-          </section>
 
           <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
             <div className="flex gap-3">
