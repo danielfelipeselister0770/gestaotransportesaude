@@ -210,7 +210,11 @@ export default function PatientsPage() {
               filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhum paciente cadastrado.</div> :
               filtered.map((patient) => (
                 <div key={patient.id} className="grid gap-2 border-b px-5 py-4 last:border-0 md:grid-cols-[2fr_1fr_1fr_1fr] md:items-center md:gap-4">
-                  <div><div className="font-medium text-slate-800">{patient.name}</div><div className="text-xs text-slate-500">{patient.city || 'Cidade não informada'}</div></div>
+                  <div><div className="font-medium text-slate-800">{patient.name}</div><div className="text-xs text-slate-500">{patient.city || 'Cidade não informada'}</div>
+                    {susMissingFields(patient).length === 0
+                      ? <div className="mt-1 text-xs font-medium text-emerald-700">Dados cadastrais SUS básicos preenchidos</div>
+                      : <div className="mt-1 text-xs font-medium text-amber-700">Dados SUS pendentes: {susMissingFields(patient).slice(0, 3).join(', ')}{susMissingFields(patient).length > 3 ? '…' : ''}</div>}
+                  </div>
                   <div className="text-sm text-slate-600">{patient.cpf || '—'}</div>
                   <div className="text-sm text-slate-600">{patient.phone || '—'}</div>
                   <div className="flex flex-wrap gap-1 text-xs">
@@ -231,6 +235,23 @@ export default function PatientsPage() {
 
 function Field({ name, label, type = 'text', placeholder, required }: { name: string; label: string; type?: string; placeholder?: string; required?: boolean }) {
   return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input name={name} type={type} placeholder={placeholder} required={required} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200" /></label>;
+}
+
+function susMissingFields(patient: Patient): string[] {
+  const missing: string[] = [];
+  if (!patient.name?.trim()) missing.push('nome');
+  if (!patient.birth_date) missing.push('data de nascimento');
+  if (!patient.sex) missing.push('sexo');
+  if (!patient.nationality) missing.push('nacionalidade');
+  if (!patient.race_color) missing.push('raça/cor');
+  if (!patient.cep) missing.push('CEP');
+  if (!patient.residence_municipality?.trim()) missing.push('município de residência');
+  if (!patient.residence_municipality_ibge) missing.push('código IBGE');
+  if (!patient.street?.trim()) missing.push('logradouro');
+  if (!patient.street_number?.trim()) missing.push('número');
+  if (!patient.neighborhood?.trim()) missing.push('bairro');
+  if (patient.race_color === 'INDIGENA' && !patient.ethnicity?.trim()) missing.push('etnia');
+  return missing;
 }
 
 function SelectField({ name, label, options }: { name: string; label: string; options: [string, string][] }) {
