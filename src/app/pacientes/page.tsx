@@ -12,6 +12,18 @@ type Patient = {
   birth_date: string | null;
   phone: string | null;
   city: string | null;
+  cns: string | null;
+  sex: string | null;
+  nationality: string | null;
+  race_color: string | null;
+  ethnicity: string | null;
+  cep: string | null;
+  residence_municipality: string | null;
+  residence_municipality_ibge: string | null;
+  street: string | null;
+  street_number: string | null;
+  neighborhood: string | null;
+  address_complement: string | null;
   wheelchair: boolean;
   reduced_mobility: boolean;
   stretcher: boolean;
@@ -32,7 +44,7 @@ export default function PatientsPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from('patients')
-      .select('id,name,cpf,birth_date,phone,city,wheelchair,reduced_mobility,stretcher,needs_companion,active')
+      .select('id,name,cpf,birth_date,phone,city,cns,sex,nationality,race_color,ethnicity,cep,residence_municipality,residence_municipality_ibge,street,street_number,neighborhood,address_complement,wheelchair,reduced_mobility,stretcher,needs_companion,active')
       .eq('active', true)
       .order('name');
     if (error) setMessage(`Erro ao carregar pacientes: ${error.message}`);
@@ -57,6 +69,18 @@ export default function PatientsPage() {
       phone: String(form.get('phone') ?? '').trim() || null,
       address: String(form.get('address') ?? '').trim() || null,
       city: String(form.get('city') ?? '').trim() || null,
+      cns: String(form.get('cns') ?? '').replace(/\\D/g, '') || null,
+      sex: String(form.get('sex') ?? '') || null,
+      nationality: String(form.get('nationality') ?? '') || null,
+      race_color: String(form.get('race_color') ?? '') || null,
+      ethnicity: String(form.get('ethnicity') ?? '').trim() || null,
+      cep: String(form.get('cep') ?? '').replace(/\\D/g, '') || null,
+      residence_municipality: String(form.get('residence_municipality') ?? '').trim() || null,
+      residence_municipality_ibge: String(form.get('residence_municipality_ibge') ?? '').replace(/\\D/g, '') || null,
+      street: String(form.get('street') ?? '').trim() || null,
+      street_number: String(form.get('street_number') ?? '').trim() || null,
+      neighborhood: String(form.get('neighborhood') ?? '').trim() || null,
+      address_complement: String(form.get('address_complement') ?? '').trim() || null,
       wheelchair: form.get('wheelchair') === 'on',
       reduced_mobility: form.get('reduced_mobility') === 'on',
       stretcher: form.get('stretcher') === 'on',
@@ -140,7 +164,25 @@ export default function PatientsPage() {
                 <Field name="birth_date" label="Data de nascimento" type="date" />
                 <Field name="phone" label="Telefone" />
                 <Field name="address" label="Endereço" />
-                <Field name="city" label="Cidade" />
+                <Field name="city" label="Cidade (cadastro operacional)" />
+              </div>
+              <div className="mt-6 border-t pt-5">
+                <h3 className="mb-1 font-semibold text-slate-800">Dados complementares para produção SUS</h3>
+                <p className="mb-4 text-xs text-slate-500">Preencha quando disponíveis. A ausência desses dados não impede o cadastro para transporte.</p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field name="cns" label="CNS (15 dígitos)" placeholder="Somente números" />
+                  <SelectField name="sex" label="Sexo" options={[['','Selecione'],['MASCULINO','Masculino'],['FEMININO','Feminino'],['IGNORADO','Ignorado']]} />
+                  <SelectField name="nationality" label="Nacionalidade" options={[['','Selecione'],['BRASILEIRA','Brasileira'],['NATURALIZADA','Brasileira naturalizada'],['ESTRANGEIRA','Estrangeira']]} />
+                  <SelectField name="race_color" label="Raça/cor" options={[['','Selecione'],['BRANCA','Branca'],['PRETA','Preta'],['PARDA','Parda'],['AMARELA','Amarela'],['INDIGENA','Indígena'],['SEM_DECLARACAO','Sem declaração']]} />
+                  <Field name="ethnicity" label="Etnia (quando aplicável)" />
+                  <Field name="cep" label="CEP" placeholder="00000000" />
+                  <Field name="residence_municipality" label="Município de residência" />
+                  <Field name="residence_municipality_ibge" label="Código IBGE do município (7 dígitos)" />
+                  <Field name="street" label="Logradouro" />
+                  <Field name="street_number" label="Número" />
+                  <Field name="neighborhood" label="Bairro" />
+                  <Field name="address_complement" label="Complemento" />
+                </div>
               </div>
               <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-700">
                 <Check name="wheelchair" label="Cadeira de rodas" />
