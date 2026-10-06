@@ -21,6 +21,45 @@ export async function POST(request: Request) {
 
   const action = body?.action ?? 'generate';
 
+  if (action === 'activate') {
+    const token = body?.token?.trim();
+    const temporaryPassword = body?.temporaryPassword ?? '';
+    const password = body?.password ?? '';
+    if (!token || !temporaryPassword || !password) return NextResponse.json({ error: 'Dados de primeiro acesso incompletos.' }, { status: 400 });
+    if (password.length < 8) return NextResponse.json({ error: 'A senha definitiva deve ter pelo menos 8 caracteres.' }, { status: 400 });
+
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceKey) return NextResponse.json({ error: 'Configuração segura do servidor ausente.' }, { status: 500 });
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+    const { data: driver } = await admin.from('drivers')
+      .select('id,profile_id,access_token_expires_at,access_token_used_at')
+      .eq('access_token_hash', hashToken(token))
+      .maybeSingle();
+
+    if (!driver || !driver.profile_id || driver.access_token_used_at || !driver.access_token_expires_at || new Date(driver.access_token_expires_at) < new Date()) {
+      return NextResponse.json({ error: 'Este link de acesso é inválido, expirou ou já foi utilizado.' }, { status: 410 });
+    }
+
+    const { data: authUser, error: userError } = await admin.auth.admin.getUserById(driver.profile_id);
+    const email = authUser.user?.email;
+    if (userError || !email) return NextResponse.json({ error: 'Não foi possível localizar a conta do motorista.' }, { status: 404 });
+
+    const publicClient = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { autoRefreshToken: false, persistSession: false } });
+    const { error: passwordError } = await publicClient.auth.signInWithPassword({ email, password: temporaryPassword });
+    if (passwordError) return NextResponse.json({ error: 'Senha provisória incorreta.' }, { status: 401 });
+
+    const { error: updateError } = await admin.auth.admin.updateUserById(driver.profile_id, { password, email_confirm: true });
+    if (updateError) return NextResponse.json({ error: 'Não foi possível definir a senha definitiva: ' + updateError.message }, { status: 400 });
+
+    const { error: profileError } = await admin.from('profiles').update({ must_change_password: false }).eq('id', driver.profile_id);
+    if (profileError) return NextResponse.json({ error: 'Senha criada, mas não foi possível concluir a ativação: ' + profileError.message }, { status: 500 });
+
+    const { error: tokenError } = await admin.from('drivers').update({ access_token_used_at: new Date().toISOString() }).eq('id', driver.id);
+    if (tokenError) return NextResponse.json({ error: 'Senha criada, mas não foi possível concluir a ativação: ' + tokenError.message }, { status: 500 });
+
+    return NextResponse.json({ ok: true, email });
+  }
+
   if (action === 'validate') {
     const token = body?.token?.trim();
     if (!token) return NextResponse.json({ error: 'Link de acesso inválido.' }, { status: 400 });
