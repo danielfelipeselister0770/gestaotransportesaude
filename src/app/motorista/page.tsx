@@ -299,9 +299,6 @@ export default function DriverPortalPage() {
           </div>
         )}
 
-        <Link href="/motoristas" className="inline-block text-sm text-slate-500 hover:text-slate-900">
-          Voltar ao cadastro de motoristas
-        </Link>
       </section>
     </main>
   );
