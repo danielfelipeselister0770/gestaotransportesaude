@@ -426,7 +426,7 @@ export default function ConfiguracoesPage() {
             </div>
           )}
 
-          {isAdmin && userModalOpen && (
+          {canCreateUsers && userModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
               <form onSubmit={saveNewUser} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between">
