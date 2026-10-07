@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { LockKeyhole, LogIn, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -10,6 +10,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const blocked = new URLSearchParams(window.location.search).get('blocked') === '1';
+    if (!blocked) return;
+    setErrorMessage('Este usuário está inativo. Procure o administrador do sistema.');
+    void supabase.auth.signOut({ scope: 'local' });
+  }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
