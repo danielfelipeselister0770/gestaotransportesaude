@@ -26,6 +26,8 @@ export default function ProfessionalsPage() {
   const [municipalityId,setMunicipalityId]=useState<string|null>(null);
   const [municipalityName,setMunicipalityName]=useState('');
   const [search,setSearch]=useState('');
+  const [statusFilter,setStatusFilter]=useState<'ALL'|'ACTIVE'|'INACTIVE'>('ALL');
+  const [unitFilter,setUnitFilter]=useState('ALL');
   const [editing,setEditing]=useState<Professional|null>(null);
   const [editingLink,setEditingLink]=useState<LinkRow|null>(null);
   const [showForm,setShowForm]=useState(false);
@@ -87,6 +89,9 @@ export default function ProfessionalsPage() {
     const selectedMunicipalityId=role==='ADMIN'
       ? String(form.get('municipality_id')??'')||null : municipalityId;
     if(!selectedMunicipalityId){setMessage('Selecione a prefeitura do profissional.');return;}
+
+    const duplicate=items.find(item=>item.id!==editing?.id&&item.municipality_id===selectedMunicipalityId&&cns&&item.cns===cns);
+    if(duplicate){setMessage('Já existe um profissional com este CNS nesta prefeitura.');return;}
 
     const professionalPayload={
       name:String(form.get('name')??'').trim(),
@@ -166,13 +171,16 @@ export default function ProfessionalsPage() {
   const filtered=items.filter(item=>{
     const q=search.toLowerCase();
     const myLinks=links.filter(l=>l.professional_id===item.id);
-    return item.name.toLowerCase().includes(q)
+    const hit=item.name.toLowerCase().includes(q)
       || (item.cns??'').includes(q)
       || myLinks.some(l=>{
         const unit=units.find(u=>u.id===l.health_unit_id);
         return (l.cbo??'').includes(q) || (unit?.name??'').toLowerCase().includes(q) || (unit?.cnes??'').includes(q);
       });
+    return hit&&(statusFilter==='ALL'||(statusFilter==='ACTIVE'?item.active:!item.active))&&(unitFilter==='ALL'||myLinks.some(l=>l.health_unit_id===unitFilter));
   });
+
+  const counts={total:items.length,active:items.filter(x=>x.active).length,withCns:items.filter(x=>x.cns).length,activeLinks:links.filter(x=>x.active).length};
 
   return <main className="min-h-screen bg-slate-50">
 <section className=" p-4 md:p-8"><div className="mx-auto max-w-6xl">
@@ -181,7 +189,8 @@ export default function ProfessionalsPage() {
         {canManage&&<button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><Plus size={18}/> Novo profissional</button>}
       </div>
       {message&&<div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
-      <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNS, CBO, CNES ou estabelecimento" className="w-full outline-none text-sm"/></div>
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Profissionais" value={counts.total}/><Stat label="Ativos" value={counts.active}/><Stat label="Com CNS" value={counts.withCns}/><Stat label="Vínculos ativos" value={counts.activeLinks}/></div>
+      <div className="mb-4 grid gap-2 md:grid-cols-[1fr_170px_260px]"><div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNS, CBO, CNES ou estabelecimento" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os estabelecimentos</option>{visibleUnits.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
 
       {showForm&&<form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between"><div><h2 className="font-semibold">{editing?'Editar profissional':'Novo profissional'}</h2><p className="text-xs text-slate-500">O profissional é a pessoa; CBO e estabelecimento pertencem ao vínculo CNES.</p></div><button type="button" onClick={()=>setShowForm(false)}><X size={20}/></button></div>
@@ -229,3 +238,5 @@ export default function ProfessionalsPage() {
     </div></section>
   </main>;
 }
+
+function Stat({label,value}:{label:string;value:number}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold">{value}</div></div>}
