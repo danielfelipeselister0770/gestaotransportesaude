@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, Banknote, CheckCircle2, ClipboardList, FileCheck2 } from 'lucide-react';
+import { AlertTriangle, Banknote, CheckCircle2, ClipboardList, Download, FileCheck2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Production = { id:string; production_date:string; quantity:number; production_type:string; status:string; export_batch_id:string|null; request_id:string|null; procedure:{code:string;name:string}|null; request:{financing_distance_km:number|null;patient:{name:string}|null}|null };
@@ -81,6 +81,15 @@ export default function FinanciamentoPage(){
   return {total,ready,average,projection:average*12,best,activeMonths};
  },[yearRows,rules,month]);
 
+ function exportCsv(){
+  const esc=(v:unknown)=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const header=['Competência','Data','Paciente','Código','Procedimento','Tratamento','Tipo produção','Status','Distância km','Faixa km','Valor faixa ida/volta','Quantidade','Potencial estimado','Classificação','Pendência','Base legal'];
+  const data=classified.map(item=>[month,item.row.production_date,item.patient,item.row.procedure?.code||'',item.row.procedure?.name||'',item.rule?.treatment_type==='HEMODIALYSIS'?'Hemodiálise':item.rule?.treatment_type==='RADIOTHERAPY'?'Radioterapia':'',item.row.production_type,item.row.status,item.distance||'',item.rule?`${item.rule.min_distance_km}-${item.rule.max_distance_km??'+'}`:'',item.rule?.round_trip_value??'',item.row.quantity,item.rule?item.value:'',item.classification==='READY'?'Pronto para BPA-I':item.classification==='FIX'?'Corrigir pendência':'Fora da regra',item.issue,item.rule?.legal_basis||'']);
+  const note=['AVISO','Valores são estimativas de potencial e não representam recurso aprovado, processado ou transferido pelo SUS.'];
+  const csv='\uFEFF'+[note,[],header,...data].map(row=>row.map(esc).join(';')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`financiamento-transporte-sus-${month}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+ }
+
  const stats=useMemo(()=>{
   const total=rows.reduce((s,r)=>s+Number(r.quantity||0),0);
   const validated=rows.filter(r=>r.status==='VALIDATED');
@@ -92,7 +101,7 @@ export default function FinanciamentoPage(){
  },[rows]);
 
  return <main className="min-h-screen bg-slate-50"><section className="p-4 md:p-8"><div className="mx-auto max-w-7xl">
-  <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><div className="text-sm font-medium text-slate-500">Produção SUS</div><h1 className="text-2xl font-bold text-slate-900">Painel de Financiamento do Transporte SUS</h1><p className="mt-1 max-w-3xl text-sm text-slate-500">Acompanhamento operacional da produção relacionada ao transporte. Valores financeiros só serão exibidos quando houver regra oficial parametrizada.</p></div><div className="flex gap-2"><input type="month" value={month} onChange={e=>setMonth(e.target.value)} className="rounded-lg border bg-white px-3 py-2 text-sm"/><Link href="/producao" className="rounded-lg border bg-white px-3 py-2 text-sm font-medium">Produção</Link></div></div>
+  <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"><div><div className="text-sm font-medium text-slate-500">Produção SUS</div><h1 className="text-2xl font-bold text-slate-900">Painel de Financiamento do Transporte SUS</h1><p className="mt-1 max-w-3xl text-sm text-slate-500">Acompanhamento operacional da produção relacionada ao transporte. Valores financeiros só serão exibidos quando houver regra oficial parametrizada.</p></div><div className="flex flex-wrap gap-2"><input type="month" value={month} onChange={e=>setMonth(e.target.value)} className="rounded-lg border bg-white px-3 py-2 text-sm"/><button type="button" onClick={exportCsv} disabled={loading||classified.length===0} className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"><Download size={16}/>Exportar CSV</button><Link href="/producao" className="rounded-lg border bg-white px-3 py-2 text-sm font-medium">Produção</Link></div></div>
   {message&&<div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{message}</div>}
   <div className="mb-6 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900"><div className="flex gap-2 font-semibold"><Banknote size={18}/>Estimativa potencial — não é valor aprovado ou transferido</div><p className="mt-1">O cálculo usa procedimento BPA-I, competência, distância de referência informada na solicitação e a faixa oficial parametrizada. O valor real depende do processamento e das regras do SUS.</p></div>
   {loading?<div className="rounded-xl border bg-white p-8 text-center text-sm text-slate-500">Carregando painel...</div>:<>
