@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { CarFront, Pencil, Plus, Search, X } from 'lucide-react';
+import { CarFront, CircleCheck, Gauge, Pencil, Plus, Search, Wrench, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type VehicleStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'INACTIVE';
@@ -72,17 +72,17 @@ export default function VehiclesPage() {
   });
   const counts={total:vehicles.length,available:vehicles.filter(v=>v.status==='AVAILABLE').length,use:vehicles.filter(v=>v.status==='IN_USE').length,maintenance:vehicles.filter(v=>v.status==='MAINTENANCE').length};
 
-  return <main className="min-h-screen bg-slate-50">
+  return <main className="min-h-screen">
 <section className=" p-4 md:p-8">
       <div className="mx-auto max-w-6xl">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><h1 className="text-2xl font-bold text-slate-900">Veículos</h1><p className="text-sm text-slate-500">Cadastro e situação da frota municipal.</p></div>
-          <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"><Plus size={18}/> Novo veículo</button>
+        <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+          <div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><CarFront size={15}/> Gestão da frota</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Veículos</h1><p className="mt-1 text-sm text-slate-500">Acompanhe disponibilidade, documentação e situação operacional da frota municipal.</p></div>
+          <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18}/> Novo veículo</button>
         </div>
-        {message&&<div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
-        <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Frota" value={counts.total}/><Stat label="Disponíveis" value={counts.available}/><Stat label="Em uso" value={counts.use}/><Stat label="Em manutenção" value={counts.maintenance}/></div>
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row"><div className="flex flex-1 items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por placa, marca ou modelo" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as 'ALL'|VehicleStatus)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todas as situações</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
-        {showForm&&<form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+        <div className="p-5 lg:p-8">{message&&<div className="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
+        <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<CarFront size={18}/>} label="Frota" value={counts.total}/><Stat icon={<CircleCheck size={18}/>} label="Disponíveis" value={counts.available}/><Stat icon={<Gauge size={18}/>} label="Em uso" value={counts.use}/><Stat icon={<Wrench size={18}/>} label="Em manutenção" value={counts.maintenance}/></div>
+        <div className="mb-5 flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row"><div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por placa, marca ou modelo" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as 'ALL'|VehicleStatus)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todas as situações</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+        {showForm&&<form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">{editing?'Editar veículo':'Novo veículo'}</h2><button type="button" onClick={()=>setShowForm(false)}><X size={20}/></button></div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-sm">Placa<input name="plate" required defaultValue={editing?.plate??''} className="mt-1 w-full rounded-lg border px-3 py-2 uppercase"/></label>
@@ -94,12 +94,12 @@ export default function VehiclesPage() {
             <label className="text-sm">RENAVAM<input name="renavam" defaultValue={editing?.renavam??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm">Licenciamento<input name="licensing_expiry" type="date" defaultValue={editing?.licensing_expiry??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm">Seguro<input name="insurance_expiry" type="date" defaultValue={editing?.insurance_expiry??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="flex items-end gap-2 pb-2 text-sm"><input name="wheelchair_accessible" type="checkbox" defaultChecked={editing?.wheelchair_accessible??false}/> Acessível para cadeirante</label><label className="text-sm">Situação<select name="status" defaultValue={editing?.status??'AVAILABLE'} className="mt-1 w-full rounded-lg border px-3 py-2">{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>
             <label className="text-sm sm:col-span-2 lg:col-span-4">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label>
           </div>
-          <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={()=>setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving?'Salvando...':'Salvar veículo'}</button></div>
+          <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={()=>setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800">{saving?'Salvando...':'Salvar veículo'}</button></div>
         </form>}
-        <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {loading?<div className="p-8 text-center text-sm text-slate-500">Carregando...</div>:filtered.length===0?<div className="p-8 text-center text-sm text-slate-500">Nenhum veículo encontrado.</div>:
-          <div className="divide-y">{filtered.map(v=><div key={v.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-3"><div className="rounded-lg bg-slate-100 p-2"><CarFront size={20}/></div><div><div className="font-semibold text-slate-900">{v.plate}</div><div className="text-sm text-slate-500">{[v.brand,v.model,v.year].filter(Boolean).join(' • ')||'Sem descrição'}</div><div className="mt-1 text-xs text-slate-500">{v.capacity} lugares · {v.current_mileage.toLocaleString('pt-BR')} km{v.wheelchair_accessible?' · ♿ Acessível':''}</div></div></div>
+          <div className="divide-y">{filtered.map(v=><div key={v.id} className="flex flex-col gap-3 p-4 transition hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3"><div className="rounded-xl bg-teal-50 p-2 text-teal-700"><CarFront size={20}/></div><div><div className="font-semibold text-slate-900">{v.plate}</div><div className="text-sm text-slate-500">{[v.brand,v.model,v.year].filter(Boolean).join(' • ')||'Sem descrição'}</div><div className="mt-1 text-xs text-slate-500">{v.capacity} lugares · {v.current_mileage.toLocaleString('pt-BR')} km{v.wheelchair_accessible?' · ♿ Acessível':''}</div></div></div>
             <div className="flex items-center gap-3"><span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClasses[v.status]}`}>{statusLabels[v.status]}</span><button onClick={()=>openEdit(v)} className="rounded-lg border p-2 hover:bg-slate-50" title="Editar"><Pencil size={16}/></button></div>
           </div>)}</div>}
         </div>
@@ -108,4 +108,4 @@ export default function VehiclesPage() {
   </main>;
 }
 
-function Stat({label,value}:{label:string;value:number}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="text-2xl font-bold">{value}</div></div>}
+function Stat({icon,label,value}:{icon:React.ReactNode;label:string;value:number}){return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>}
