@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import {
   Archive,
   CheckCircle2,
@@ -402,9 +403,9 @@ export default function PatientsPage() {
             <h1 className="mt-1 text-2xl font-bold">Pacientes</h1>
             <p className="mt-1 text-sm text-slate-500">Cadastro completo, documentos SUS, necessidades de transporte e histórico.</p>
           </div>
-          <button onClick={openNewPatient} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
+          <div className="flex gap-2"><Link href="/pacientes/importar" className="flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Importar CSV</Link><button onClick={openNewPatient} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
             <Plus size={18} /> Novo paciente
-          </button>
+          </button></div>
         </header>
 
         <div className="p-6">
