@@ -2,10 +2,8 @@
 
 import { FormEvent, useState } from 'react';
 import { LockKeyhole } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 
 export default function TrocarSenhaPage() {
-  const supabase = createClient();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [message, setMessage] = useState('');
@@ -17,12 +15,9 @@ export default function TrocarSenhaPage() {
     if (password.length < 8) return setMessage('A nova senha deve ter pelo menos 8 caracteres.');
     if (password !== confirm) return setMessage('As senhas não conferem.');
     setSaving(true);
-    const { error: authError } = await supabase.auth.updateUser({ password });
-    if (authError) { setMessage('Não foi possível alterar a senha: ' + authError.message); setSaving(false); return; }
-    const { data: claims } = await supabase.auth.getClaims();
-    const userId = String(claims?.claims?.sub ?? '');
-    const { error: profileError } = await supabase.from('profiles').update({ must_change_password: false }).eq('id', userId);
-    if (profileError) { setMessage('Senha alterada, mas não foi possível liberar o acesso. Contate o administrador.'); setSaving(false); return; }
+    const response = await fetch('/api/auth/trocar-senha', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) { setMessage(result.error || 'Não foi possível alterar a senha.'); setSaving(false); return; }
     window.location.assign('/');
   }
 
