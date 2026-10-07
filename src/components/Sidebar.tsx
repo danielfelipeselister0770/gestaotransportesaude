@@ -15,6 +15,7 @@ const nav = [
   ['Abastecimentos', '/abastecimentos'],
   ['Manutenções', '/manutencoes'],
   ['Ocorrências', '/ocorrencias'],
+  ['Produção SUS', '/producao'],
   ['Relatórios', '/relatorios'],
   ['Configurações', '/configuracoes'],
 ] as const;
