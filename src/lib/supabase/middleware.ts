@@ -44,10 +44,24 @@ export async function updateSession(request: NextRequest) {
 
   const userId = claims.sub as string | undefined;
   const { data: profile } = userId
-    ? await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+    ? await supabase.from('profiles').select('role,active,must_change_password').eq('id', userId).maybeSingle()
     : { data: null };
 
   const role = profile?.role as 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA' | undefined;
+  const isPasswordChange = pathname === '/auth/trocar-senha';
+
+  if (profile?.active === false) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/login';
+    url.searchParams.set('blocked', '1');
+    return NextResponse.redirect(url);
+  }
+
+  if (profile?.must_change_password && !isPasswordChange) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/auth/trocar-senha';
+    return NextResponse.redirect(url);
+  }
   const isDriverArea = pathname === '/motorista' || pathname.startsWith('/motorista/');
   const isDriverApi = pathname.startsWith('/api/motorista/');
 
