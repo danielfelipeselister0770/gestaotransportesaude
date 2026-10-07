@@ -54,6 +54,9 @@ export default function RelatoriosPage() {
   const [previousTrips, setPreviousTrips] = useState<Trip[]>([]);
   const [previousFuelings, setPreviousFuelings] = useState<Fueling[]>([]);
   const [previousMaintenances, setPreviousMaintenances] = useState<Maintenance[]>([]);
+  const [historyTrips, setHistoryTrips] = useState<Trip[]>([]);
+  const [historyFuelings, setHistoryFuelings] = useState<Fueling[]>([]);
+  const [historyMaintenances, setHistoryMaintenances] = useState<Maintenance[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -70,7 +73,11 @@ export default function RelatoriosPage() {
     previousStartDate.setMonth(previousStartDate.getMonth() - 1);
     const previousStart = previousStartDate.toISOString().slice(0, 10);
 
-    const [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult] = await Promise.all([
+    const historyStartDate = new Date(`${month}-01T00:00:00`);
+    historyStartDate.setMonth(historyStartDate.getMonth() - 5);
+    const historyStart = historyStartDate.toISOString().slice(0, 10);
+
+    const [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult, historyTripResult, historyFuelingResult, historyMaintenanceResult] = await Promise.all([
       supabase.from('vehicles').select('id,plate,brand,model').order('plate'),
       supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', start).lt('date', end),
       supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', start).lt('date', end),
@@ -79,9 +86,12 @@ export default function RelatoriosPage() {
       supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', previousStart).lt('date', start),
       supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', previousStart).lt('date', start),
       supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', previousStart).lt('date', start),
+      supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', historyStart).lt('date', end),
+      supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', historyStart).lt('date', end),
+      supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', historyStart).lt('date', end),
     ]);
 
-    const firstError = [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult].find((r) => r.error);
+    const firstError = [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult, historyTripResult, historyFuelingResult, historyMaintenanceResult].find((r) => r.error);
     if (firstError?.error) {
       setMessage(`Erro ao carregar relatório: ${firstError.error.message}`);
       setLoading(false);
@@ -103,6 +113,9 @@ export default function RelatoriosPage() {
     setPreviousTrips((previousTripResult.data ?? []) as Trip[]);
     setPreviousFuelings((previousFuelingResult.data ?? []) as Fueling[]);
     setPreviousMaintenances((previousMaintenanceResult.data ?? []) as Maintenance[]);
+    setHistoryTrips((historyTripResult.data ?? []) as Trip[]);
+    setHistoryFuelings((historyFuelingResult.data ?? []) as Fueling[]);
+    setHistoryMaintenances((historyMaintenanceResult.data ?? []) as Maintenance[]);
     setLoading(false);
   }
 
@@ -171,6 +184,21 @@ export default function RelatoriosPage() {
     if (r.maintenanceCost > 0 && r.totalCost > 0 && r.maintenanceCost / r.totalCost >= 0.6) alerts.push(`${r.vehicle.plate}: manutenção representa 60% ou mais do custo do veículo.`);
     return alerts;
   }).slice(0, 8), [reports, fleetAverageCostPerKm]);
+
+  const monthlyHistory = useMemo(() => {
+    const base = new Date(`${month}-01T00:00:00`);
+    return Array.from({ length: 6 }, (_, index) => {
+      const d = new Date(base);
+      d.setMonth(d.getMonth() - (5 - index));
+      const key = d.toISOString().slice(0, 7);
+      const monthTrips = historyTrips.filter((t) => t.date.startsWith(key));
+      const km = monthTrips.reduce((sum, t) => t.initial_mileage != null && t.final_mileage != null && t.final_mileage >= t.initial_mileage ? sum + t.final_mileage - t.initial_mileage : sum, 0);
+      const fuelCost = historyFuelings.filter((f) => f.date.startsWith(key)).reduce((sum, f) => sum + Number(f.total_value || 0), 0);
+      const maintenanceCost = historyMaintenances.filter((m) => m.date.startsWith(key) && m.status !== 'CANCELLED').reduce((sum, m) => sum + Number(m.value || 0), 0);
+      return { key, label: d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }), trips: monthTrips.length, km, cost: fuelCost + maintenanceCost };
+    });
+  }, [month, historyTrips, historyFuelings, historyMaintenances]);
+  const maxHistoryCost = Math.max(...monthlyHistory.map((item) => item.cost), 1);
 
   function variation(current: number, previous: number) {
     if (previous === 0) return current === 0 ? 0 : null;
@@ -262,6 +290,21 @@ export default function RelatoriosPage() {
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Fuel size={18} /> Combustível</div><div className="mt-3 text-xl font-bold">{money(totals.fuelCost)}</div><div className="text-sm text-slate-500">{totals.liters.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} litros</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Wrench size={18} /> Manutenção</div><div className="mt-3 text-xl font-bold">{money(totals.maintenanceCost)}</div><div className="text-sm text-slate-500">Serviços não cancelados</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} /> Operação</div><div className="mt-3 text-xl font-bold">{totals.completedTrips}/{totals.trips}</div><div className="text-sm text-slate-500">viagens concluídas</div></div>
+          </div>
+
+          <div className="mb-6 rounded-xl border bg-white p-5">
+            <div className="mb-1 font-semibold">Evolução dos últimos 6 meses</div>
+            <div className="mb-5 text-sm text-slate-500">Custos, viagens e quilômetros até o mês selecionado.</div>
+            <div className="grid grid-cols-6 gap-2">
+              {monthlyHistory.map((item) => <div key={item.key} className="min-w-0 text-center">
+                <div className="flex h-36 items-end justify-center">
+                  <div className="w-full max-w-12 rounded-t bg-slate-800" style={{ height: `${Math.max((item.cost / maxHistoryCost) * 100, item.cost > 0 ? 6 : 2)}%` }} title={money(item.cost)} />
+                </div>
+                <div className="mt-2 text-xs font-medium capitalize text-slate-700">{item.label}</div>
+                <div className="mt-1 text-xs font-semibold">{money(item.cost)}</div>
+                <div className="text-[11px] text-slate-500">{item.trips} viagens · {item.km.toLocaleString('pt-BR')} km</div>
+              </div>)}
+            </div>
           </div>
 
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
