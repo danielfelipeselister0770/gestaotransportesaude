@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { CalendarDays, Check, ClipboardList, Edit3, Eye, History, Plus, Search, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
@@ -23,6 +24,7 @@ const requestFields='id,municipality_id,patient_id,requested_by,date,time,origin
 
 export default function RequestsPage(){
  const supabase=createClient();
+ const searchParams=useSearchParams();
  const [requests,setRequests]=useState<RequestRow[]>([]),[patients,setPatients]=useState<Patient[]>([]),[units,setUnits]=useState<HealthUnit[]>([]);
  const [search,setSearch]=useState(''),[status,setStatus]=useState<'ALL'|RequestStatus>('ALL'),[unit,setUnit]=useState('ALL'),[date,setDate]=useState('');
  const [showForm,setShowForm]=useState(false),[editing,setEditing]=useState<RequestRow|null>(null),[selected,setSelected]=useState<RequestRow|null>(null);
@@ -38,6 +40,8 @@ export default function RequestsPage(){
   if(a.error)setMessage('Erro ao carregar solicitações: '+a.error.message); else setRequests((a.data??[]).map(normalize) as unknown as RequestRow[]);
   if(!b.error)setPatients((b.data??[]) as unknown as Patient[]);
   if(!c.error)setUnits((c.data??[]) as unknown as HealthUnit[]);
+  const requestedId=searchParams.get('request');
+  if(requestedId&&a.data){const found=(a.data??[]).map(normalize).find((x:any)=>x.id===requestedId);if(found){setEditing(found as RequestRow);setShowForm(true);}}
   setLoading(false);
  }
  useEffect(()=>{load();},[]);
