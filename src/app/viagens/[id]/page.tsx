@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Check, Gauge, Save, UserRound, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Check, Gauge, Save, UserRound, AlertTriangle, History } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,6 +15,8 @@ type Passenger = {
   observations: string | null;
   patient: { name: string } | null;
 };
+
+type TripHistory = { id:string; action:string; old_status:Trip['status']|null; new_status:Trip['status']|null; note:string|null; changed_at:string };
 
 type Trip = {
   id: string;
@@ -53,16 +55,18 @@ export default function TripDetailPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [history, setHistory] = useState<TripHistory[]>([]);
 
   async function loadData() {
     setLoading(true);
-    const [tripResult, passengersResult] = await Promise.all([
+    const [tripResult, passengersResult, historyResult] = await Promise.all([
       supabase.from('trips')
         .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
         .eq('id', tripId).single(),
       supabase.from('trip_passengers')
         .select('id,patient_id,request_id,companion,boarding_status,observations,patient:patients(name)')
         .eq('trip_id', tripId).order('created_at'),
+      supabase.from('trip_history').select('id,action,old_status,new_status,note,changed_at').eq('trip_id',tripId).order('changed_at',{ascending:false}),
     ]);
 
     if (tripResult.error) setMessage(`Erro ao carregar viagem: ${tripResult.error.message}`);
@@ -87,6 +91,7 @@ export default function TripDetailPage() {
       })) as Passenger[];
       setPassengers(normalized);
     }
+    if (!historyResult.error) setHistory((historyResult.data ?? []) as TripHistory[]);
     setLoading(false);
   }
 
@@ -134,7 +139,7 @@ export default function TripDetailPage() {
       initial_mileage: initial,
       final_mileage: final,
       observations: observation.trim() || null,
-      ...(status ? { status } : {}),
+      ...(status ? { status, ...(status === 'COMPLETED' ? { completed_at: new Date().toISOString() } : {}) } : {}),
     }).eq('id', trip.id);
 
     if (error) {
@@ -259,7 +264,7 @@ export default function TripDetailPage() {
       setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
       return;
     }
-    const { error } = await supabase.from('trip_passengers').update({ boarding_status }).eq('id', id);
+    const { error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id);
     if (error) setMessage(`Não foi possível atualizar o passageiro: ${error.message}`);
     else setPassengers((current) => current.map((item) => item.id === id ? { ...item, boarding_status } : item));
   }
@@ -351,6 +356,11 @@ export default function TripDetailPage() {
               {trip.status === 'IN_PROGRESS' && <button onClick={() => saveMileage('COMPLETED')} disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><Check size={16}/> Salvar e concluir viagem</button>}
             </div>
           </section>
+        </div>
+
+        <div className="mt-5 rounded-xl border bg-white shadow-sm">
+          <div className="flex items-center gap-2 border-b px-5 py-4"><History size={18}/><h2 className="font-semibold">Histórico da viagem</h2></div>
+          <div className="p-5">{history.length===0?<p className="text-sm text-slate-500">Sem movimentações registradas.</p>:history.map(h=><div key={h.id} className="mb-3 border-l-2 pl-3 text-sm"><b>{h.action==='CREATED'?'Viagem criada':h.action==='STATUS_CHANGED'?(h.old_status?statusLabels[h.old_status]+' → ':'')+(h.new_status?statusLabels[h.new_status]:''):'Viagem atualizada'}</b><div className="text-xs text-slate-500">{new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(h.changed_at))}{h.note?' · '+h.note:''}</div></div>)}</div>
         </div>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
