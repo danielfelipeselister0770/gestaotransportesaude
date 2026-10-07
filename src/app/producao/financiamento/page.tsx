@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { AlertTriangle, Banknote, CheckCircle2, ClipboardList, FileCheck2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-type Production = { id:string; production_date:string; quantity:number; production_type:string; status:string; export_batch_id:string|null; request_id:string|null; procedure:{code:string;name:string}|null; request:{financing_distance_km:number|null}|null };
+type Production = { id:string; production_date:string; quantity:number; production_type:string; status:string; export_batch_id:string|null; request_id:string|null; procedure:{code:string;name:string}|null; request:{financing_distance_km:number|null;patient:{name:string}|null}|null };
 type Rule = { treatment_type:string; procedure_code:string; min_distance_km:number; max_distance_km:number|null; round_trip_value:number; valid_from:string; valid_to:string|null; legal_basis:string };
 type Batch = { id:string; competence:string; production_type:string; status:string; record_count:number };
 
@@ -22,7 +22,7 @@ export default function FinanciamentoPage(){
   setLoading(true);setMessage('');
   const start=`${month}-01`;const d=new Date(`${month}-01T00:00:00`);d.setMonth(d.getMonth()+1);const end=d.toISOString().slice(0,10);const competence=month.replace('-','');
   const [p,b,r]=await Promise.all([
-   supabase.from('sus_production').select('id,production_date,quantity,production_type,status,export_batch_id,request_id,procedure:sigtap_procedures(code,name),request:transport_requests(financing_distance_km)').gte('production_date',start).lt('production_date',end),
+   supabase.from('sus_production').select('id,production_date,quantity,production_type,status,export_batch_id,request_id,procedure:sigtap_procedures(code,name),request:transport_requests(financing_distance_km,patient:patients(name))').gte('production_date',start).lt('production_date',end),
    supabase.from('sus_export_batches').select('id,competence,production_type,status,record_count').eq('competence',competence),
    supabase.from('sus_transport_financing_rules').select('treatment_type,procedure_code,min_distance_km,max_distance_km,round_trip_value,valid_from,valid_to,legal_basis').eq('active',true)
   ]);
@@ -35,7 +35,18 @@ export default function FinanciamentoPage(){
   const rule=rules.find(rule=>rule.procedure_code===row.procedure?.code&&row.production_type==='BPA_I'&&row.production_date>=rule.valid_from&&(!rule.valid_to||row.production_date<=rule.valid_to)&&distance>=Number(rule.min_distance_km)&&(!rule.max_distance_km||distance<=Number(rule.max_distance_km)));
   return {row,distance,rule,value:rule?Number(row.quantity||0)*Number(rule.round_trip_value):0};
  }),[rows,rules]);
- const eligible=financing.filter(x=>x.rule);
+ const detailed=financing.map(item=>{
+  const target=['0803010150','0803010168'].includes(item.row.procedure?.code||'');
+  let issue='';
+  if(!target) issue='Procedimento fora das regras parametrizadas';
+  else if(!item.row.request_id) issue='Sem solicitação de transporte vinculada';
+  else if(!item.distance) issue='Sem distância de referência SUS';
+  else if(item.row.production_type!=='BPA_I') issue='Registro não classificado como BPA-I';
+  else if(!item.rule) issue='Distância ou competência fora das faixas vigentes';
+  else if(item.row.status==='DRAFT') issue='Elegível, mas ainda em rascunho';
+  return {...item,issue,patient:item.row.request?.patient?.name||'Paciente não identificado'};
+ });
+ const eligible=detailed.filter(x=>x.rule);
  const estimatedPotential=eligible.reduce((sum,x)=>sum+x.value,0);
  const estimatedReady=eligible.filter(x=>['VALIDATED','EXPORTED'].includes(x.row.status)).reduce((sum,x)=>sum+x.value,0);
  const missingDistance=rows.filter(row=>['0803010150','0803010168'].includes(row.procedure?.code||'')&&!row.request?.financing_distance_km).length;
@@ -72,6 +83,8 @@ export default function FinanciamentoPage(){
     <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Sem solicitação de transporte vinculada</div><div className="mt-2 text-2xl font-bold">{stats.withoutTransport}</div><div className="text-xs text-slate-500">revisar quando o vínculo for necessário</div></div>
     <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Lotes da competência</div><div className="mt-2 text-2xl font-bold">{batches.length}</div><div className="text-xs text-slate-500">{batches.filter(b=>b.status==='OPEN').length} abertos · {batches.filter(b=>b.status==='EXPORTED').length} exportados</div></div>
    </div>
+   <div className="mb-6 overflow-hidden rounded-xl border bg-white"><div className="border-b p-5"><h2 className="font-semibold">Conferência do potencial financeiro</h2><p className="mt-1 text-sm text-slate-500">Registro, paciente, enquadramento e pendência encontrada.</p></div><div className="divide-y">{detailed.map(item=><div key={item.row.id} className="grid gap-2 p-4 md:grid-cols-[1.3fr_1fr_1fr_1.5fr_1fr]"><div><b>{item.patient}</b><div className="text-xs text-slate-500">{item.row.procedure?.code||'Sem procedimento'}</div></div><div className="text-sm">{item.distance?item.distance.toLocaleString('pt-BR')+' km':'Sem distância'}</div><div className="text-sm">{item.row.status}</div><div className="text-sm">{item.issue||'Enquadrado na regra parametrizada'}</div><div className="text-sm font-semibold md:text-right">{item.rule?item.value.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</div></div>)}</div></div>
+   <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5"><div className="flex items-center gap-2 font-semibold text-amber-900"><AlertTriangle size={18}/>Fila de pendências</div><div className="mt-3 space-y-2 text-sm text-amber-900">{detailed.filter(x=>x.issue).length===0?<div>Nenhuma pendência identificada.</div>:detailed.filter(x=>x.issue).slice(0,10).map(x=><div key={x.row.id}>• <b>{x.patient}</b>: {x.issue}</div>)}</div></div>
    <div className="rounded-xl border bg-white p-5"><h2 className="font-semibold">Prontidão da competência</h2><div className="mt-4 grid gap-3 md:grid-cols-3"><Status label="Rascunhos" value={stats.draft}/><Status label="Validados" value={stats.validated}/><Status label="Exportados" value={stats.exported}/></div><div className="mt-5 flex flex-wrap gap-2"><Link href="/producao/lotes" className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">Gerenciar lotes BPA/TFD</Link><Link href="/producao/sigtap/importar" className="rounded-lg border px-4 py-2 text-sm font-medium">Conferir SIGTAP</Link></div></div>
   </>}
  </div></section></main>
