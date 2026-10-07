@@ -20,11 +20,11 @@ async function getCurrentProfile() {
 
   const { data: profile } = await server
     .from('profiles')
-    .select('id,role,municipality_id')
+    .select('id,role,municipality_id,active,must_change_password')
     .eq('id', userId)
     .maybeSingle();
 
-  if (!profile || !['ADMIN', 'GESTOR'].includes(profile.role)) return null;
+  if (!profile || !profile.active || profile.must_change_password || !['ADMIN', 'GESTOR'].includes(profile.role)) return null;
   return profile;
 }
 
