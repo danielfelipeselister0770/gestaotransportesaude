@@ -340,7 +340,7 @@ export default function TripsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
 <section className="">
         <header className="flex flex-col gap-4 border-b bg-white px-6 py-5 md:flex-row md:items-center md:justify-between">
           <div>
