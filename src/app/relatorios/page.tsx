@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, Download, FileSpreadsheet, Fuel, Gauge, Search, Wrench, type LucideIcon } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, BarChart3, Download, FileSpreadsheet, Fuel, Gauge, Search, Trophy, Wrench, type LucideIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
@@ -51,6 +51,9 @@ export default function RelatoriosPage() {
   const [fuelings, setFuelings] = useState<Fueling[]>([]);
   const [maintenances, setMaintenances] = useState<Maintenance[]>([]);
   const [passengerCounts, setPassengerCounts] = useState<Record<string, number>>({});
+  const [previousTrips, setPreviousTrips] = useState<Trip[]>([]);
+  const [previousFuelings, setPreviousFuelings] = useState<Fueling[]>([]);
+  const [previousMaintenances, setPreviousMaintenances] = useState<Maintenance[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
@@ -63,15 +66,22 @@ export default function RelatoriosPage() {
     endDate.setMonth(endDate.getMonth() + 1);
     const end = endDate.toISOString().slice(0, 10);
 
-    const [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult] = await Promise.all([
+    const previousStartDate = new Date(`${month}-01T00:00:00`);
+    previousStartDate.setMonth(previousStartDate.getMonth() - 1);
+    const previousStart = previousStartDate.toISOString().slice(0, 10);
+
+    const [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult] = await Promise.all([
       supabase.from('vehicles').select('id,plate,brand,model').order('plate'),
       supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', start).lt('date', end),
       supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', start).lt('date', end),
       supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', start).lt('date', end),
       supabase.from('trip_passengers').select('trip_id').limit(10000),
+      supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', previousStart).lt('date', start),
+      supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', previousStart).lt('date', start),
+      supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', previousStart).lt('date', start),
     ]);
 
-    const firstError = [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult].find((r) => r.error);
+    const firstError = [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult].find((r) => r.error);
     if (firstError?.error) {
       setMessage(`Erro ao carregar relatório: ${firstError.error.message}`);
       setLoading(false);
@@ -90,6 +100,9 @@ export default function RelatoriosPage() {
     setFuelings((fuelingResult.data ?? []) as Fueling[]);
     setMaintenances((maintenanceResult.data ?? []) as Maintenance[]);
     setPassengerCounts(counts);
+    setPreviousTrips((previousTripResult.data ?? []) as Trip[]);
+    setPreviousFuelings((previousFuelingResult.data ?? []) as Fueling[]);
+    setPreviousMaintenances((previousMaintenanceResult.data ?? []) as Maintenance[]);
     setLoading(false);
   }
 
@@ -139,6 +152,35 @@ export default function RelatoriosPage() {
     maintenanceCost: acc.maintenanceCost + r.maintenanceCost,
     totalCost: acc.totalCost + r.totalCost,
   }), { trips: 0, completedTrips: 0, passengers: 0, km: 0, liters: 0, fuelCost: 0, maintenanceCost: 0, totalCost: 0 });
+
+  const previousTotals = useMemo(() => {
+    const km = previousTrips.reduce((sum, t) => t.initial_mileage != null && t.final_mileage != null && t.final_mileage >= t.initial_mileage ? sum + t.final_mileage - t.initial_mileage : sum, 0);
+    const fuelCost = previousFuelings.reduce((sum, f) => sum + Number(f.total_value || 0), 0);
+    const maintenanceCost = previousMaintenances.filter((m) => m.status !== 'CANCELLED').reduce((sum, m) => sum + Number(m.value || 0), 0);
+    return { trips: previousTrips.length, km, totalCost: fuelCost + maintenanceCost };
+  }, [previousTrips, previousFuelings, previousMaintenances]);
+
+  const ranking = useMemo(() => reports.filter((r) => r.trips > 0 || r.totalCost > 0).sort((a, b) => b.totalCost - a.totalCost).slice(0, 5), [reports]);
+
+  function variation(current: number, previous: number) {
+    if (previous === 0) return current === 0 ? 0 : null;
+    return ((current - previous) / previous) * 100;
+  }
+
+  function Comparison({ label, current, previous, format = 'number' }: { label: string; current: number; previous: number; format?: 'number' | 'money' }) {
+    const change = variation(current, previous);
+    const up = change != null && change >= 0;
+    return <div className="rounded-xl border bg-white p-5">
+      <div className="text-sm text-slate-500">{label}</div>
+      <div className="mt-2 text-xl font-bold">{format === 'money' ? money(current) : current.toLocaleString('pt-BR')}</div>
+      <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
+        {change == null ? <span>Sem base no mês anterior</span> : <>
+          {up ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+          <span>{Math.abs(change).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}% vs. mês anterior</span>
+        </>}
+      </div>
+    </div>;
+  }
 
   function exportCsv() {
     const header = ['Veículo','Viagens','Concluídas','Passageiros','KM rodados','Litros','Custo combustível','Custo manutenção','Custo total','Custo/KM','Custo/viagem','Custo/passageiro'];
@@ -197,11 +239,30 @@ export default function RelatoriosPage() {
             <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Taxa de conclusão</div><div className="mt-2 text-xl font-bold">{totals.trips > 0 ? ((totals.completedTrips / totals.trips) * 100).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}%</div></div>
           </div>
 
+          <div className="mb-6">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Comparativo mensal</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Comparison label="Viagens" current={totals.trips} previous={previousTotals.trips} />
+              <Comparison label="KM rodados" current={totals.km} previous={previousTotals.km} />
+              <Comparison label="Custo total" current={totals.totalCost} previous={previousTotals.totalCost} format="money" />
+            </div>
+          </div>
+
           <div className="mb-6 grid gap-4 lg:grid-cols-3">
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Fuel size={18} /> Combustível</div><div className="mt-3 text-xl font-bold">{money(totals.fuelCost)}</div><div className="text-sm text-slate-500">{totals.liters.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} litros</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Wrench size={18} /> Manutenção</div><div className="mt-3 text-xl font-bold">{money(totals.maintenanceCost)}</div><div className="text-sm text-slate-500">Serviços não cancelados</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} /> Operação</div><div className="mt-3 text-xl font-bold">{totals.completedTrips}/{totals.trips}</div><div className="text-sm text-slate-500">viagens concluídas</div></div>
           </div>
+
+          {ranking.length > 0 && <div className="mb-6 rounded-xl border bg-white p-5">
+            <div className="mb-4 flex items-center gap-2 font-semibold"><Trophy size={18} /> Ranking de custo por veículo</div>
+            <div className="space-y-3">
+              {ranking.map((r, index) => <div key={r.vehicle.id} className="flex items-center justify-between gap-4 border-b pb-3 last:border-0 last:pb-0">
+                <div><span className="mr-3 text-sm font-bold text-slate-400">{index + 1}º</span><span className="font-medium">{r.vehicle.plate}</span><span className="ml-2 text-xs text-slate-500">{[r.vehicle.brand, r.vehicle.model].filter(Boolean).join(' ')}</span></div>
+                <div className="text-right"><div className="font-semibold">{money(r.totalCost)}</div><div className="text-xs text-slate-500">{money(r.costPerKm)}/km</div></div>
+              </div>)}
+            </div>
+          </div>}
 
           <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
             <Search size={18} className="text-slate-400" />
