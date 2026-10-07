@@ -10,7 +10,7 @@ type Maintenance = {
   id: string; vehicle_id: string; date: string; mileage: number | null; type: string;
   description: string; workshop: string | null; value: number | null;
   next_maintenance_date: string | null; next_maintenance_mileage: number | null;
-  status: Status; observations: string | null; vehicle?: Vehicle | null;
+  status: Status; observations: string | null; parts_value:number|null; labor_value:number|null; vehicle?: Vehicle | null;
 };
 const labels: Record<Status, string> = { SCHEDULED: 'Agendada', IN_PROGRESS: 'Em andamento', COMPLETED: 'Concluída', CANCELLED: 'Cancelada' };
 
@@ -29,7 +29,7 @@ export default function ManutencoesPage() {
     setLoading(true);
     const [maintenanceResult, vehicleResult] = await Promise.all([
       supabase.from('maintenances')
-        .select('id,vehicle_id,date,mileage,type,description,workshop,value,next_maintenance_date,next_maintenance_mileage,status,observations,vehicle:vehicles(id,plate,brand,model)')
+        .select('id,vehicle_id,date,mileage,type,description,workshop,value,next_maintenance_date,next_maintenance_mileage,status,observations,parts_value,labor_value,vehicle:vehicles(id,plate,brand,model)')
         .order('date', { ascending: false }),
       supabase.from('vehicles').select('id,plate,brand,model').order('plate'),
     ]);
@@ -68,6 +68,8 @@ export default function ManutencoesPage() {
       next_maintenance_mileage: form.get('next_maintenance_mileage') ? Number(form.get('next_maintenance_mileage')) : null,
       status: String(form.get('status') ?? 'SCHEDULED') as Status,
       observations: String(form.get('observations') ?? '').trim() || null,
+      parts_value: form.get('parts_value') ? Number(form.get('parts_value')) : null,
+      labor_value: form.get('labor_value') ? Number(form.get('labor_value')) : null,
     };
     if (!payload.vehicle_id || !payload.date || !payload.type || !payload.description) {
       setMessage('Informe veículo, data, tipo e descrição.');
@@ -94,6 +96,8 @@ export default function ManutencoesPage() {
       (row.workshop ?? '').toLowerCase().includes(q);
   });
 
+  const monthKey=new Date().toISOString().slice(0,7); const monthCost=rows.filter(r=>r.date.slice(0,7)===monthKey).reduce((s,r)=>s+Number(r.value??0)+Number(r.parts_value??0)+Number(r.labor_value??0),0); const openCount=rows.filter(r=>['SCHEDULED','IN_PROGRESS'].includes(r.status)).length;
+
   function statusClass(status: Status) {
     return status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700' :
       status === 'IN_PROGRESS' ? 'bg-blue-50 text-blue-700' :
@@ -110,6 +114,7 @@ export default function ManutencoesPage() {
             <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><Plus size={18} /> Nova manutenção</button>
           </div>
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
+          <div className="mb-4 grid gap-3 sm:grid-cols-3"><Stat label="Registros" value={String(rows.length)}/><Stat label="Pendentes / em andamento" value={String(openCount)}/><Stat label="Custo no mês" value={money(monthCost)}/></div>
           <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por placa, tipo ou oficina" className="w-full outline-none text-sm" /></div>
           {showForm && <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">{editing ? 'Editar manutenção' : 'Nova manutenção'}</h2><button type="button" onClick={() => setShowForm(false)}><X size={20} /></button></div>
@@ -120,8 +125,8 @@ export default function ManutencoesPage() {
               <label className="text-sm">Tipo<input name="type" required placeholder="Preventiva, corretiva..." defaultValue={editing?.type ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
               <label className="text-sm sm:col-span-2">Descrição<input name="description" required defaultValue={editing?.description ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
               <label className="text-sm">Oficina<input name="workshop" defaultValue={editing?.workshop ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-              <label className="text-sm">Valor<input name="value" type="number" min="0" step="0.01" defaultValue={editing?.value ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-              <label className="text-sm">Próxima data<input name="next_maintenance_date" type="date" defaultValue={editing?.next_maintenance_date ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+              <label className="text-sm">Serviço / valor geral<input name="value" type="number" min="0" step="0.01" defaultValue={editing?.value ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+              <label className="text-sm">Peças<input name="parts_value" type="number" min="0" step="0.01" defaultValue={editing?.parts_value??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm">Mão de obra<input name="labor_value" type="number" min="0" step="0.01" defaultValue={editing?.labor_value??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm">Próxima data<input name="next_maintenance_date" type="date" defaultValue={editing?.next_maintenance_date ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
               <label className="text-sm">Próximo KM<input name="next_maintenance_mileage" type="number" min="0" defaultValue={editing?.next_maintenance_mileage ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
               <label className="text-sm">Situação<select name="status" defaultValue={editing?.status ?? 'SCHEDULED'} className="mt-1 w-full rounded-lg border px-3 py-2">{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
               <label className="text-sm sm:col-span-2 lg:col-span-4">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
@@ -142,3 +147,6 @@ export default function ManutencoesPage() {
     </main>
   );
 }
+
+function money(v:number){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function Stat({label,value}:{label:string;value:string}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-xl font-bold">{value}</div></div>}
