@@ -240,17 +240,15 @@ export default function ConfiguracoesPage() {
     setSaving(true);
     setMessage('');
 
-    const result = await supabase.from('profiles').update({
-      name: name.trim(),
-      cpf: cpf.trim() || null,
-      phone: phone.trim() || null,
-      role,
-      municipality_id: role === 'ADMIN' ? null : (municipalityId || null),
-      active,
-    }).eq('id', editing.id);
+    const response = await fetch('/api/usuarios', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', userId: editing.id, name, cpf, phone, role, municipalityId, active }),
+    });
+    const result = await response.json().catch(() => ({}));
 
-    if (result.error) {
-      setMessage(`Não foi possível salvar: ${result.error.message}`);
+    if (!response.ok) {
+      setMessage(result.error ?? 'Não foi possível salvar o usuário.');
     } else {
       setMessage('Usuário atualizado com sucesso.');
       setEditing(null);
