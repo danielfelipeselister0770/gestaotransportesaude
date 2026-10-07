@@ -77,12 +77,11 @@ export default function RelatoriosPage() {
     historyStartDate.setMonth(historyStartDate.getMonth() - 5);
     const historyStart = historyStartDate.toISOString().slice(0, 10);
 
-    const [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult, historyTripResult, historyFuelingResult, historyMaintenanceResult] = await Promise.all([
+    const [vehicleResult, tripResult, fuelingResult, maintenanceResult, previousTripResult, previousFuelingResult, previousMaintenanceResult, historyTripResult, historyFuelingResult, historyMaintenanceResult] = await Promise.all([
       supabase.from('vehicles').select('id,plate,brand,model').order('plate'),
       supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', start).lt('date', end),
       supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', start).lt('date', end),
       supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', start).lt('date', end),
-      supabase.from('trip_passengers').select('trip_id').limit(10000),
       supabase.from('trips').select('id,date,initial_mileage,final_mileage,status,vehicle_id').gte('date', previousStart).lt('date', start),
       supabase.from('fuelings').select('id,vehicle_id,date,liters,total_value,mileage').gte('date', previousStart).lt('date', start),
       supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', previousStart).lt('date', start),
@@ -91,18 +90,30 @@ export default function RelatoriosPage() {
       supabase.from('maintenances').select('id,vehicle_id,date,value,status').gte('date', historyStart).lt('date', end),
     ]);
 
-    const firstError = [vehicleResult, tripResult, fuelingResult, maintenanceResult, passengerResult, previousTripResult, previousFuelingResult, previousMaintenanceResult, historyTripResult, historyFuelingResult, historyMaintenanceResult].find((r) => r.error);
+    const firstError = [vehicleResult, tripResult, fuelingResult, maintenanceResult, previousTripResult, previousFuelingResult, previousMaintenanceResult, historyTripResult, historyFuelingResult, historyMaintenanceResult].find((r) => r.error);
     if (firstError?.error) {
       setMessage(`Erro ao carregar relatório: ${firstError.error.message}`);
       setLoading(false);
       return;
     }
 
-    const passengerRows = (passengerResult.data ?? []) as Array<{ trip_id: string }>;
-    const tripIds = new Set((tripResult.data ?? []).map((t) => t.id));
+    const tripIds = (tripResult.data ?? []).map((t) => t.id);
     const counts: Record<string, number> = {};
-    for (const row of passengerRows) {
-      if (tripIds.has(row.trip_id)) counts[row.trip_id] = (counts[row.trip_id] ?? 0) + 1;
+    const chunkSize = 200;
+    for (let i = 0; i < tripIds.length; i += chunkSize) {
+      const chunk = tripIds.slice(i, i + chunkSize);
+      const { data: passengerRows, error: passengerError } = await supabase
+        .from('trip_passengers')
+        .select('trip_id,boarding_status')
+        .in('trip_id', chunk);
+      if (passengerError) {
+        setMessage(`Erro ao carregar passageiros do relatório: ${passengerError.message}`);
+        setLoading(false);
+        return;
+      }
+      for (const row of passengerRows ?? []) {
+        if (row.boarding_status === 'BOARDED') counts[row.trip_id] = (counts[row.trip_id] ?? 0) + 1;
+      }
     }
 
     setVehicles((vehicleResult.data ?? []) as Vehicle[]);
@@ -144,7 +155,7 @@ export default function RelatoriosPage() {
         maintenanceCost,
         totalCost: fuelCost + maintenanceCost,
         costPerKm: km > 0 ? (fuelCost + maintenanceCost) / km : 0,
-        costPerTrip: vehicleTrips.length > 0 ? (fuelCost + maintenanceCost) / vehicleTrips.length : 0,
+        costPerTrip: vehicleTrips.filter((t) => t.status === 'COMPLETED').length > 0 ? (fuelCost + maintenanceCost) / vehicleTrips.filter((t) => t.status === 'COMPLETED').length : 0,
         costPerPassenger: passengers > 0 ? (fuelCost + maintenanceCost) / passengers : 0,
       };
     });
@@ -272,7 +283,7 @@ export default function RelatoriosPage() {
 
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo médio por KM</div><div className="mt-2 text-xl font-bold">{money(totals.km > 0 ? totals.totalCost / totals.km : 0)}</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por viagem</div><div className="mt-2 text-xl font-bold">{money(totals.trips > 0 ? totals.totalCost / totals.trips : 0)}</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por viagem concluída</div><div className="mt-2 text-xl font-bold">{money(totals.completedTrips > 0 ? totals.totalCost / totals.completedTrips : 0)}</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por passageiro</div><div className="mt-2 text-xl font-bold">{money(totals.passengers > 0 ? totals.totalCost / totals.passengers : 0)}</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Taxa de conclusão</div><div className="mt-2 text-xl font-bold">{totals.trips > 0 ? ((totals.completedTrips / totals.trips) * 100).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}%</div></div>
           </div>
