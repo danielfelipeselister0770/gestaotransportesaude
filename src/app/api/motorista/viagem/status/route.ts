@@ -98,7 +98,7 @@ export async function POST(request: Request) {
 
     const { error: updateTripError } = await admin
       .from('trips')
-      .update({ status: 'IN_PROGRESS', initial_mileage: initialMileage })
+      .update({ status: 'IN_PROGRESS', initial_mileage: initialMileage, started_at: new Date().toISOString() })
       .eq('id', trip.id)
       .eq('status', 'SCHEDULED');
 
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
 
   const { error: updateTripError } = await admin
     .from('trips')
-    .update({ status: 'COMPLETED', final_mileage: finalMileage })
+    .update({ status: 'COMPLETED', final_mileage: finalMileage, completed_at: new Date().toISOString() })
     .eq('id', trip.id)
     .eq('status', 'IN_PROGRESS');
 
@@ -184,16 +184,18 @@ export async function POST(request: Request) {
     });
   }
 
+  await admin.from('trip_passengers').update({ boarding_status: 'NO_SHOW' }).eq('trip_id', trip.id).eq('boarding_status', 'EXPECTED');
+
   const { data: passengers } = await admin
     .from('trip_passengers')
-    .select('request_id')
+    .select('request_id,boarding_status')
     .eq('trip_id', trip.id)
     .not('request_id', 'is', null);
 
-  const requestIds = [...new Set((passengers ?? []).map((row) => row.request_id).filter(Boolean))];
-  if (requestIds.length > 0) {
-    await admin.from('transport_requests').update({ status: 'COMPLETED' }).in('id', requestIds);
-  }
+  const completedIds = [...new Set((passengers ?? []).filter(row => row.boarding_status === 'BOARDED').map(row => row.request_id).filter(Boolean))];
+  const noShowIds = [...new Set((passengers ?? []).filter(row => row.boarding_status !== 'BOARDED').map(row => row.request_id).filter(Boolean))];
+  if (completedIds.length > 0) await admin.from('transport_requests').update({ status: 'COMPLETED' }).in('id', completedIds);
+  if (noShowIds.length > 0) await admin.from('transport_requests').update({ status: 'NO_SHOW' }).in('id', noShowIds);
 
   return NextResponse.json({ ok: true, status: 'COMPLETED', finalMileage, distance: finalMileage - initialMileage });
 }
