@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { AlertTriangle, Copy, Eye, EyeOff, KeyRound, MessageCircle, Pencil, Plus, Search, UserRound, X } from 'lucide-react';
+import { AlertTriangle, BadgeCheck, Copy, Eye, EyeOff, IdCard, KeyRound, MessageCircle, Pencil, Plus, Search, ShieldCheck, UserRound, UsersRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Driver = {
@@ -147,17 +147,17 @@ export default function DriversPage() {
 <section className=" p-4 md:p-8"><div className="mx-auto max-w-6xl">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div><h1 className="text-2xl font-bold">Motoristas</h1><p className="text-sm text-slate-500">Cadastro, habilitação e acesso dos condutores.</p></div>
-        <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><Plus size={18}/> Novo motorista</button>
+        <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18}/> Novo motorista</button>
       </div>
 
-      {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
+      <div className="p-5 lg:p-8">\n      {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-      <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<UsersRound size={18}/>} label="Motoristas" value={drivers.length}/><Stat icon={<BadgeCheck size={18}/>} label="Ativos" value={activeCount}/><Stat icon={<IdCard size={18}/>} label="CNHs vencidas" value={expiredCount} attention={expiredCount > 0}/><Stat icon={<ShieldCheck size={18}/>} label="Com acesso" value={accessCount}/></div>\n\n      <div className="mb-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
         <Search size={18} className="text-slate-400"/>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, CPF ou CNH" className="w-full outline-none text-sm"/>
       </div>
 
-      {showForm && <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+      {showForm && <form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">{editing ? 'Editar motorista' : 'Novo motorista'}</h2><button type="button" onClick={() => setShowForm(false)}><X size={20}/></button></div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm sm:col-span-2">Nome completo<input name="name" required defaultValue={editing?.name ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label>
@@ -169,10 +169,10 @@ export default function DriversPage() {
           <label className="flex items-center gap-2 pt-6 text-sm"><input name="active" type="checkbox" defaultChecked={editing?.active ?? true}/> Motorista ativo</label>
           <label className="text-sm sm:col-span-2 lg:col-span-4">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label>
         </div>
-        <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar motorista'}</button></div>
+        <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800">{saving ? 'Salvando...' : 'Salvar motorista'}</button></div>
       </form>}
 
-      {accessDriver && <div className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+      {accessDriver && <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <div><h2 className="font-semibold">Acesso provisório</h2><p className="text-sm text-slate-500">{accessDriver.name}</p></div>
           <button type="button" onClick={() => { setAccessDriver(null); setAccessData(null); }}><X size={20}/></button>
@@ -190,7 +190,7 @@ export default function DriversPage() {
             <span className="mt-1 block text-xs text-slate-500">Essa senha será usada somente no primeiro acesso e deverá ser trocada pelo motorista.</span>
           </label>
           <div className="mt-4 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">Nenhum e-mail será enviado. O gestor receberá aqui um link e uma senha provisória para entregar ao motorista.</div>
-          <button type="button" disabled={generatingAccess || (!accessDriver.profile_id && !accessEmail.trim())} onClick={generateAccess} className="mt-4 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50">{generatingAccess ? 'Gerando...' : accessDriver.profile_id ? 'Gerar novo acesso' : 'Criar acesso provisório'}</button>
+          <button type="button" disabled={generatingAccess || (!accessDriver.profile_id && !accessEmail.trim())} onClick={generateAccess} className="mt-4 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-50">{generatingAccess ? 'Gerando...' : accessDriver.profile_id ? 'Gerar novo acesso' : 'Criar acesso provisório'}</button>
         </> : <>
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
             <div className="font-semibold">Acesso criado com sucesso.</div>
@@ -210,13 +210,13 @@ export default function DriversPage() {
         </>}
       </div>}
 
-      <div className="overflow-hidden rounded-xl border bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando...</div> : filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhum motorista encontrado.</div> :
-          <div className="divide-y">{filtered.map(d => <div key={d.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-start gap-3"><div className="rounded-lg bg-slate-100 p-2"><UserRound size={20}/></div><div><div className="font-semibold">{d.name}</div><div className="text-sm text-slate-500">{[d.cpf && 'CPF ' + d.cpf,d.phone,d.cnh && 'CNH ' + d.cnh,d.cnh_category && 'Cat. ' + d.cnh_category].filter(Boolean).join(' • ') || 'Sem dados complementares'}</div>{d.cnh_expiration && <div className={'mt-1 flex items-center gap-1 text-xs ' + (expired(d) ? 'font-medium text-red-600' : 'text-slate-500')}>{expired(d) && <AlertTriangle size={13}/>}CNH válida até {new Date(d.cnh_expiration + 'T12:00:00').toLocaleDateString('pt-BR')}</div>}</div></div>
+          <div className="divide-y">{filtered.map(d => <div key={d.id} className="flex flex-col gap-3 p-4 transition hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-start gap-3"><div className="rounded-xl bg-teal-50 p-2 text-teal-700"><UserRound size={20}/></div><div><div className="font-semibold">{d.name}</div><div className="text-sm text-slate-500">{[d.cpf && 'CPF ' + d.cpf,d.phone,d.cnh && 'CNH ' + d.cnh,d.cnh_category && 'Cat. ' + d.cnh_category].filter(Boolean).join(' • ') || 'Sem dados complementares'}</div>{d.cnh_expiration && <div className={'mt-1 flex items-center gap-1 text-xs ' + (expired(d) ? 'font-medium text-red-600' : 'text-slate-500')}>{expired(d) && <AlertTriangle size={13}/>}CNH válida até {new Date(d.cnh_expiration + 'T12:00:00').toLocaleDateString('pt-BR')}</div>}</div></div>
             <div className="flex items-center gap-3"><span className={'rounded-full px-2.5 py-1 text-xs font-medium ' + (d.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600')}>{d.active ? 'Ativo' : 'Inativo'}</span><button onClick={() => openAccess(d)} className="flex items-center gap-1 rounded-lg border px-3 py-2 text-xs hover:bg-slate-50" title="Gerar acesso"><KeyRound size={15}/> {d.profile_id ? 'Gerar novo acesso' : 'Criar acesso'}</button><button onClick={() => openEdit(d)} className="rounded-lg border p-2 hover:bg-slate-50" title="Editar"><Pencil size={16}/></button></div>
           </div>)}</div>}
       </div>
     </div></section>
   </main>;
-}
+}\n\nfunction Stat({icon,label,value,attention=false}:{icon:React.ReactNode;label:string;value:number;attention?:boolean}) {\n  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={"mb-3 grid h-9 w-9 place-items-center rounded-xl " + (attention ? "bg-amber-50 text-amber-700" : "bg-teal-50 text-teal-700")}>{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>;\n}\n
