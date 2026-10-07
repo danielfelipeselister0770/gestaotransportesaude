@@ -461,7 +461,7 @@ export default function TripsPage() {
   );
 }
 
-function Stat({label,value}:{label:string;value:number}) { return <div className="rounded-2xl border border-slate-200 bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold">{value}</div></div>; }
+function Stat({label,value,icon}:{label:string;value:number;icon:ReactNode}) { return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>; }
 
 function Field({name,label,type='text',placeholder,required,defaultValue}:{name:string;label:string;type?:string;placeholder?:string;required?:boolean;defaultValue?:string}) {
   return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>;
