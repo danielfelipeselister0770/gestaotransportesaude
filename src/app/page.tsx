@@ -1,4 +1,4 @@
-import { CarFront, ClipboardList, Gauge, LogOut, MapPinned, Users, Wrench, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, CarFront, ClipboardList, Gauge, LogOut, MapPinned, Users, Wrench, type LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 
@@ -21,7 +21,7 @@ export default async function Home() {
     day: '2-digit',
   }).format(new Date());
 
-  const [{ data: profile }, trips, passengers, requests, vehicles, maintenances, occurrences, upcomingTripsResult] = await Promise.all([
+  const [{ data: profile }, trips, passengers, requests, vehicles, maintenances, occurrences, upcomingTripsResult, todayRequests, vehicleTotal, maintenanceVehicles, documentAlerts] = await Promise.all([
     userId ? supabase.from('profiles').select('name, role').eq('id', userId).maybeSingle() : Promise.resolve({ data: null }),
     supabase.from('trips').select('id', { count: 'exact', head: true }).eq('date', today),
     supabase
@@ -40,6 +40,10 @@ export default async function Home() {
       .order('date', { ascending: true })
       .order('departure_time', { ascending: true })
       .limit(6),
+    supabase.from('transport_requests').select('id,status').eq('date',today),
+    supabase.from('vehicles').select('id',{count:'exact',head:true}),
+    supabase.from('vehicles').select('id',{count:'exact',head:true}).eq('status','MAINTENANCE'),
+    supabase.from('vehicles').select('id,plate,licensing_expiry,insurance_expiry').or(`licensing_expiry.lte.${new Date(Date.now()+30*86400000).toISOString().slice(0,10)},insurance_expiry.lte.${new Date(Date.now()+30*86400000).toISOString().slice(0,10)}`).limit(6),
   ]);
 
   type UpcomingTrip = {
@@ -59,13 +63,18 @@ export default async function Home() {
     vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
   })) as UpcomingTrip[];
 
-  const cards: Array<[string, number, LucideIcon]> = [
-    ['Viagens hoje', trips.count ?? 0, CarFront],
-    ['Passageiros em viagens', passengers.count ?? 0, Users],
-    ['Solicitações pendentes', requests.count ?? 0, ClipboardList],
-    ['Veículos disponíveis', vehicles.count ?? 0, CarFront],
-    ['Manutenções abertas', maintenances.count ?? 0, Wrench],
-    ['Ocorrências abertas', occurrences.count ?? 0, Gauge],
+  const requestRows=(todayRequests.data??[]) as {id:string;status:string}[];
+  const todayPending=requestRows.filter(r=>['REQUESTED','APPROVED'].includes(r.status)).length;
+  const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
+  const alerts=[...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
+
+  const cards: Array<[string, number, LucideIcon, string]> = [
+    ['Viagens hoje', trips.count ?? 0, CarFront, '/viagens'],
+    ['Passageiros em viagens', passengers.count ?? 0, Users, '/viagens'],
+    ['Solicitações pendentes', requests.count ?? 0, ClipboardList, '/solicitacoes'],
+    ['Veículos disponíveis', vehicles.count ?? 0, CarFront, '/veiculos'],
+    ['Manutenções abertas', maintenances.count ?? 0, Wrench, '/manutencoes'],
+    ['Ocorrências abertas', occurrences.count ?? 0, Gauge, '/ocorrencias'],
   ];
 
   const displayName = profile?.name || (claimsData?.claims?.email as string | undefined) || 'Usuário';
@@ -92,13 +101,21 @@ export default async function Home() {
 
         <div className="p-6">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {cards.map(([label, value, Icon]) => (
-              <div key={label as string} className="rounded-xl border bg-white p-5 shadow-sm">
+            {cards.map(([label, value, Icon, href]) => (
+              <Link href={href} key={label as string} className="rounded-xl border bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow">
                 <div className="flex items-center justify-between"><span className="text-sm text-slate-500">{label as string}</span><Icon size={20} className="text-slate-500" /></div>
                 <div className="mt-3 text-3xl font-bold">{value as number}</div>
-              </div>
+              </Link>
             ))}
           </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-3">
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Pendências de hoje</div><div className="mt-2 text-2xl font-bold">{todayPending}</div><div className="mt-1 text-xs text-slate-500">Solicitações de hoje ainda aguardando fluxo.</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Frota indisponível</div><div className="mt-2 text-2xl font-bold">{fleetUnavailable}</div><div className="mt-1 text-xs text-slate-500">{maintenanceVehicles.count??0} veículo(s) marcado(s) em manutenção.</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Alertas operacionais</div><div className="mt-2 text-2xl font-bold">{alerts.length}</div><div className="mt-1 text-xs text-slate-500">Ocorrências, manutenção e documentos da frota.</div></div>
+          </div>
+
+          {alerts.length>0&&<div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5"><div className="flex items-center gap-2 font-semibold text-amber-900"><AlertTriangle size={18}/> Atenção da gestão</div><div className="mt-3 space-y-2">{alerts.slice(0,6).map((a,i)=><div key={i} className="text-sm text-amber-900">• {a}</div>)}</div></div>}
 
           <div className="mt-6 rounded-xl border bg-white p-6">
             <div className="flex items-center justify-between gap-4">
