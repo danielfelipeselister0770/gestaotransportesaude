@@ -105,6 +105,8 @@ export default function AbastecimentosPage() {
     setSaving(false);
   }
 
+  const monthKey=new Date().toISOString().slice(0,7); const monthRows=rows.filter(r=>r.date.slice(0,7)===monthKey); const totalLiters=monthRows.reduce((s,r)=>s+Number(r.liters),0); const totalCost=monthRows.reduce((s,r)=>s+Number(r.total_value),0); const avgPrice=totalLiters?totalCost/totalLiters:0;
+
   const filtered = rows.filter((row) => {
     const q = search.toLowerCase();
     return (row.vehicle?.plate ?? '').toLowerCase().includes(q) ||
@@ -126,6 +128,8 @@ export default function AbastecimentosPage() {
           </div>
 
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
+
+          <div className="mb-4 grid gap-3 sm:grid-cols-3"><Stat label="Custo no mês" value={money(totalCost)}/><Stat label="Litros no mês" value={totalLiters.toLocaleString('pt-BR',{maximumFractionDigits:2})+' L'}/><Stat label="Preço médio/L" value={money(avgPrice)}/></div>
 
           <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
             <Search size={18} className="text-slate-400" />
@@ -161,7 +165,7 @@ export default function AbastecimentosPage() {
                 <div key={row.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-3"><div className="rounded-lg bg-slate-100 p-2"><Fuel size={20} /></div><div>
                     <div className="font-semibold text-slate-900">{row.vehicle?.plate ?? 'Veículo'}</div>
-                    <div className="text-sm text-slate-500">{new Date(row.date).toLocaleString('pt-BR')} • {row.liters.toLocaleString('pt-BR')} L • R$ {row.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                    <div className="text-sm text-slate-500">{new Date(row.date).toLocaleString('pt-BR')} • {row.liters.toLocaleString('pt-BR')} L • R$ {row.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • {money(Number(row.total_value)/Number(row.liters))}/L</div>
                     <div className="text-xs text-slate-500">KM {row.mileage.toLocaleString('pt-BR')}{row.fuel_type ? ` • ${row.fuel_type}` : ''}</div>
                   </div></div>
                   <button onClick={() => openEdit(row)} className="self-end rounded-lg border p-2 hover:bg-slate-50"><Pencil size={16} /></button>
@@ -174,3 +178,6 @@ export default function AbastecimentosPage() {
     </main>
   );
 }
+
+function money(v:number){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function Stat({label,value}:{label:string;value:string}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-xl font-bold">{value}</div></div>}
