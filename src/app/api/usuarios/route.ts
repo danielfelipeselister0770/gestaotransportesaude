@@ -110,7 +110,7 @@ export async function POST(request: Request) {
       active: body?.active !== false,
     }).eq('id', userId);
     if (error) return NextResponse.json({ error: 'Não foi possível atualizar o usuário: ' + error.message }, { status: 400 });
-    await recordHistory(userId, nextMunicipality, 'UPDATE', { role: nextRole, active: body?.active !== false });
+    await recordHistory(userId, nextMunicipality ?? null, 'UPDATE', { role: nextRole, active: body?.active !== false });
     return NextResponse.json({ ok: true, message: 'Usuário atualizado com segurança.' });
   }
 
