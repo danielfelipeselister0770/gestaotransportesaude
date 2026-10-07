@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!currentProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
 
   const body = await request.json().catch(() => null) as {
-    action?: 'create' | 'delete';
+    action?: 'create' | 'delete' | 'update';
     userId?: string;
     municipalityId?: string;
     name?: string;
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
     email?: string;
     password?: string;
     role?: UserRole;
+    active?: boolean;
   } | null;
 
   const action = body?.action ?? 'create';
@@ -69,6 +70,28 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: 'Não foi possível excluir o usuário: ' + error.message }, { status: 400 });
 
     return NextResponse.json({ ok: true, message: 'Usuário excluído com sucesso.' });
+  }
+
+  if (action === 'update') {
+    const userId = body?.userId?.trim();
+    if (!userId) return NextResponse.json({ error: 'Usuário é obrigatório.' }, { status: 400 });
+    const { data: target } = await admin.from('profiles').select('id,role,municipality_id').eq('id', userId).maybeSingle();
+    if (!target) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+    if (currentProfile.role !== 'ADMIN') return NextResponse.json({ error: 'Apenas o administrador pode alterar perfil, prefeitura ou status de acesso.' }, { status: 403 });
+    const nextRole = body?.role;
+    if (!nextRole || !['ADMIN','GESTOR','OPERADOR','MOTORISTA'].includes(nextRole)) return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
+    const nextMunicipality = nextRole === 'ADMIN' ? null : body?.municipalityId?.trim();
+    if (nextRole !== 'ADMIN' && !nextMunicipality) return NextResponse.json({ error: 'Prefeitura é obrigatória.' }, { status: 400 });
+    const { error } = await admin.from('profiles').update({
+      name: body?.name?.trim(),
+      cpf: body?.cpf?.trim() || null,
+      phone: body?.phone?.trim() || null,
+      role: nextRole,
+      municipality_id: nextMunicipality,
+      active: body?.active !== false,
+    }).eq('id', userId);
+    if (error) return NextResponse.json({ error: 'Não foi possível atualizar o usuário: ' + error.message }, { status: 400 });
+    return NextResponse.json({ ok: true, message: 'Usuário atualizado com segurança.' });
   }
 
   if (action !== 'create') return NextResponse.json({ error: 'Ação inválida.' }, { status: 400 });
