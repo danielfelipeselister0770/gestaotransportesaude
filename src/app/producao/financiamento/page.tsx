@@ -13,6 +13,7 @@ export default function FinanciamentoPage(){
  const supabase=createClient();
  const [month,setMonth]=useState(()=>new Date().toISOString().slice(0,7));
  const [rows,setRows]=useState<Production[]>([]);
+ const [historyRows,setHistoryRows]=useState<Production[]>([]);
  const [batches,setBatches]=useState<Batch[]>([]);
  const [rules,setRules]=useState<Rule[]>([]);
  const [loading,setLoading]=useState(true);
@@ -21,13 +22,15 @@ export default function FinanciamentoPage(){
  useEffect(()=>{(async()=>{
   setLoading(true);setMessage('');
   const start=`${month}-01`;const d=new Date(`${month}-01T00:00:00`);d.setMonth(d.getMonth()+1);const end=d.toISOString().slice(0,10);const competence=month.replace('-','');
-  const [p,b,r]=await Promise.all([
+  const historyDate=new Date(`${month}-01T00:00:00`);historyDate.setMonth(historyDate.getMonth()-5);const historyStart=historyDate.toISOString().slice(0,10);
+  const [p,b,r,h]=await Promise.all([
    supabase.from('sus_production').select('id,production_date,quantity,production_type,status,export_batch_id,request_id,procedure:sigtap_procedures(code,name),request:transport_requests(financing_distance_km,patient:patients(name))').gte('production_date',start).lt('production_date',end),
    supabase.from('sus_export_batches').select('id,competence,production_type,status,record_count').eq('competence',competence),
-   supabase.from('sus_transport_financing_rules').select('treatment_type,procedure_code,min_distance_km,max_distance_km,round_trip_value,valid_from,valid_to,legal_basis').eq('active',true)
+   supabase.from('sus_transport_financing_rules').select('treatment_type,procedure_code,min_distance_km,max_distance_km,round_trip_value,valid_from,valid_to,legal_basis').eq('active',true),
+   supabase.from('sus_production').select('id,production_date,quantity,production_type,status,export_batch_id,request_id,procedure:sigtap_procedures(code,name),request:transport_requests(financing_distance_km,patient:patients(name))').gte('production_date',historyStart).lt('production_date',end)
   ]);
-  if(p.error||b.error||r.error){setMessage(p.error?.message||b.error?.message||r.error?.message||'Erro ao carregar painel.');setLoading(false);return}
-  setRows((p.data??[]) as unknown as Production[]);setBatches((b.data??[]) as Batch[]);setRules((r.data??[]) as Rule[]);setLoading(false);
+  if(p.error||b.error||r.error||h.error){setMessage(p.error?.message||b.error?.message||r.error?.message||h.error?.message||'Erro ao carregar painel.');setLoading(false);return}
+  setRows((p.data??[]) as unknown as Production[]);setBatches((b.data??[]) as Batch[]);setRules((r.data??[]) as Rule[]);setHistoryRows((h.data??[]) as unknown as Production[]);setLoading(false);
  })()},[month]);
 
  const financing=useMemo(()=>rows.map(row=>{
@@ -59,6 +62,13 @@ export default function FinanciamentoPage(){
   const pending=items.filter(x=>x.classification==='FIX');
   return {type,label:type==='HEMODIALYSIS'?'Hemodiálise':'Radioterapia',records:items.length,potential:items.reduce((s,x)=>s+x.value,0),readyValue:ready.reduce((s,x)=>s+x.value,0),pendingValue:pending.reduce((s,x)=>s+x.value,0),ready:ready.length,pending:pending.length};
  });
+
+ const monthlyHistory=useMemo(()=>Array.from({length:6},(_,i)=>{
+  const base=new Date(`${month}-01T00:00:00`);base.setMonth(base.getMonth()-(5-i));const key=base.toISOString().slice(0,7);
+  const items=historyRows.filter(row=>row.production_date.startsWith(key)).map(row=>{const distance=Number(row.request?.financing_distance_km||0);const rule=rules.find(rule=>rule.procedure_code===row.procedure?.code&&row.production_type==='BPA_I'&&row.production_date>=rule.valid_from&&(!rule.valid_to||row.production_date<=rule.valid_to)&&distance>=Number(rule.min_distance_km)&&(!rule.max_distance_km||distance<=Number(rule.max_distance_km)));return {row,value:rule?Number(row.quantity||0)*Number(rule.round_trip_value):0,rule};}).filter(x=>x.rule);
+  return {key,label:base.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}),potential:items.reduce((s,x)=>s+x.value,0),ready:items.filter(x=>['VALIDATED','EXPORTED'].includes(x.row.status)).reduce((s,x)=>s+x.value,0),pending:items.filter(x=>x.row.status==='DRAFT').reduce((s,x)=>s+x.value,0)};
+ }),[historyRows,rules,month]);
+ const maxHistory=Math.max(1,...monthlyHistory.map(x=>x.potential));
 
  const stats=useMemo(()=>{
   const total=rows.reduce((s,r)=>s+Number(r.quantity||0),0);
@@ -93,6 +103,7 @@ export default function FinanciamentoPage(){
     <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Sem solicitação de transporte vinculada</div><div className="mt-2 text-2xl font-bold">{stats.withoutTransport}</div><div className="text-xs text-slate-500">revisar quando o vínculo for necessário</div></div>
     <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Lotes da competência</div><div className="mt-2 text-2xl font-bold">{batches.length}</div><div className="text-xs text-slate-500">{batches.filter(b=>b.status==='OPEN').length} abertos · {batches.filter(b=>b.status==='EXPORTED').length} exportados</div></div>
    </div>
+   <div className="mb-6 rounded-xl border bg-white p-5"><div className="mb-5"><h2 className="font-semibold">Evolução do financiamento — 6 meses</h2><p className="text-sm text-slate-500">Histórico estimado pelas mesmas regras do painel. Não representa valor efetivamente transferido.</p></div><div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">{monthlyHistory.map(m=><div key={m.key} className="flex min-w-0 flex-col"><div className="flex h-32 items-end justify-center rounded-lg bg-slate-50 p-2"><div className="w-full max-w-[3rem] rounded-t bg-slate-800" style={{height:`${Math.max(m.potential?8:0,(m.potential/maxHistory)*100)}%`}}/></div><div className="mt-2 text-center text-xs font-medium capitalize">{m.label}</div><div className="text-center text-sm font-bold">{m.potential.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div className="mt-1 text-center text-[11px] text-emerald-700">Pronto {m.ready.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div className="text-center text-[11px] text-amber-700">Pendente {m.pending.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div>)}</div></div>
    <div className="mb-6"><div className="mb-3"><h2 className="font-semibold text-slate-900">Potencial por tratamento</h2><p className="text-sm text-slate-500">Separação dos registros que já possuem enquadramento calculável nas regras parametrizadas.</p></div><div className="grid gap-4 lg:grid-cols-2">{treatmentSummary.map(t=><div key={t.type} className="rounded-xl border bg-white p-5"><div className="flex items-start justify-between gap-4"><div><div className="font-semibold">{t.label}</div><div className="text-xs text-slate-500">{t.records} registro(s) enquadrado(s)</div></div><div className="text-right"><div className="text-xs text-slate-500">Potencial</div><div className="text-xl font-bold">{t.potential.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div></div><div className="mt-4 grid grid-cols-2 gap-3"><div className="rounded-lg bg-emerald-50 p-3"><div className="text-xs text-emerald-700">Pronto</div><div className="font-semibold text-emerald-950">{t.readyValue.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div className="text-xs text-emerald-700">{t.ready} registro(s)</div></div><div className="rounded-lg bg-amber-50 p-3"><div className="text-xs text-amber-700">Pendente calculável</div><div className="font-semibold text-amber-950">{t.pendingValue.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div><div className="text-xs text-amber-700">{t.pending} registro(s)</div></div></div></div>)}</div></div>
    <div className="mb-6 overflow-hidden rounded-xl border bg-white"><div className="border-b p-5"><h2 className="font-semibold">Conferência do potencial financeiro</h2><p className="mt-1 text-sm text-slate-500">Registro, paciente, enquadramento e pendência encontrada.</p></div><div className="divide-y">{classified.map(item=><div key={item.row.id} className="grid gap-2 p-4 md:grid-cols-[1.3fr_1fr_1fr_1.5fr_1fr]"><div><b>{item.patient}</b><div className="text-xs text-slate-500">{item.row.procedure?.code||'Sem procedimento'}</div></div><div className="text-sm">{item.distance?item.distance.toLocaleString('pt-BR')+' km':'Sem distância'}</div><div className="text-sm">{item.row.status}</div><div className="text-sm"><div>{item.issue||'Enquadrado na regra parametrizada'}</div><div className="mt-2 flex flex-wrap gap-2">{item.row.request_id&&<Link href={`/solicitacoes?request=${item.row.request_id}`} className="rounded border px-2 py-1 text-xs font-medium">Abrir solicitação</Link>}<Link href={`/producao?production=${item.row.id}`} className="rounded border px-2 py-1 text-xs font-medium">Abrir produção</Link></div></div><div className="text-sm font-semibold md:text-right">{item.rule?item.value.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'—'}</div></div>)}</div></div>
    <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5"><div className="flex items-center gap-2 font-semibold text-amber-900"><AlertTriangle size={18}/>Fila de pendências</div><div className="mt-3 space-y-2 text-sm text-amber-900">{detailed.filter(x=>x.issue).length===0?<div>Nenhuma pendência identificada.</div>:detailed.filter(x=>x.issue).slice(0,10).map(x=><div key={x.row.id}>• <b>{x.patient}</b>: {x.issue}</div>)}</div></div>
