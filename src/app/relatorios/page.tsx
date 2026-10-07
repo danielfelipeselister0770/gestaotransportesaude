@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDownRight, ArrowUpRight, BarChart3, Download, FileSpreadsheet, Fuel, Gauge, Search, Trophy, Wrench, type LucideIcon } from 'lucide-react';
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, BarChart3, Download, FileSpreadsheet, Fuel, Gauge, Search, Trophy, Wrench, type LucideIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
@@ -160,7 +160,17 @@ export default function RelatoriosPage() {
     return { trips: previousTrips.length, km, totalCost: fuelCost + maintenanceCost };
   }, [previousTrips, previousFuelings, previousMaintenances]);
 
-  const ranking = useMemo(() => reports.filter((r) => r.trips > 0 || r.totalCost > 0).sort((a, b) => b.totalCost - a.totalCost).slice(0, 5), [reports]);
+  const ranking = useMemo(() => [...reports].filter((r) => r.trips > 0 || r.totalCost > 0).sort((a, b) => b.totalCost - a.totalCost).slice(0, 5), [reports]);
+  const activeReports = reports.filter((r) => r.km > 0);
+  const fleetAverageCostPerKm = activeReports.length > 0 ? activeReports.reduce((sum, r) => sum + r.costPerKm, 0) / activeReports.length : 0;
+  const managementAlerts = useMemo(() => reports.flatMap((r) => {
+    const alerts: string[] = [];
+    if (r.totalCost > 0 && r.km === 0) alerts.push(`${r.vehicle.plate}: possui custos no período, mas nenhuma quilometragem registrada.`);
+    if (r.km > 0 && fleetAverageCostPerKm > 0 && r.costPerKm > fleetAverageCostPerKm * 1.5) alerts.push(`${r.vehicle.plate}: custo por km está mais de 50% acima da média da frota.`);
+    if (r.trips > 0 && r.completedTrips / r.trips < 0.7) alerts.push(`${r.vehicle.plate}: menos de 70% das viagens do período foram concluídas.`);
+    if (r.maintenanceCost > 0 && r.totalCost > 0 && r.maintenanceCost / r.totalCost >= 0.6) alerts.push(`${r.vehicle.plate}: manutenção representa 60% ou mais do custo do veículo.`);
+    return alerts;
+  }).slice(0, 8), [reports, fleetAverageCostPerKm]);
 
   function variation(current: number, previous: number) {
     if (previous === 0) return current === 0 ? 0 : null;
@@ -253,6 +263,18 @@ export default function RelatoriosPage() {
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Wrench size={18} /> Manutenção</div><div className="mt-3 text-xl font-bold">{money(totals.maintenanceCost)}</div><div className="text-sm text-slate-500">Serviços não cancelados</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} /> Operação</div><div className="mt-3 text-xl font-bold">{totals.completedTrips}/{totals.trips}</div><div className="text-sm text-slate-500">viagens concluídas</div></div>
           </div>
+
+          <div className="mb-6 grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Veículos utilizados</div><div className="mt-2 text-xl font-bold">{reports.filter((r) => r.trips > 0).length}/{vehicles.length}</div><div className="text-xs text-slate-500">com viagens no período</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Média da frota por KM</div><div className="mt-2 text-xl font-bold">{money(fleetAverageCostPerKm)}</div><div className="text-xs text-slate-500">média entre veículos com KM registrado</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Ocupação média</div><div className="mt-2 text-xl font-bold">{totals.completedTrips > 0 ? (totals.passengers / totals.completedTrips).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}</div><div className="text-xs text-slate-500">passageiros por viagem concluída</div></div>
+          </div>
+
+          {managementAlerts.length > 0 && <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+            <div className="mb-3 flex items-center gap-2 font-semibold text-amber-900"><AlertTriangle size={18} /> Alertas gerenciais</div>
+            <div className="space-y-2 text-sm text-amber-900">{managementAlerts.map((alert) => <div key={alert}>• {alert}</div>)}</div>
+            <div className="mt-3 text-xs text-amber-700">Alertas indicativos baseados nos registros do período; devem ser analisados pelo gestor antes de qualquer decisão.</div>
+          </div>}
 
           {ranking.length > 0 && <div className="mb-6 rounded-xl border bg-white p-5">
             <div className="mb-4 flex items-center gap-2 font-semibold"><Trophy size={18} /> Ranking de custo por veículo</div>
