@@ -194,6 +194,17 @@ export default function ConfiguracoesPage() {
     setSaving(false);
   }
 
+  async function resetPassword(profile: Profile) {
+    const password = window.prompt('Digite uma senha temporária com no mínimo 8 caracteres para ' + profile.name + ':');
+    if (!password) return;
+    if (password.length < 8) { setMessage('A senha temporária deve ter pelo menos 8 caracteres.'); return; }
+    setSaving(true); setMessage('');
+    const response = await fetch('/api/usuarios', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reset_password', userId: profile.id, password }) });
+    const result = await response.json().catch(() => ({}));
+    setMessage(response.ok ? 'Senha temporária definida. O usuário deverá trocá-la no próximo acesso.' : (result.error ?? 'Não foi possível redefinir a senha.'));
+    setSaving(false);
+  }
+
   async function deleteUser(profile: Profile) {
     if (profile.id === currentUserId) {
       setMessage('Você não pode excluir seu próprio usuário.');
@@ -358,6 +369,7 @@ export default function ConfiguracoesPage() {
                                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${profile.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{profile.active ? 'Ativo' : 'Inativo'}</span>
                                   <div className="flex items-center gap-2">
                                     <button onClick={() => openEdit(profile)} className="rounded-lg border p-2" title="Editar"><Pencil size={16} /></button>
+                                    {isAdmin && profile.id !== currentUserId && <button onClick={() => resetPassword(profile)} disabled={saving} className="rounded-lg border px-3 py-2 text-xs font-medium disabled:opacity-50" title="Redefinir senha">Redefinir senha</button>}
                                     {profile.role !== 'ADMIN' && profile.id !== currentUserId && <button onClick={() => deleteUser(profile)} disabled={saving} className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 disabled:opacity-50" title="Excluir usuário"><Trash2 size={16} /></button>}
                                   </div>
                                 </div>
