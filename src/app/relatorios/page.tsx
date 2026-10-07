@@ -19,6 +19,9 @@ type VehicleReport = {
   fuelCost: number;
   maintenanceCost: number;
   totalCost: number;
+  costPerKm: number;
+  costPerTrip: number;
+  costPerPassenger: number;
 };
 
 function monthStart(offset: number) {
@@ -114,6 +117,9 @@ export default function RelatoriosPage() {
         fuelCost,
         maintenanceCost,
         totalCost: fuelCost + maintenanceCost,
+        costPerKm: km > 0 ? (fuelCost + maintenanceCost) / km : 0,
+        costPerTrip: vehicleTrips.length > 0 ? (fuelCost + maintenanceCost) / vehicleTrips.length : 0,
+        costPerPassenger: passengers > 0 ? (fuelCost + maintenanceCost) / passengers : 0,
       };
     });
   }, [vehicles, trips, fuelings, maintenances, passengerCounts]);
@@ -135,10 +141,10 @@ export default function RelatoriosPage() {
   }), { trips: 0, completedTrips: 0, passengers: 0, km: 0, liters: 0, fuelCost: 0, maintenanceCost: 0, totalCost: 0 });
 
   function exportCsv() {
-    const header = ['Veículo','Viagens','Concluídas','Passageiros','KM rodados','Litros','Custo combustível','Custo manutenção','Custo total'];
+    const header = ['Veículo','Viagens','Concluídas','Passageiros','KM rodados','Litros','Custo combustível','Custo manutenção','Custo total','Custo/KM','Custo/viagem','Custo/passageiro'];
     const lines = filtered.map((r) => [
       r.vehicle.plate, r.trips, r.completedTrips, r.passengers, r.km, r.liters.toFixed(2),
-      r.fuelCost.toFixed(2), r.maintenanceCost.toFixed(2), r.totalCost.toFixed(2),
+      r.fuelCost.toFixed(2), r.maintenanceCost.toFixed(2), r.totalCost.toFixed(2), r.costPerKm.toFixed(2), r.costPerTrip.toFixed(2), r.costPerPassenger.toFixed(2),
     ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(';'));
     const csv = '\uFEFF' + [header.join(';'), ...lines].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -184,6 +190,13 @@ export default function RelatoriosPage() {
             ))}
           </div>
 
+          <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo médio por KM</div><div className="mt-2 text-xl font-bold">{money(totals.km > 0 ? totals.totalCost / totals.km : 0)}</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por viagem</div><div className="mt-2 text-xl font-bold">{money(totals.trips > 0 ? totals.totalCost / totals.trips : 0)}</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por passageiro</div><div className="mt-2 text-xl font-bold">{money(totals.passengers > 0 ? totals.totalCost / totals.passengers : 0)}</div></div>
+            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Taxa de conclusão</div><div className="mt-2 text-xl font-bold">{totals.trips > 0 ? ((totals.completedTrips / totals.trips) * 100).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}%</div></div>
+          </div>
+
           <div className="mb-6 grid gap-4 lg:grid-cols-3">
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Fuel size={18} /> Combustível</div><div className="mt-3 text-xl font-bold">{money(totals.fuelCost)}</div><div className="text-sm text-slate-500">{totals.liters.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} litros</div></div>
             <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Wrench size={18} /> Manutenção</div><div className="mt-3 text-xl font-bold">{money(totals.maintenanceCost)}</div><div className="text-sm text-slate-500">Serviços não cancelados</div></div>
@@ -204,7 +217,7 @@ export default function RelatoriosPage() {
                     <tr>
                       <th className="px-4 py-3">Veículo</th><th className="px-4 py-3">Viagens</th><th className="px-4 py-3">Passageiros</th>
                       <th className="px-4 py-3">KM</th><th className="px-4 py-3">Litros</th><th className="px-4 py-3">Combustível</th>
-                      <th className="px-4 py-3">Manutenção</th><th className="px-4 py-3">Total</th>
+                      <th className="px-4 py-3">Manutenção</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">R$/KM</th><th className="px-4 py-3">R$/Viagem</th><th className="px-4 py-3">R$/Passageiro</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -217,7 +230,7 @@ export default function RelatoriosPage() {
                         <td className="px-4 py-3">{r.liters.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}</td>
                         <td className="px-4 py-3">{money(r.fuelCost)}</td>
                         <td className="px-4 py-3">{money(r.maintenanceCost)}</td>
-                        <td className="px-4 py-3 font-semibold">{money(r.totalCost)}</td>
+                        <td className="px-4 py-3 font-semibold">{money(r.totalCost)}</td><td className="px-4 py-3">{money(r.costPerKm)}</td><td className="px-4 py-3">{money(r.costPerTrip)}</td><td className="px-4 py-3">{money(r.costPerPassenger)}</td>
                       </tr>
                     ))}
                   </tbody>
