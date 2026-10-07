@@ -58,7 +58,7 @@ export default function OcorrenciasPage() {
     if (vehicleResult.error) setMessage(`Erro ao carregar veículos: ${vehicleResult.error.message}`);
     else setVehicles((vehicleResult.data ?? []) as Vehicle[]);
     if (tripResult.error) setMessage(`Erro ao carregar viagens: ${tripResult.error.message}`);
-    else setTrips((tripResult.data ?? []) as Trip[]);
+    else setTrips((tripResult.data ?? []) as unknown as Trip[]);
     if(!driverResult.error)setDrivers((driverResult.data??[]) as Driver[]);if(!patientResult.error)setPatients((patientResult.data??[]) as Patient[]);
     setLoading(false);
   }
