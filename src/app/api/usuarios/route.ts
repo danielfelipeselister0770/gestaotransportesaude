@@ -47,6 +47,9 @@ export async function POST(request: Request) {
 
   const action = body?.action ?? 'create';
   const admin = adminClient();
+  const recordHistory = async (targetUserId: string, municipalityId: string | null, historyAction: string, details: Record<string, unknown> = {}) => {
+    await admin.from('user_admin_history').insert({ target_user_id: targetUserId, municipality_id: municipalityId, actor_user_id: currentProfile.id, action: historyAction, details });
+  };
 
   if (action === 'delete') {
     const userId = body?.userId?.trim();
@@ -64,6 +67,7 @@ export async function POST(request: Request) {
     if (target.role === 'ADMIN') return NextResponse.json({ error: 'Usuários ADMIN não podem ser excluídos por esta tela.' }, { status: 400 });
 
     // Desvincula relações operacionais antes de remover a conta Auth.
+    await recordHistory(userId, target.municipality_id, 'DELETE', { name: target.name, role: target.role });
     await admin.from('drivers').update({ profile_id: null, manager_id: null }).or(`profile_id.eq.${userId},manager_id.eq.${userId}`);
 
     const { error } = await admin.auth.admin.deleteUser(userId);
@@ -83,6 +87,7 @@ export async function POST(request: Request) {
     if (authError) return NextResponse.json({ error: 'Não foi possível redefinir a senha: ' + authError.message }, { status: 400 });
     const { error: profileError } = await admin.from('profiles').update({ must_change_password: true }).eq('id', userId);
     if (profileError) return NextResponse.json({ error: 'Senha redefinida, mas não foi possível exigir a troca no próximo acesso.' }, { status: 500 });
+    await recordHistory(userId, null, 'RESET_PASSWORD');
     return NextResponse.json({ ok: true, message: 'Senha temporária definida. O usuário deverá trocá-la no próximo acesso.' });
   }
 
@@ -105,6 +110,7 @@ export async function POST(request: Request) {
       active: body?.active !== false,
     }).eq('id', userId);
     if (error) return NextResponse.json({ error: 'Não foi possível atualizar o usuário: ' + error.message }, { status: 400 });
+    await recordHistory(userId, nextMunicipality, 'UPDATE', { role: nextRole, active: body?.active !== false });
     return NextResponse.json({ ok: true, message: 'Usuário atualizado com segurança.' });
   }
 
@@ -177,6 +183,8 @@ export async function POST(request: Request) {
       }
     }
   }
+
+  await recordHistory(authData.user.id, municipalityId, 'CREATE', { role, name });
 
   return NextResponse.json({
     ok: true,
