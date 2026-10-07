@@ -32,6 +32,8 @@ export default function EstablishmentsPage() {
   const [municipalityId, setMunicipalityId] = useState<string | null>(null);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [search, setSearch] = useState('');
+  const [statusFilter,setStatusFilter]=useState<'ALL'|'ACTIVE'|'INACTIVE'>('ALL');
+  const [municipalityFilter,setMunicipalityFilter]=useState('ALL');
   const [editing, setEditing] = useState<Establishment | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -155,6 +157,9 @@ export default function EstablishmentsPage() {
       return;
     }
 
+    const duplicate=establishments.find(item=>item.id!==editing?.id&&item.municipality_id===selectedMunicipalityId&&cnes&&item.cnes===cnes);
+    if(duplicate){setMessage('Já existe um estabelecimento com este CNES nesta prefeitura.');setSaving(false);return;}
+
     const result = editing
       ? await supabase.from('health_units').update({ ...payload, municipality_id: selectedMunicipalityId }).eq('id', editing.id)
       : await supabase.from('health_units').insert({ ...payload, municipality_id: selectedMunicipalityId });
@@ -172,11 +177,11 @@ export default function EstablishmentsPage() {
 
   const filtered = establishments.filter((item) => {
     const q = search.toLowerCase();
-    return item.name.toLowerCase().includes(q)
-      || (item.cnes ?? '').includes(q)
-      || (item.cnpj ?? '').includes(q)
-      || (item.city ?? '').toLowerCase().includes(q);
+    const hit=item.name.toLowerCase().includes(q)||(item.cnes??'').includes(q)||(item.cnpj??'').includes(q)||(item.city??'').toLowerCase().includes(q);
+    return hit&&(statusFilter==='ALL'||(statusFilter==='ACTIVE'?item.active:!item.active))&&(municipalityFilter==='ALL'||item.municipality_id===municipalityFilter);
   });
+
+  const counts={total:establishments.length,active:establishments.filter(x=>x.active).length,cnes:establishments.filter(x=>x.cnes).length,inactive:establishments.filter(x=>!x.active).length};
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -196,10 +201,8 @@ export default function EstablishmentsPage() {
 
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-          <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
-            <Search size={18} className="text-slate-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nome, CNES, CNPJ ou cidade" className="w-full outline-none text-sm" />
-          </div>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Total" value={counts.total}/><Stat label="Ativos" value={counts.active}/><Stat label="Com CNES" value={counts.cnes}/><Stat label="Inativos" value={counts.inactive}/></div>
+          <div className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_220px]"><div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNES, CNPJ ou cidade" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select>{role==='ADMIN'&&<select value={municipalityFilter} onChange={e=>setMunicipalityFilter(e.target.value)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todas as prefeituras</option>{municipalities.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select>}</div>
 
           {showForm && (
             <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
@@ -298,3 +301,5 @@ export default function EstablishmentsPage() {
     </main>
   );
 }
+
+function Stat({label,value}:{label:string;value:number}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold">{value}</div></div>}
