@@ -33,7 +33,7 @@ export async function POST(request: Request) {
   if (!currentProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
 
   const body = await request.json().catch(() => null) as {
-    action?: 'create' | 'delete' | 'update';
+    action?: 'create' | 'delete' | 'update' | 'reset_password';
     userId?: string;
     municipalityId?: string;
     name?: string;
@@ -70,6 +70,20 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: 'Não foi possível excluir o usuário: ' + error.message }, { status: 400 });
 
     return NextResponse.json({ ok: true, message: 'Usuário excluído com sucesso.' });
+  }
+
+  if (action === 'reset_password') {
+    const userId = body?.userId?.trim();
+    const password = body?.password ?? '';
+    if (!userId || password.length < 8) return NextResponse.json({ error: 'Usuário e senha temporária de no mínimo 8 caracteres são obrigatórios.' }, { status: 400 });
+    if (currentProfile.role !== 'ADMIN') return NextResponse.json({ error: 'Apenas o administrador pode redefinir senhas.' }, { status: 403 });
+    const { data: target } = await admin.from('profiles').select('id').eq('id', userId).maybeSingle();
+    if (!target) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+    const { error: authError } = await admin.auth.admin.updateUserById(userId, { password });
+    if (authError) return NextResponse.json({ error: 'Não foi possível redefinir a senha: ' + authError.message }, { status: 400 });
+    const { error: profileError } = await admin.from('profiles').update({ must_change_password: true }).eq('id', userId);
+    if (profileError) return NextResponse.json({ error: 'Senha redefinida, mas não foi possível exigir a troca no próximo acesso.' }, { status: 500 });
+    return NextResponse.json({ ok: true, message: 'Senha temporária definida. O usuário deverá trocá-la no próximo acesso.' });
   }
 
   if (action === 'update') {
