@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CalendarDays, CarFront, CheckCircle2, ChevronDown, ChevronUp, LogOut, MapPin, Play, RefreshCw, UserRound } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CarFront, Check, CheckCircle2, ChevronDown, ChevronUp, LogOut, MapPin, Play, RefreshCw, UserRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Trip = {
@@ -14,6 +14,7 @@ type Trip = {
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   vehicle: { plate: string } | null;
   initial_mileage?: number | null;
+  observations?: string | null;
 };
 
 type Passenger = {
@@ -21,6 +22,7 @@ type Passenger = {
   boarding_status: string;
   companion: boolean;
   patient: { name: string } | null;
+  observations?: string | null;
 };
 
 const statusLabel: Record<Trip['status'], string> = {
@@ -42,6 +44,8 @@ export default function DriverPortalPage() {
   const [message, setMessage] = useState('');
   const [viewMode, setViewMode] = useState<'TODAY' | 'SCHEDULE'>('TODAY');
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
+  const [occurrenceType,setOccurrenceType]=useState('ATRASO');
+  const [occurrenceDescription,setOccurrenceDescription]=useState('');
 
   async function loadData() {
     setLoading(true);
@@ -78,7 +82,7 @@ export default function DriverPortalPage() {
 
     let tripsQuery = supabase
       .from('trips')
-      .select('id,date,departure_time,origin,destination,status,initial_mileage,vehicle:vehicles(plate)')
+      .select('id,date,departure_time,origin,destination,status,initial_mileage,observations,vehicle:vehicles(plate)')
       .eq('driver_id', driver.id)
       .in('status', ['SCHEDULED', 'IN_PROGRESS']);
 
@@ -119,7 +123,7 @@ export default function DriverPortalPage() {
 
     const { data, error } = await supabase
       .from('trip_passengers')
-      .select('id,boarding_status,companion,patient:patients(name)')
+      .select('id,boarding_status,companion,observations,patient:patients(name)')
       .eq('trip_id', tripId);
 
     if (error) {
@@ -131,6 +135,26 @@ export default function DriverPortalPage() {
       ...row,
       patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
     })) as Passenger[]);
+  }
+
+  async function updatePassenger(passenger: Passenger, boardingStatus: 'BOARDED'|'NO_SHOW') {
+    if (!selectedTripData || selectedTripData.status !== 'IN_PROGRESS') { setMessage('Inicie a viagem antes de registrar embarques.'); return; }
+    setActionLoading(passenger.id); setMessage('');
+    const response=await fetch('/api/motorista/viagem/passageiro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tripId:selectedTripData.id,passengerId:passenger.id,boardingStatus})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)setMessage(result.error??'Não foi possível atualizar o passageiro.');
+    else setPassengers(current=>current.map(p=>p.id===passenger.id?{...p,boarding_status:boardingStatus}:p));
+    setActionLoading(null);
+  }
+
+  async function addOccurrence(event:FormEvent<HTMLFormElement>){
+    event.preventDefault(); if(!selectedTripData||!occurrenceDescription.trim())return;
+    setActionLoading('occurrence'); setMessage('');
+    const response=await fetch('/api/motorista/viagem/ocorrencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tripId:selectedTripData.id,type:occurrenceType,description:occurrenceDescription.trim()})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok)setMessage(result.error??'Não foi possível registrar a ocorrência.');
+    else{setOccurrenceDescription('');setMessage('Ocorrência registrada e enviada para a gestão.');}
+    setActionLoading(null);
   }
 
   async function changeTripStatus(trip: Trip, action: 'START' | 'FINISH') {
@@ -365,12 +389,19 @@ export default function DriverPortalPage() {
                       <div className="font-medium">{passenger.patient?.name ?? 'Paciente não informado'}</div>
                       <div className="text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                     </div>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">{passenger.boarding_status}</span>
+                    <div className="flex flex-wrap justify-end gap-2"><button disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button><button disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border'}`}><X size={13} className="mr-1 inline"/> Faltou</button></div>
                   </div>
                 ))}
               </div>
             )}
           </div>
+        )}
+
+        {selectedTripData && (
+          <form onSubmit={addOccurrence} className="rounded-xl border bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center gap-2"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
+            <div className="grid gap-3 md:grid-cols-[180px_1fr_auto]"><select value={occurrenceType} onChange={e=>setOccurrenceType(e.target.value)} className="rounded-lg border px-3 py-2.5 text-sm"><option value="ATRASO">Atraso</option><option value="AVARIA">Avaria</option><option value="ACIDENTE">Acidente</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option></select><input value={occurrenceDescription} onChange={e=>setOccurrenceDescription(e.target.value)} required placeholder="Descreva o ocorrido..." className="rounded-lg border px-3 py-2.5 text-sm"/><button disabled={actionLoading==='occurrence'} className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white">Registrar</button></div>
+          </form>
         )}
 
       </section>
