@@ -4,6 +4,8 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   Archive,
+  ArrowRight,
+  FileUp,
   CheckCircle2,
   ClipboardList,
   Edit3,
@@ -395,23 +397,22 @@ export default function PatientsPage() {
     municipalities.find((m) => m.id === id)?.name ?? 'Prefeitura não identificada';
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
       <section>
-        <header className="flex flex-col gap-4 border-b bg-white px-6 py-5 md:flex-row md:items-center md:justify-between">
+        <header className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
           <div>
-            <div className="flex items-center gap-2 text-sm text-slate-500"><UserRound size={16} /> Cadastro e acompanhamento</div>
-            <h1 className="mt-1 text-2xl font-bold">Pacientes</h1>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><UserRound size={15} /> Cadastro e acompanhamento</div>\n            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Pacientes</h1>
             <p className="mt-1 text-sm text-slate-500">Cadastro completo, documentos SUS, necessidades de transporte e histórico.</p>
           </div>
-          <div className="flex gap-2"><Link href="/pacientes/importar" className="flex items-center justify-center gap-2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Importar CSV</Link><button onClick={openNewPatient} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">
+          <div className="flex flex-wrap gap-2"><Link href="/pacientes/importar" className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-teal-200 hover:text-teal-700"><FileUp size={17}/> Importar arquivo</Link><button onClick={openNewPatient} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
             <Plus size={18} /> Novo paciente
           </button></div>
         </header>
 
-        <div className="p-6">
+        <div className="p-5 lg:p-8">
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
-          <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <Indicator icon={<ClipboardList size={18} />} label="Total de pacientes" value={indicators.total} />
             <Indicator icon={<CheckCircle2 size={18} />} label="Pacientes ativos" value={indicators.active} />
             <Indicator icon={<UserRound size={18} />} label="Com CNS" value={indicators.cns} />
@@ -419,7 +420,7 @@ export default function PatientsPage() {
             <Indicator icon={<Archive size={18} />} label="Cadastro incompleto" value={indicators.incomplete} />
           </div>
 
-          <div className="mb-4 rounded-xl border bg-white p-4 shadow-sm">
+          <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_1px_2px_rgba(15,23,42,.04)]">
             <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><Search size={17} /> Busca e filtros</div>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
               <label className="lg:col-span-2">
@@ -428,7 +429,7 @@ export default function PatientsPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Nome, CPF, CNS ou telefone..."
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                 />
               </label>
               <SelectFilter value={statusFilter} onChange={(v) => setStatusFilter(v as typeof statusFilter)} options={[['ACTIVE','Ativos'],['INACTIVE','Inativos'],['ALL','Todos']]} />
@@ -453,8 +454,8 @@ export default function PatientsPage() {
             <span>Busca aplicada sobre os registros permitidos pelo seu acesso.</span>
           </div>
 
-          <div className="overflow-hidden rounded-xl border bg-white shadow-sm">
-            <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_180px] gap-4 border-b bg-slate-50 px-5 py-3 text-xs font-semibold uppercase text-slate-500 lg:grid">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,.04)]">
+            <div className="hidden grid-cols-[2fr_1fr_1fr_1fr_180px] gap-4 border-b border-slate-200 bg-slate-50/80 px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500 lg:grid">
               <span>Paciente</span><span>CPF</span><span>CNS</span><span>Telefone</span><span>Ações</span>
             </div>
 
@@ -464,7 +465,7 @@ export default function PatientsPage() {
               <div className="p-8 text-center text-sm text-slate-500">Nenhum paciente encontrado com os filtros atuais.</div>
             ) : (
               filtered.map((patient) => (
-                <div key={patient.id} className="grid gap-3 border-b px-5 py-4 last:border-0 lg:grid-cols-[2fr_1fr_1fr_1fr_180px] lg:items-center lg:gap-4">
+                <div key={patient.id} className="grid gap-3 border-b border-slate-100 px-5 py-4 transition last:border-0 hover:bg-slate-50/70 lg:grid-cols-[2fr_1fr_1fr_1fr_180px] lg:items-center lg:gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium text-slate-800">{patient.name}</span>
@@ -581,12 +582,12 @@ function PatientForm({
 
       <label className="mt-5 block">
         <span className="mb-1.5 block text-sm font-medium text-slate-700">Observações</span>
-        <textarea name="observations" defaultValue={value('observations')} rows={3} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200" />
+        <textarea name="observations" defaultValue={value('observations')} rows={3} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
       </label>
 
       <div className="mt-5 flex justify-end gap-2">
         <button type="button" onClick={onCancel} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-        <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60">
+        <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">
           {saving ? 'Salvando...' : patient ? 'Salvar alterações' : 'Cadastrar paciente'}
         </button>
       </div>
@@ -700,7 +701,7 @@ function PatientDetail({
           <button onClick={onToggleActive} className="rounded-lg border px-4 py-2 text-sm">
             {patient.active ? 'Inativar paciente' : 'Reativar paciente'}
           </button>
-          <button onClick={onEdit} className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Edit3 size={15} /> Editar ficha</button>
+          <button onClick={onEdit} className="flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800"><Edit3 size={15} /> Editar ficha</button>
         </div>
       </div>
     </div>
@@ -709,9 +710,8 @@ function PatientDetail({
 
 function Indicator({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <div className="mb-2 flex items-center gap-2 text-slate-500">{icon}<span className="text-xs font-medium">{label}</span></div>
-      <div className="text-2xl font-bold text-slate-900">{value}</div>
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,.04)]">
+      <div className="mb-3 flex items-center justify-between text-slate-500"><span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</span><ArrowRight size={15} className="text-slate-300"/></div>\n      <div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div>
     </div>
   );
 }
@@ -747,7 +747,7 @@ function Field({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span>
-      <input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue ?? ''} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200" />
+      <input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue ?? ''} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
     </label>
   );
 }
@@ -766,7 +766,7 @@ function SelectField({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span>
-      <select name={name} defaultValue={defaultValue ?? ''} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200">
+      <select name={name} defaultValue={defaultValue ?? ''} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">
         {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
       </select>
     </label>
@@ -774,7 +774,7 @@ function SelectField({
 }
 
 function SelectFilter({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: [string, string][] }) {
-  return <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200">{options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select>;
+  return <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">{options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select>;
 }
 
 function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked?: boolean }) {
