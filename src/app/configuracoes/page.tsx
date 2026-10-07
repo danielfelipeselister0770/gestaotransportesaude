@@ -1,7 +1,8 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Pencil, Plus, Save, ShieldCheck, Trash2, UserCog, X } from 'lucide-react';
+import { History, Pencil, Plus, Save, ShieldCheck, Trash2, UserCog, X } from 'lucide-react';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
 type Role = 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA';
@@ -296,6 +297,7 @@ export default function ConfiguracoesPage() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
             <p className="text-sm text-slate-500">Perfil, permissões e usuários do sistema.</p>
+            {(isAdmin || currentProfile?.role === 'GESTOR') && <Link href="/configuracoes/historico" className="mt-3 inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium"><History size={16} /> Histórico administrativo</Link>}
           </div>
 
           {message && <div className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
