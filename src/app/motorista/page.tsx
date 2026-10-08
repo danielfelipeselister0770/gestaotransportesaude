@@ -160,7 +160,7 @@ export default function DriverPortalPage() {
   }
 
   async function loadPassengers(tripId: string, preserveMessage = false) {
-    if (actionInProgressRef.current) return;
+    if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++passengerRequestId.current;
     selectedTripRef.current = tripId;
     setSelectedTrip(tripId);
@@ -183,7 +183,7 @@ export default function DriverPortalPage() {
       if (requestId !== passengerRequestId.current) return;
       if (error) {
         setPassengersError(true);
-        setMessage(`Não foi possível carregar os passageiros: ${error.message}`);
+        setMessage(preserveMessage ? 'A programação foi sincronizada, mas não foi possível atualizar os passageiros. Tente novamente na lista abaixo.' : `Não foi possível carregar os passageiros: ${error.message}`);
         return;
       }
 
@@ -194,7 +194,7 @@ export default function DriverPortalPage() {
     } catch {
       if (requestId === passengerRequestId.current) {
         setPassengersError(true);
-        setMessage('Falha de conexão ao carregar passageiros. Verifique sua internet e selecione a viagem novamente.');
+        setMessage(preserveMessage ? 'A programação foi sincronizada, mas a conexão falhou ao atualizar os passageiros. Tente novamente na lista abaixo.' : 'Falha de conexão ao carregar passageiros. Verifique sua internet e selecione a viagem novamente.');
       }
     } finally {
       if (requestId === passengerRequestId.current) setPassengersLoading(false);
