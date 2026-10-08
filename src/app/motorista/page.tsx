@@ -181,8 +181,10 @@ export default function DriverPortalPage() {
     if (switchingTrip) setPassengers([]);
     setPassengersLoading(true);
     setPassengersError(false);
-    if (!preserveMessage) setMessage('');
-    setMessageTone('warning');
+    if (!preserveMessage) {
+      setMessage('');
+      setMessageTone('warning');
+    }
 
     const trip = trips.find((item) => item.id === tripId);
     if (trip?.status === 'IN_PROGRESS' && trip.initial_mileage != null) {
@@ -197,6 +199,7 @@ export default function DriverPortalPage() {
 
       if (requestId !== passengerRequestId.current || (parentRequestId !== undefined && parentRequestId !== tripsRequestId.current)) return;
       if (error) {
+        setMessageTone('warning');
         setPassengersError(true);
         setMessage(preserveMessage ? 'A programação foi sincronizada, mas não foi possível atualizar os passageiros. Tente novamente na lista abaixo.' : `Não foi possível carregar os passageiros: ${error.message}`);
         return;
@@ -208,6 +211,7 @@ export default function DriverPortalPage() {
       })) as Passenger[]);
     } catch {
       if (requestId === passengerRequestId.current && (parentRequestId === undefined || parentRequestId === tripsRequestId.current)) {
+        setMessageTone('warning');
         setPassengersError(true);
         setMessage(preserveMessage ? 'A programação foi sincronizada, mas a conexão falhou ao atualizar os passageiros. Tente novamente na lista abaixo.' : 'Falha de conexão ao carregar passageiros. Verifique sua internet e selecione a viagem novamente.');
       }
