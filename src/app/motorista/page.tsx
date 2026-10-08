@@ -61,8 +61,13 @@ export default function DriverPortalPage() {
     if (!preserveMessage) setMessage('');
 
     try {
-      const { data: authData } = await supabase.auth.getUser();
+      const { data: authData, error: authError } = await supabase.auth.getUser();
     if (requestId !== tripsRequestId.current) return;
+    if (authError) {
+      setTripsError(true);
+      setMessage('Não foi possível verificar seu acesso. Confira a conexão e tente novamente.');
+      return;
+    }
     const userId = authData.user?.id;
 
     if (!userId) {
@@ -77,9 +82,14 @@ export default function DriverPortalPage() {
       .maybeSingle();
 
     if (requestId !== tripsRequestId.current) return;
-    if (driverError || !driver) {
+    if (driverError) {
       setTripsError(true);
-      setMessage('Sua conta ainda não está vinculada a um cadastro de motorista.');
+      setMessage('Não foi possível verificar seu cadastro de motorista. Confira a conexão e tente novamente.');
+      return;
+    }
+    if (!driver) {
+      setTripsError(true);
+      setMessage('Sua conta ainda não está vinculada a um cadastro de motorista. Entre em contato com a gestão.');
       return;
     }
 
