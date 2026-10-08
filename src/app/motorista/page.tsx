@@ -59,17 +59,18 @@ export default function DriverPortalPage() {
   async function loadData(preserveMessage = false, afterConfirmedAction = false) {
     if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++tripsRequestId.current;
+    const recoveringSync = syncWarning || afterConfirmedAction;
     setLoading(true);
-    setSyncWarning(false);
+    if (!recoveringSync) setSyncWarning(false);
     setTripsError(false);
     setDriverLinkMissing(false);
     if (!preserveMessage) setMessage('');
     const reportError = (detail: string) => {
-      if (!afterConfirmedAction) setTripsError(true);
-      if (afterConfirmedAction) setSyncWarning(true);
+      if (!recoveringSync) setTripsError(true);
+      if (recoveringSync) setSyncWarning(true);
       setMessage((previous) => afterConfirmedAction
         ? `${previous} A viagem foi atualizada, mas não foi possível sincronizar a programação. Use Atualizar para tentar novamente.`
-        : detail);
+        : recoveringSync ? 'Ainda não foi possível sincronizar a programação. Confira a conexão e tente novamente.' : detail);
     };
 
     try {
@@ -98,7 +99,7 @@ export default function DriverPortalPage() {
       return;
     }
     if (!driver) {
-      if (!afterConfirmedAction) setDriverLinkMissing(true);
+      if (!recoveringSync) setDriverLinkMissing(true);
       reportError('Sua conta ainda não está vinculada a um cadastro de motorista. Entre em contato com a gestão.');
       return;
     }
@@ -135,6 +136,7 @@ export default function DriverPortalPage() {
         vehicle: Array.isArray(trip.vehicle) ? trip.vehicle[0] ?? null : trip.vehicle,
       })) as Trip[];
       setTrips(normalized);
+      setSyncWarning(false);
       if (selectedTripRef.current && !normalized.some((trip) => trip.id === selectedTripRef.current)) {
         passengerRequestId.current += 1;
         selectedTripRef.current = null;
