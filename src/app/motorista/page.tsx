@@ -138,13 +138,28 @@ export default function DriverPortalPage() {
   }
 
   async function updatePassenger(passenger: Passenger, boardingStatus: 'BOARDED'|'NO_SHOW') {
+    if (actionLoading) return;
     if (!selectedTripData || selectedTripData.status !== 'IN_PROGRESS') { setMessage('Inicie a viagem antes de registrar embarques.'); return; }
-    setActionLoading(passenger.id); setMessage('');
-    const response=await fetch('/api/motorista/viagem/passageiro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tripId:selectedTripData.id,passengerId:passenger.id,boardingStatus})});
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok)setMessage(result.error??'Não foi possível atualizar o passageiro.');
-    else setPassengers(current=>current.map(p=>p.id===passenger.id?{...p,boarding_status:boardingStatus}:p));
-    setActionLoading(null);
+    setActionLoading(passenger.id);
+    setMessage('');
+    try {
+      const response = await fetch('/api/motorista/viagem/passageiro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId: selectedTripData.id, passengerId: passenger.id, boardingStatus }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(result.error ?? 'Não foi possível atualizar o passageiro.');
+      } else {
+        setPassengers(current => current.map(p => p.id === passenger.id ? { ...p, boarding_status: boardingStatus } : p));
+        setMessage('Situação de embarque atualizada com sucesso.');
+      }
+    } catch {
+      setMessage('Falha de conexão ao atualizar o passageiro. Verifique sua internet e tente novamente.');
+    } finally {
+      setActionLoading(null);
+    }
   }
 
   async function addOccurrence(event:FormEvent<HTMLFormElement>){
