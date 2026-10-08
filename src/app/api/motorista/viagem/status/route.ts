@@ -96,15 +96,19 @@ export async function POST(request: Request) {
 
     const initialMileage = Number(vehicle.current_mileage);
 
-    const { error: updateTripError } = await admin
+    const { data: startedTrip, error: updateTripError } = await admin
       .from('trips')
       .update({ status: 'IN_PROGRESS', initial_mileage: initialMileage, started_at: new Date().toISOString() })
       .eq('id', trip.id)
-      .eq('status', 'SCHEDULED');
+      .eq('status', 'SCHEDULED')
+      .select('id')
+      .maybeSingle();
 
     if (updateTripError) {
       return NextResponse.json({ error: updateTripError.message }, { status: 400 });
     }
+
+    if (!startedTrip) return NextResponse.json({ error: 'Viagem já iniciada ou alterada. Atualize a programação.' }, { status: 409 });
 
     const { error: vehicleError } = await admin
       .from('vehicles')
