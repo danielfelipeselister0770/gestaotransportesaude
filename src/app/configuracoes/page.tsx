@@ -425,7 +425,7 @@ export default function ConfiguracoesPage() {
           {isAdmin && municipalityModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm">
               <form onSubmit={saveMunicipality} className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
-                <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }}><X size={20} /></button></div>
+                <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} aria-label="Fechar formulário da prefeitura" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button></div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm sm:col-span-2">Nome da prefeitura<input value={municipalityName} onChange={(e) => setMunicipalityName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" placeholder="Prefeitura Municipal de ..." /></label>
                   <label className="text-sm">CNPJ<input value={municipalityCnpj} onChange={(e) => setMunicipalityCnpj(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
@@ -443,7 +443,7 @@ export default function ConfiguracoesPage() {
               <form onSubmit={saveNewUser} className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
                 <div className="mb-5 flex items-center justify-between">
                   <div><h2 className="text-lg font-semibold">Novo usuário</h2><p className="text-xs text-slate-500">{municipalities.find((m) => m.id === userMunicipalityId)?.name ?? (userMunicipalityId === currentProfile?.municipality_id ? currentProfile?.name?.includes('') ? 'Minha prefeitura' : 'Minha prefeitura' : '')}</p></div>
-                  <button type="button" onClick={closeUserModal}><X size={20} /></button>
+                  <button type="button" onClick={closeUserModal} aria-label="Fechar cadastro de usuário" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm sm:col-span-2">Nome<input value={userName} onChange={(e) => setUserName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
@@ -470,18 +470,18 @@ export default function ConfiguracoesPage() {
                     <h2 className="text-lg font-semibold">Editar usuário</h2>
                     <p className="text-xs text-slate-500">{editing.name}</p>
                   </div>
-                  <button type="button" onClick={closeEdit}><X size={20} /></button>
+                  <button type="button" onClick={closeEdit} aria-label="Fechar edição de usuário" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm sm:col-span-2">Nome<input value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">CPF<input value={cpf} onChange={(e) => setCpf(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Telefone<input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
-                  <label className="text-sm">Perfil<select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={!isAdmin} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100">
+                  <label className="text-sm">Perfil<select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={!isAdmin} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100">
                     {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select><span className="mt-1 block text-xs text-slate-500">{roleDescriptions[role]}</span></label>
-                  <label className="text-sm">Prefeitura<select value={municipalityId} onChange={(e) => setMunicipalityId(e.target.value)} disabled={!isAdmin || role === 'ADMIN'} required={role !== 'ADMIN'} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100"><option value="">Selecione a prefeitura</option>{municipalities.filter((m) => m.active).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select><span className="mt-1 block text-xs text-slate-500">Gestores e operadores devem pertencer a uma prefeitura.</span></label>
-                  <label className="text-sm">Status<select value={active ? 'true' : 'false'} onChange={(e) => setActive(e.target.value === 'true')} disabled={!isAdmin} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100">
+                  <label className="text-sm">Prefeitura<select value={municipalityId} onChange={(e) => setMunicipalityId(e.target.value)} disabled={!isAdmin || role === 'ADMIN'} required={role !== 'ADMIN'} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100"><option value="">Selecione a prefeitura</option>{municipalities.filter((m) => m.active).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select><span className="mt-1 block text-xs text-slate-500">Gestores e operadores devem pertencer a uma prefeitura.</span></label>
+                  <label className="text-sm">Status<select value={active ? 'true' : 'false'} onChange={(e) => setActive(e.target.value === 'true')} disabled={!isAdmin} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100 disabled:bg-slate-100">
                     <option value="true">Ativo</option><option value="false">Inativo</option>
                   </select></label>
                 </div>
