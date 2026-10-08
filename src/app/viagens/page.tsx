@@ -386,9 +386,9 @@ export default function TripsPage() {
                 <textarea name="observations" rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/>
               </label>
 
-              <div className="mt-5 flex justify-end gap-2">
-                <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-                <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">
+              <div className="mt-6 flex flex-col-reverse gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+                <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">
                   {saving ? 'Salvando...' : 'Criar viagem'}
                 </button>
               </div>
@@ -401,9 +401,9 @@ export default function TripsPage() {
                 <h2 className="font-semibold">Solicitações aprovadas</h2>
                 <p className="text-xs text-slate-500">Selecione os passageiros que serão agrupados em uma mesma viagem.</p>
               </div>
-              <div className="flex items-center gap-2">
-                <input type="date" aria-label="Filtrar solicitações aprovadas por data" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="rounded-lg border px-3 py-2 text-sm"/>
-                <button type="button" onClick={() => dateFilter && selectByDate(dateFilter)} className="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50">Selecionar dia</button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <input type="date" aria-label="Filtrar solicitações aprovadas por data" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100 sm:w-auto"/>
+                <button type="button" disabled={!dateFilter} onClick={() => dateFilter && selectByDate(dateFilter)} className="rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">Selecionar dia</button>
               </div>
             </div>
 
@@ -411,11 +411,11 @@ export default function TripsPage() {
               requests.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma solicitação aprovada aguardando agendamento.</div> :
               <div className="divide-y">
                 {requests.filter((request) => !dateFilter || request.date === dateFilter).map((request) => (
-                  <label key={request.id} className="flex cursor-pointer items-center gap-4 px-5 py-4 transition hover:bg-teal-50/40">
-                    <input type="checkbox" checked={selectedIds.includes(request.id)} onChange={() => toggleRequest(request.id)} className="h-4 w-4 rounded border-slate-300"/>
+                  <label key={request.id} className="flex cursor-pointer items-start gap-3 px-4 py-4 transition hover:bg-teal-50/40 focus-within:bg-teal-50/50 sm:items-center sm:gap-4 sm:px-5">
+                    <input type="checkbox" checked={selectedIds.includes(request.id)} onChange={() => toggleRequest(request.id)} className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 accent-teal-700 sm:mt-0"/>
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-slate-800">{request.patient?.name ?? 'Paciente não encontrado'}</div>
-                      <div className="mt-1 text-xs text-slate-500">{request.date.split('-').reverse().join('/')} às {request.time.slice(0,5)} · {request.origin} → {request.destination}</div>
+                      <div className="mt-1 break-words text-xs leading-relaxed text-slate-500">{request.date.split('-').reverse().join('/')} às {request.time.slice(0,5)} · {request.origin} → {request.destination}</div>
                     </div>
                     <div className="hidden text-xs text-slate-500 md:block">{request.needs_companion ? 'Acompanhante' : 'Sem acompanhante'}</div>
                   </label>
