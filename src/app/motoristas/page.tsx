@@ -143,6 +143,10 @@ export default function DriversPage() {
     return d.name.toLowerCase().includes(q) || (d.cpf ?? '').toLowerCase().includes(q) || (d.cnh ?? '').toLowerCase().includes(q);
   });
 
+  const activeCount = drivers.filter(d => d.active).length;
+  const expiredCount = drivers.filter(d => expired(d)).length;
+  const accessCount = drivers.filter(d => !!d.profile_id).length;
+
   return <main className="min-h-screen bg-slate-50">
 <section className=" p-4 md:p-8"><div className="mx-auto max-w-6xl">
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -216,6 +220,7 @@ export default function DriversPage() {
             <div className="flex items-start gap-3"><div className="rounded-xl bg-teal-50 p-2 text-teal-700"><UserRound size={20}/></div><div><div className="font-semibold">{d.name}</div><div className="text-sm text-slate-500">{[d.cpf && 'CPF ' + d.cpf,d.phone,d.cnh && 'CNH ' + d.cnh,d.cnh_category && 'Cat. ' + d.cnh_category].filter(Boolean).join(' • ') || 'Sem dados complementares'}</div>{d.cnh_expiration && <div className={'mt-1 flex items-center gap-1 text-xs ' + (expired(d) ? 'font-medium text-red-600' : 'text-slate-500')}>{expired(d) && <AlertTriangle size={13}/>}CNH válida até {new Date(d.cnh_expiration + 'T12:00:00').toLocaleDateString('pt-BR')}</div>}</div></div>
             <div className="flex items-center gap-3"><span className={'rounded-full px-2.5 py-1 text-xs font-medium ' + (d.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600')}>{d.active ? 'Ativo' : 'Inativo'}</span><button onClick={() => openAccess(d)} className="flex items-center gap-1 rounded-lg border px-3 py-2 text-xs hover:bg-slate-50" title="Gerar acesso"><KeyRound size={15}/> {d.profile_id ? 'Gerar novo acesso' : 'Criar acesso'}</button><button onClick={() => openEdit(d)} className="rounded-lg border p-2 hover:bg-slate-50" title="Editar"><Pencil size={16}/></button></div>
           </div>)}</div>}
+      </div>
       </div>
     </div></section>
   </main>;
