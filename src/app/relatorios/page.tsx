@@ -324,7 +324,7 @@ export default function RelatoriosPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Ocupação média</div><div className="mt-2 text-xl font-bold">{totals.completedTrips > 0 ? (totals.passengers / totals.completedTrips).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}</div><div className="text-xs text-slate-500">passageiros por viagem concluída</div></div>
           </div>
 
-          {managementAlerts.length > 0 && <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
+          {managementAlerts.length > 0 && <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
             <div className="mb-3 flex items-center gap-2 font-semibold text-amber-900"><AlertTriangle size={18} /> Alertas gerenciais</div>
             <div className="space-y-2 text-sm text-amber-900">{managementAlerts.map((alert) => <div key={alert}>• {alert}</div>)}</div>
             <div className="mt-3 text-xs text-amber-700">Alertas indicativos baseados nos registros do período; devem ser analisados pelo gestor antes de qualquer decisão.</div>
@@ -340,26 +340,26 @@ export default function RelatoriosPage() {
             </div>
           </div>}
 
-          <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:border-teal-500 focus-within:ring-2 focus-within:ring-teal-100">
             <Search size={18} className="text-slate-400" />
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filtrar por veículo, placa ou modelo" className="w-full outline-none text-sm" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Filtrar por veículo, placa ou modelo" className="w-full bg-transparent text-sm outline-none placeholder:text-slate-400" />
           </div>
 
-          <div className="overflow-hidden rounded-xl border bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando relatório...</div> :
               filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhum dado encontrado para o período.</div> :
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-slate-50 text-left text-xs uppercase text-slate-500">
+                  <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <tr>
                       <th className="px-4 py-3">Veículo</th><th className="px-4 py-3">Viagens</th><th className="px-4 py-3">Passageiros</th>
                       <th className="px-4 py-3">KM</th><th className="px-4 py-3">Litros</th><th className="px-4 py-3">Combustível</th>
                       <th className="px-4 py-3">Manutenção</th><th className="px-4 py-3">Total</th><th className="px-4 py-3">R$/KM</th><th className="px-4 py-3">R$/Viagem</th><th className="px-4 py-3">R$/Passageiro</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y">
+                  <tbody className="divide-y divide-slate-100">
                     {filtered.map((r) => (
-                      <tr key={r.vehicle.id}>
+                      <tr key={r.vehicle.id} className="transition hover:bg-teal-50/40">
                         <td className="px-4 py-3"><div className="font-medium">{r.vehicle.plate}</div><div className="text-xs text-slate-500">{[r.vehicle.brand, r.vehicle.model].filter(Boolean).join(' ')}</div></td>
                         <td className="px-4 py-3">{r.completedTrips}/{r.trips}</td>
                         <td className="px-4 py-3">{r.passengers}</td>
