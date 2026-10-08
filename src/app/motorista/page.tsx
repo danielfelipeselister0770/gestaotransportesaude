@@ -335,6 +335,12 @@ export default function DriverPortalPage() {
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        if (action === 'FINISH' && typeof result.error === 'string' && result.error.startsWith('Viagem concluída')) {
+          setSyncWarning(true);
+          setMessageTone('warning');
+          setMessage(`${result.error} Sincronize a programação antes de registrar novas ações.`);
+          return;
+        }
         setMessage(result.error ?? 'Não foi possível atualizar a viagem.');
         return;
       }
