@@ -305,14 +305,14 @@ export default function TripDetailPage() {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <section className="mx-auto max-w-6xl p-6">
+      <section className="mx-auto max-w-6xl p-4 sm:p-6 lg:p-8">
         <Link href="/viagens" className="mb-5 inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900"><ArrowLeft size={16}/> Voltar para Agenda / Viagens</Link>
 
-        <header className="mb-6 rounded-xl border bg-white p-6 shadow-sm">
+        <header className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="text-sm text-slate-500">{trip.date.split('-').reverse().join('/')} às {trip.departure_time.slice(0,5)}</div>
-              <h1 className="mt-1 text-2xl font-bold text-slate-900">{trip.origin} → {trip.destination}</h1>
+              <h1 className="mt-1 break-words text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">{trip.origin} → {trip.destination}</h1>
               <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500">
                 <span>Motorista: {trip.driver?.name ?? 'Não informado'}</span>
                 <span>Veículo: {trip.vehicle?.plate ?? 'Não informado'}</span>
@@ -325,21 +325,21 @@ export default function TripDetailPage() {
         {message && <div className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
         <div className="grid gap-5 lg:grid-cols-3">
-          <section className="rounded-xl border bg-white shadow-sm lg:col-span-2">
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between border-b px-5 py-4">
               <div><h2 className="font-semibold">Passageiros</h2><p className="text-xs text-slate-500">{passengers.length} passageiro(s) nesta viagem</p></div>
               <UserRound size={20} className="text-slate-400"/>
             </div>
             <div className="divide-y">
               {passengers.map((passenger) => (
-                <div key={passenger.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
+                <div key={passenger.id} className="flex flex-col gap-3 px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
                   <div>
                     <div className="font-medium">{passenger.patient?.name ?? 'Paciente não encontrado'}</div>
                     <div className="mt-1 text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
-                    <button onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    <button type="button" aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
+                    <button type="button" aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
                   </div>
                 </div>
               ))}
@@ -377,7 +377,7 @@ export default function TripDetailPage() {
 
           <section className="rounded-xl border bg-white shadow-sm">
             <div className="border-b px-5 py-4"><h2 className="font-semibold">Resumo operacional</h2></div>
-            <div className="grid grid-cols-2 gap-4 p-5">
+            <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
               <Summary label="Passageiros" value={String(passengers.length)}/>
               <Summary label="Embarcados" value={String(passengers.filter(p => p.boarding_status === 'BOARDED').length)}/>
               <Summary label="Não compareceram" value={String(passengers.filter(p => p.boarding_status === 'NO_SHOW').length)}/>
