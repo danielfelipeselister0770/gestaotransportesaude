@@ -357,13 +357,13 @@ export default function TripsPage() {
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
           {showForm && (
-            <form onSubmit={createTrip} className="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <form onSubmit={createTrip} className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center justify-between">
                 <div>
-                  <h2 className="font-semibold">Montar nova viagem</h2>
+                  <h2 className="text-lg font-bold tracking-tight text-slate-950">Montar nova viagem</h2>
                   <p className="mt-1 text-xs text-slate-500">{selectedPassengerCount} passageiro(s) selecionado(s)</p>
                 </div>
-                <button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={18}/></button>
+                <button type="button" onClick={() => setShowForm(false)} aria-label="Fechar formulário de nova viagem" className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={18}/></button>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -383,7 +383,7 @@ export default function TripsPage() {
 
               <label className="mt-4 block">
                 <span className="mb-1.5 block text-sm font-medium text-slate-700">Observações</span>
-                <textarea name="observations" rows={2} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/>
+                <textarea name="observations" rows={2} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/>
               </label>
 
               <div className="mt-5 flex justify-end gap-2">
@@ -402,7 +402,7 @@ export default function TripsPage() {
                 <p className="text-xs text-slate-500">Selecione os passageiros que serão agrupados em uma mesma viagem.</p>
               </div>
               <div className="flex items-center gap-2">
-                <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="rounded-lg border px-3 py-2 text-sm"/>
+                <input type="date" aria-label="Filtrar solicitações aprovadas por data" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="rounded-lg border px-3 py-2 text-sm"/>
                 <button type="button" onClick={() => dateFilter && selectByDate(dateFilter)} className="rounded-lg border px-3 py-2 text-sm hover:bg-slate-50">Selecionar dia</button>
               </div>
             </div>
@@ -429,7 +429,7 @@ export default function TripsPage() {
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b px-5 py-4 md:flex-row md:items-center md:justify-between">
               <h2 className="font-semibold">Viagens cadastradas</h2>
-              <div className="flex flex-col gap-2 sm:flex-row"><div className="flex items-center gap-2 rounded-lg border px-3"><Search size={16}/><input value={tripSearch} onChange={e=>setTripSearch(e.target.value)} placeholder="Destino, motorista ou placa..." className="py-2 text-sm outline-none"/></div><select value={tripStatusFilter} onChange={e=>setTripStatusFilter(e.target.value as 'ALL'|TripRow['status'])} className="rounded-lg border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os status</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+              <div className="flex flex-col gap-2 sm:flex-row"><div className="flex items-center gap-2 rounded-lg border px-3"><Search size={16}/><input type="search" aria-label="Buscar viagens por destino, motorista ou placa" value={tripSearch} onChange={e=>setTripSearch(e.target.value)} placeholder="Destino, motorista ou placa..." className="py-2 text-sm outline-none"/></div><select aria-label="Filtrar viagens por status" value={tripStatusFilter} onChange={e=>setTripStatusFilter(e.target.value as 'ALL'|TripRow['status'])} className="rounded-lg border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os status</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
             </div>
             {filteredTrips.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma viagem cadastrada.</div> :
               <div className="divide-y">
@@ -465,9 +465,9 @@ export default function TripsPage() {
 function Stat({label,value,icon}:{label:string;value:number;icon:ReactNode}) { return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>; }
 
 function Field({name,label,type='text',placeholder,required,defaultValue}:{name:string;label:string;type?:string;placeholder?:string;required?:boolean;defaultValue?:string}) {
-  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>;
+  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>;
 }
 
 function SelectField({name,label,required,children}:{name:string;label:string;required?:boolean;children:ReactNode}) {
-  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><select name={name} required={required} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">{children}</select></label>;
+  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><select name={name} required={required} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">{children}</select></label>;
 }
