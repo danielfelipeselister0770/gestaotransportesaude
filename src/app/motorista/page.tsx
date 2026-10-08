@@ -44,6 +44,7 @@ export default function DriverPortalPage() {
   const passengerRequestId = useRef(0);
   const tripsRequestId = useRef(0);
   const [loading, setLoading] = useState(true);
+  const [tripsError, setTripsError] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
@@ -56,6 +57,7 @@ export default function DriverPortalPage() {
   async function loadData(preserveMessage = false) {
     const requestId = ++tripsRequestId.current;
     setLoading(true);
+    setTripsError(false);
     if (!preserveMessage) setMessage('');
 
     try {
@@ -76,6 +78,7 @@ export default function DriverPortalPage() {
 
     if (requestId !== tripsRequestId.current) return;
     if (driverError || !driver) {
+      setTripsError(true);
       setMessage('Sua conta ainda não está vinculada a um cadastro de motorista.');
       return;
     }
@@ -105,6 +108,7 @@ export default function DriverPortalPage() {
 
     if (requestId !== tripsRequestId.current) return;
     if (error) {
+      setTripsError(true);
       setMessage(`Não foi possível carregar suas viagens: ${error.message}`);
     } else {
       const normalized = (data ?? []).map((trip) => ({
@@ -124,6 +128,7 @@ export default function DriverPortalPage() {
 
     } catch {
       if (requestId === tripsRequestId.current) {
+        setTripsError(true);
         setMessage('Falha de conexão ao atualizar a programação. Verifique sua internet e tente novamente.');
       }
     } finally {
@@ -360,6 +365,13 @@ export default function DriverPortalPage() {
 
         {loading ? (
           <div role="status" aria-live="polite" className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500"><RefreshCw size={22} className="mx-auto mb-3 animate-spin text-teal-700" aria-hidden="true" />Carregando viagens...</div>
+        ) : tripsError ? (
+          <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-900">
+            <AlertTriangle size={28} className="mx-auto mb-3" aria-hidden="true" />
+            <p className="font-semibold">Não foi possível carregar a programação.</p>
+            <p className="mt-1 text-sm">Verifique sua conexão e tente novamente.</p>
+            <button type="button" onClick={() => loadData()} className="mt-4 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700">Tentar novamente</button>
+          </div>
         ) : trips.length === 0 ? (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <CalendarDays className="mx-auto mb-3 text-slate-400" size={32} />
