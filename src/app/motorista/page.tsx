@@ -53,7 +53,8 @@ export default function DriverPortalPage() {
     setLoading(true);
     if (!preserveMessage) setMessage('');
 
-    const { data: authData } = await supabase.auth.getUser();
+    try {
+      const { data: authData } = await supabase.auth.getUser();
     const userId = authData.user?.id;
 
     if (!userId) {
@@ -69,7 +70,6 @@ export default function DriverPortalPage() {
 
     if (driverError || !driver) {
       setMessage('Sua conta ainda não está vinculada a um cadastro de motorista.');
-      setLoading(false);
       return;
     }
 
@@ -113,7 +113,11 @@ export default function DriverPortalPage() {
       }
     }
 
-    setLoading(false);
+    } catch {
+      setMessage('Falha de conexão ao atualizar a programação. Verifique sua internet e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function loadPassengers(tripId: string) {
