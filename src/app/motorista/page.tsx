@@ -37,6 +37,7 @@ export default function DriverPortalPage() {
   const [driverName, setDriverName] = useState('');
   const [trips, setTrips] = useState<Trip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
+  const selectedTripRef = useRef<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [passengersLoading, setPassengersLoading] = useState(false);
   const passengerRequestId = useRef(0);
@@ -109,8 +110,9 @@ export default function DriverPortalPage() {
         vehicle: Array.isArray(trip.vehicle) ? trip.vehicle[0] ?? null : trip.vehicle,
       })) as Trip[];
       setTrips(normalized);
-      if (selectedTrip && !normalized.some((trip) => trip.id === selectedTrip)) {
+      if (selectedTripRef.current && !normalized.some((trip) => trip.id === selectedTripRef.current)) {
         passengerRequestId.current += 1;
+        selectedTripRef.current = null;
         setPassengersLoading(false);
         setSelectedTrip(null);
         setPassengers([]);
@@ -129,6 +131,7 @@ export default function DriverPortalPage() {
 
   async function loadPassengers(tripId: string) {
     const requestId = ++passengerRequestId.current;
+    selectedTripRef.current = tripId;
     setSelectedTrip(tripId);
     setPassengers([]);
     setPassengersLoading(true);
@@ -256,6 +259,7 @@ export default function DriverPortalPage() {
       );
       passengerRequestId.current += 1;
       setPassengersLoading(false);
+      selectedTripRef.current = null;
       setSelectedTrip(null);
       setPassengers([]);
       setFinishMileage('');
@@ -414,6 +418,7 @@ export default function DriverPortalPage() {
                           step="1"
                           value={selectedTripData?.id === trip.id ? finishMileage : ''}
                           onChange={(event) => {
+                            selectedTripRef.current = trip.id;
                             setSelectedTrip(trip.id);
                             setFinishMileage(event.target.value);
                           }}
