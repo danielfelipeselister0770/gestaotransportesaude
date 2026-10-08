@@ -335,7 +335,7 @@ export default function DriverPortalPage() {
       const result = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        if (action === 'FINISH' && typeof result.error === 'string' && result.error.startsWith('Viagem concluída')) {
+        if (action === 'FINISH' && result.completedWithPending === true) {
           setSyncWarning(true);
           setMessageTone('warning');
           setMessage(`${result.error} Sincronize a programação antes de registrar novas ações.`);
