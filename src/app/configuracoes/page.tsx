@@ -291,19 +291,19 @@ export default function ConfiguracoesPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
-<section className=" p-4 md:p-8">
+    <main className="min-h-screen">
+<section className="p-5 lg:p-8">
         <div className="mx-auto max-w-6xl">
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><ShieldCheck size={16} /> Administração / Acessos</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Configurações</h1>
             <p className="text-sm text-slate-500">Perfil, permissões e usuários do sistema.</p>
-            {(isAdmin || currentProfile?.role === 'GESTOR') && <Link href="/configuracoes/historico" className="mt-3 inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm font-medium"><History size={16} /> Histórico administrativo</Link>}
+            {(isAdmin || currentProfile?.role === 'GESTOR') && <Link href="/configuracoes/historico" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm hover:bg-teal-50"><History size={16} /> Histórico administrativo</Link>}
           </div>
 
           {message && <div className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
           {currentProfile && (
-            <section className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+            <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
                 <div className="rounded-lg bg-slate-100 p-2"><UserCog size={20} /></div>
                 <div>
