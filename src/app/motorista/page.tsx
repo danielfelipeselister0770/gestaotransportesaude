@@ -383,6 +383,12 @@ export default function DriverPortalPage() {
 
         {actionLoading !== null && <p role="status" aria-live="polite" className="text-sm font-medium text-teal-800">Salvando informações... Aguarde antes de trocar os filtros ou atualizar a programação.</p>}
 
+        {actionLoading === null && (loading || passengersLoading || passengersError) && (
+          <p role="status" aria-live="polite" className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+            {loading ? "Atualizando a programação. As ações das viagens ficam disponíveis quando a consulta terminar." : passengersLoading ? "Atualizando os passageiros. Aguarde para registrar embarques, ocorrências ou alterar a viagem." : "Não foi possível confirmar a lista de passageiros. Atualize a lista antes de registrar embarques, ocorrências ou alterar a viagem."}
+          </p>
+        )}
+
         <div role="group" aria-label="Filtro de programação" className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row">
           <button
             onClick={() => setViewMode('TODAY')}
