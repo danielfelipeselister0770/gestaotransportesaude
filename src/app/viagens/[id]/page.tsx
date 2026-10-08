@@ -346,14 +346,14 @@ export default function TripDetailPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border bg-white shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b px-5 py-4"><Gauge size={19}/><h2 className="font-semibold">Quilometragem</h2></div>
-            <div className="space-y-4 p-5">
+            <div className="space-y-4 p-4 sm:p-5">
               <Field label="KM inicial" type="number" value={initialMileage} onChange={setInitialMileage}/>
               <Field label="KM final" type="number" value={finalMileage} onChange={setFinalMileage}/>
-              <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">Observações</span><textarea value={observation} onChange={(e) => setObservation(e.target.value)} rows={3} className="w-full rounded-lg border px-3 py-2.5 text-sm"/></label>
-              <button onClick={() => saveMileage()} disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><Save size={16}/> Salvar</button>
-              {trip.status === 'IN_PROGRESS' && <button onClick={() => saveMileage('COMPLETED')} disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-60"><Check size={16}/> Salvar e concluir viagem</button>}
+              <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">Observações</span><textarea value={observation} onChange={(e) => setObservation(e.target.value)} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>
+              <button type="button" onClick={() => saveMileage()} disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60"><Save size={16}/> Salvar</button>
+              {trip.status === 'IN_PROGRESS' && <button type="button" onClick={() => saveMileage('COMPLETED')} disabled={saving} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"><Check size={16}/> Salvar e concluir viagem</button>}
             </div>
           </section>
         </div>
@@ -364,18 +364,18 @@ export default function TripDetailPage() {
         </div>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <section className="rounded-xl border bg-white shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b px-5 py-4"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
-            <form onSubmit={addOccurrence} className="space-y-4 p-5">
+            <form onSubmit={addOccurrence} className="space-y-4 p-4 sm:p-5">
               <SelectField name="occurrence_type" label="Tipo" value={occurrenceType} onChange={setOccurrenceType}>
                 <option value="ACIDENTE">Acidente</option><option value="AVARIA">Avaria</option><option value="ATRASO">Atraso</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option>
               </SelectField>
-              <label className="block"><span className="mb-1.5 block text-sm font-medium">Descrição</span><textarea value={occurrenceDescription} onChange={(e) => setOccurrenceDescription(e.target.value)} rows={4} required className="w-full rounded-lg border px-3 py-2.5 text-sm"/></label>
-              <button disabled={saving} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-slate-50 disabled:opacity-60">Registrar ocorrência</button>
+              <label className="block"><span className="mb-1.5 block text-sm font-medium">Descrição</span><textarea value={occurrenceDescription} onChange={(e) => setOccurrenceDescription(e.target.value)} rows={4} required className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>
+              <button disabled={saving} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Registrar ocorrência</button>
             </form>
           </section>
 
-          <section className="rounded-xl border bg-white shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b px-5 py-4"><h2 className="font-semibold">Resumo operacional</h2></div>
             <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
               <Summary label="Passageiros" value={String(passengers.length)}/>
@@ -391,7 +391,7 @@ export default function TripDetailPage() {
 }
 
 function Field({label,type,value,onChange}:{label:string;type?:string;value:string;onChange:(value:string)=>void}) {
-  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input type={type} min={type === 'number' ? '0' : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border px-3 py-2.5 text-sm"/></label>;
+  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input type={type} min={type === 'number' ? '0' : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>;
 }
 function SelectField({label,value,onChange,children}:{name?:string;label:string;value:string;onChange:(value:string)=>void;children:ReactNode}) {
   return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border px-3 py-2.5 text-sm">{children}</select></label>;
