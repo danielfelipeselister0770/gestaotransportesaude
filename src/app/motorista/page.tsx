@@ -524,6 +524,9 @@ export default function DriverPortalPage() {
                       <div className="text-sm text-slate-600">
                         Quilometragem inicial: <strong>{trip.initial_mileage ?? '—'} km</strong>
                       </div>
+                      {selectedTrip !== trip.id && (
+                        <p className="text-xs text-amber-800">Selecione esta viagem no cartão acima antes de informar o KM final e finalizar.</p>
+                      )}
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <input
                           aria-label="Quilometragem final da viagem"
