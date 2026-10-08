@@ -81,6 +81,21 @@ export default function ConfiguracoesPage() {
   useEffect(() => {
     if (!municipalityModalOpen && !userModalOpen && !editing) return;
     const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') {
+        const dialog = document.querySelector<HTMLElement>('[role="dialog"][aria-modal="true"]');
+        const controls = dialog?.querySelectorAll<HTMLElement>('input:not(:disabled), select:not(:disabled), textarea:not(:disabled), button:not(:disabled), a[href]');
+        if (!controls?.length) return;
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+        return;
+      }
       if (event.key !== 'Escape' || saving) return;
       setMunicipalityModalOpen(false);
       setMunicipalityEditing(null);
@@ -445,7 +460,7 @@ export default function ConfiguracoesPage() {
           {isAdmin && municipalityModalOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm">
               <form role="dialog" aria-modal="true" aria-label={municipalityEditing ? "Editar prefeitura" : "Nova prefeitura"} onSubmit={saveMunicipality} className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
-                <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} aria-label="Fechar formulário da prefeitura" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button></div>
+                <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); modalOpenerRef.current?.focus(); }} aria-label="Fechar formulário da prefeitura" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button></div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm sm:col-span-2">Nome da prefeitura<input autoFocus value={municipalityName} onChange={(e) => setMunicipalityName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" placeholder="Prefeitura Municipal de ..." /></label>
                   <label className="text-sm">CNPJ<input value={municipalityCnpj} onChange={(e) => setMunicipalityCnpj(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
@@ -453,7 +468,7 @@ export default function ConfiguracoesPage() {
                   <label className="text-sm">UF<input maxLength={2} value={municipalityState} onChange={(e) => setMunicipalityState(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 uppercase focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Status<select value={municipalityActive ? 'true' : 'false'} onChange={(e) => setMunicipalityActive(e.target.value === 'true')} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"><option value="true">Ativa</option><option value="false">Inativa</option></select></label>
                 </div>
-                <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>
+                <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); modalOpenerRef.current?.focus(); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>
               </form>
             </div>
           )}
