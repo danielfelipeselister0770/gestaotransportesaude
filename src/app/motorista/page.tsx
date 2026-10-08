@@ -179,6 +179,7 @@ export default function DriverPortalPage() {
     selectedTripRef.current = tripId;
     setSelectedTrip(tripId);
     if (switchingTrip) setPassengers([]);
+    const recoveringPassengers = passengersError;
     setPassengersLoading(true);
     setPassengersError(false);
     if (!preserveMessage) {
@@ -209,6 +210,10 @@ export default function DriverPortalPage() {
         ...row,
         patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
       })) as Passenger[]);
+      if (recoveringPassengers && !preserveMessage) {
+        setMessageTone('success');
+        setMessage('Lista de passageiros atualizada com sucesso. Você já pode continuar as operações.');
+      }
     } catch {
       if (requestId === passengerRequestId.current && (parentRequestId === undefined || parentRequestId === tripsRequestId.current)) {
         setMessageTone('warning');
