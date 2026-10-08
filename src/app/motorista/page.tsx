@@ -338,7 +338,7 @@ export default function DriverPortalPage() {
         if (action === 'FINISH' && result.completedWithPending === true) {
           setSyncWarning(true);
           setMessageTone('warning');
-          setMessage(`${result.error} Sincronize a programação antes de registrar novas ações.`);
+          setMessage(`${result.error ?? 'A viagem foi concluída, mas existem registros pendentes.'} Não tente finalizar novamente. Avise a gestão para conferir os registros e sincronize a programação antes de continuar.`);
           return;
         }
         setMessage(result.error ?? 'Não foi possível atualizar a viagem.');
