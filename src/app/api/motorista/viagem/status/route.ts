@@ -162,7 +162,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (vehicleReadError || !vehicle) {
-    return NextResponse.json({ error: 'Viagem concluída, mas não foi possível localizar o veículo.' }, { status: 500 });
+    return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas não foi possível localizar o veículo.' }, { status: 500 });
   }
 
   const { data: updatedVehicle, error: vehicleError } = await admin
@@ -174,7 +174,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (vehicleError || !updatedVehicle) {
-    return NextResponse.json({ error: vehicleError
+    return NextResponse.json({ completedWithPending: true, error: vehicleError
       ? `Viagem concluída, mas não foi possível atualizar o veículo: ${vehicleError.message}`
       : 'Viagem concluída, mas o veículo não estava em uso. Avise a gestão para conferir a situação antes de continuar.' }, { status: vehicleError ? 500 : 409 });
   }
@@ -187,7 +187,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (mileageReadError) {
-    return NextResponse.json({ error: 'Viagem concluída, mas não foi possível conferir o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
+    return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas não foi possível conferir o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
   let mileageWriteError;
@@ -211,12 +211,12 @@ export async function POST(request: Request) {
   }
 
   if (mileageWriteError) {
-    return NextResponse.json({ error: 'Viagem concluída, mas falhou o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
+    return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas falhou o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
   const { error: passengerUpdateError } = await admin.from('trip_passengers').update({ boarding_status: 'NO_SHOW' }).eq('trip_id', trip.id).eq('boarding_status', 'EXPECTED');
   if (passengerUpdateError) {
-    return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização dos passageiros. Avise a gestão; não finalize novamente.' }, { status: 500 });
+    return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas falhou a atualização dos passageiros. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
   const { data: passengers, error: passengersReadError } = await admin
@@ -226,18 +226,18 @@ export async function POST(request: Request) {
     .not('request_id', 'is', null);
 
   if (passengersReadError) {
-    return NextResponse.json({ error: 'Viagem concluída, mas falhou a consulta dos passageiros vinculados às solicitações. Avise a gestão; não finalize novamente.' }, { status: 500 });
+    return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas falhou a consulta dos passageiros vinculados às solicitações. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
   const completedIds = [...new Set((passengers ?? []).filter(row => row.boarding_status === 'BOARDED').map(row => row.request_id).filter(Boolean))];
   const noShowIds = [...new Set((passengers ?? []).filter(row => row.boarding_status !== 'BOARDED').map(row => row.request_id).filter(Boolean))];
   if (completedIds.length > 0) {
     const { error } = await admin.from('transport_requests').update({ status: 'COMPLETED' }).in('id', completedIds);
-    if (error) return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização das solicitações atendidas. Avise a gestão; não finalize novamente.' }, { status: 500 });
+    if (error) return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas falhou a atualização das solicitações atendidas. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
   if (noShowIds.length > 0) {
     const { error } = await admin.from('transport_requests').update({ status: 'NO_SHOW' }).in('id', noShowIds);
-    if (error) return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização das solicitações de não comparecimento. Avise a gestão; não finalize novamente.' }, { status: 500 });
+    if (error) return NextResponse.json({ completedWithPending: true, error: 'Viagem concluída, mas falhou a atualização das solicitações de não comparecimento. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, status: 'COMPLETED', finalMileage, distance: finalMileage - initialMileage });
