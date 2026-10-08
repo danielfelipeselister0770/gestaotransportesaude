@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Pencil, Plus, Search, UserRound, X } from 'lucide-react';
+import { BadgeCheck, Building2, Link2, Pencil, Plus, Search, UserRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Role = 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA';
@@ -182,17 +182,18 @@ export default function ProfessionalsPage() {
 
   const counts={total:items.length,active:items.filter(x=>x.active).length,withCns:items.filter(x=>x.cns).length,activeLinks:links.filter(x=>x.active).length};
 
-  return <main className="min-h-screen bg-slate-50">
+  return <main className="min-h-screen">
 <section className=" p-4 md:p-8"><div className="mx-auto max-w-6xl">
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div><h1 className="text-2xl font-bold text-slate-900">Profissionais SUS</h1><p className="text-sm text-slate-500">{municipalityName||'Cadastro de profissionais e vínculos CNES'}</p></div>
-        {canManage&&<button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><Plus size={18}/> Novo profissional</button>}
+      <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+        <div><div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><UserRound size={15}/> Rede assistencial SUS</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Profissionais SUS</h1><p className="mt-1 text-sm text-slate-500">{municipalityName||'Cadastro de profissionais e vínculos CNES'}</p></div>
+        {canManage&&<button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18}/> Novo profissional</button>}
       </div>
+      <div className="p-5 lg:p-8">
       {message&&<div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Profissionais" value={counts.total}/><Stat label="Ativos" value={counts.active}/><Stat label="Com CNS" value={counts.withCns}/><Stat label="Vínculos ativos" value={counts.activeLinks}/></div>
-      <div className="mb-4 grid gap-2 md:grid-cols-[1fr_170px_260px]"><div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNS, CBO, CNES ou estabelecimento" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os estabelecimentos</option>{visibleUnits.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<UserRound size={18}/>} label="Profissionais" value={counts.total}/><Stat icon={<BadgeCheck size={18}/>} label="Ativos" value={counts.active}/><Stat icon={<Building2 size={18}/>} label="Com CNS" value={counts.withCns}/><Stat icon={<Link2 size={18}/>} label="Vínculos ativos" value={counts.activeLinks}/></div>
+      <div className="mb-5 grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_170px_260px]"><div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNS, CBO, CNES ou estabelecimento" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select><select value={unitFilter} onChange={e=>setUnitFilter(e.target.value)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os estabelecimentos</option>{visibleUnits.map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
 
-      {showForm&&<form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+      {showForm&&<form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between"><div><h2 className="font-semibold">{editing?'Editar profissional':'Novo profissional'}</h2><p className="text-xs text-slate-500">O profissional é a pessoa; CBO e estabelecimento pertencem ao vínculo CNES.</p></div><button type="button" onClick={()=>setShowForm(false)}><X size={20}/></button></div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {role==='ADMIN'&&<label className="text-sm sm:col-span-2 lg:col-span-4">Prefeitura<select name="municipality_id" required defaultValue={editing?.municipality_id??''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Selecione a prefeitura</option>{municipalities.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>}
@@ -213,30 +214,31 @@ export default function ProfessionalsPage() {
             </div>
           </div>
         </div>
-        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={()=>setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving?'Salvando...':'Salvar'}</button></div>
+        <div className="mt-5 flex justify-end gap-2"><button type="button" onClick={()=>setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">{saving?'Salvando...':'Salvar'}</button></div>
       </form>}
 
-      <div className="overflow-hidden rounded-xl border bg-white">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         {loading?<div className="p-8 text-center text-sm text-slate-500">Carregando...</div>:filtered.length===0?<div className="p-8 text-center text-sm text-slate-500">Nenhum profissional cadastrado.</div>:
         <div className="divide-y">{filtered.map(item=>{
           const myLinks=links.filter(l=>l.professional_id===item.id);
-          return <div key={item.id} className="p-4">
+          return <div key={item.id} className="p-4 transition hover:bg-slate-50/50">
             <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-              <div className="flex items-start gap-3"><div className="rounded-lg bg-slate-100 p-2"><UserRound size={20}/></div><div>
+              <div className="flex items-start gap-3"><div className="rounded-xl bg-teal-50 p-2 text-teal-700"><UserRound size={20}/></div><div>
                 <div className="flex flex-wrap items-center gap-2 font-semibold text-slate-900">{item.name}<span className={'rounded-full px-2 py-0.5 text-xs font-medium '+(item.active?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-600')}>{item.active?'Pessoa ativa':'Pessoa inativa'}</span></div>
                 <div className="mt-1 text-sm text-slate-500">{item.cns?'CNS '+item.cns:'CNS não informado'} • {myLinks.length} vínculo(s) CNES</div>
               </div></div>
               {canManage&&<button onClick={()=>openEdit(item,myLinks[0])} className="self-start rounded-lg border p-2 hover:bg-slate-50" title="Editar profissional"><Pencil size={16}/></button>}
             </div>
-            {myLinks.length>0&&<div className="mt-4 space-y-2 pl-0 md:pl-12">{myLinks.map(link=>{const unit=units.find(u=>u.id===link.health_unit_id);return <div key={link.id} className="flex flex-col gap-2 rounded-lg border bg-slate-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+            {myLinks.length>0&&<div className="mt-4 space-y-2 pl-0 md:pl-12">{myLinks.map(link=>{const unit=units.find(u=>u.id===link.health_unit_id);return <div key={link.id} className="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm"><div className="font-medium">{unit?.name??'Estabelecimento não encontrado'}{unit?.cnes?' • CNES '+unit.cnes:''}</div><div className="text-xs text-slate-500">{[link.cbo&&'CBO '+link.cbo,link.vinculation,link.vinculation_subtype,link.sus?'SUS':'Não SUS'].filter(Boolean).join(' • ')}</div></div>
               <div className="flex items-center gap-2"><span className={'rounded-full px-2 py-1 text-xs font-medium '+(link.active?'bg-emerald-50 text-emerald-700':'bg-slate-100 text-slate-600')}>{link.active?'Vínculo ativo':'Vínculo inativo'}</span>{link.responsible_for_production&&<span className="rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700">Produção</span>}{canManage&&<button onClick={()=>openEdit(item,link)} className="rounded-lg border p-1.5 hover:bg-white" title="Editar vínculo"><Pencil size={14}/></button>}</div>
             </div>})}</div>}
           </div>
         })}</div>}
       </div>
+      </div>
     </div></section>
   </main>;
 }
 
-function Stat({label,value}:{label:string;value:number}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold">{value}</div></div>}
+function Stat({icon,label,value}:{icon:React.ReactNode;label:string;value:number}){return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>}
