@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Fuel, Pencil, Plus, Search, X } from 'lucide-react';
+import { CircleDollarSign, Fuel, Gauge, Pencil, Plus, Search, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
@@ -114,30 +114,32 @@ export default function AbastecimentosPage() {
   });
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
 <section className=" p-4 md:p-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Abastecimentos</h1>
-              <p className="text-sm text-slate-500">Controle de abastecimento e custos da frota.</p>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><Fuel size={15}/> Gestão da frota</div>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Abastecimentos</h1>
+              <p className="mt-1 text-sm text-slate-500">Acompanhe consumo, custos e registros de abastecimento da frota municipal.</p>
             </div>
-            <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white">
+            <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
               <Plus size={18} /> Novo abastecimento
             </button>
           </div>
+          <div className="p-5 lg:p-8">
 
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-          <div className="mb-4 grid gap-3 sm:grid-cols-3"><Stat label="Custo no mês" value={money(totalCost)}/><Stat label="Litros no mês" value={totalLiters.toLocaleString('pt-BR',{maximumFractionDigits:2})+' L'}/><Stat label="Preço médio/L" value={money(avgPrice)}/></div>
+          <div className="mb-6 grid gap-3 sm:grid-cols-3"><Stat icon={<CircleDollarSign size={18}/>} label="Custo no mês" value={money(totalCost)}/><Stat icon={<Fuel size={18}/>} label="Litros no mês" value={totalLiters.toLocaleString('pt-BR',{maximumFractionDigits:2})+' L'}/><Stat icon={<Gauge size={18}/>} label="Preço médio/L" value={money(avgPrice)}/></div>
 
-          <div className="mb-4 flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
+          <div className="mb-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
             <Search size={18} className="text-slate-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por placa ou combustível" className="w-full outline-none text-sm" />
           </div>
 
           {showForm && (
-            <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+            <form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-semibold">{editing ? 'Editar abastecimento' : 'Novo abastecimento'}</h2>
                 <button type="button" onClick={() => setShowForm(false)}><X size={20} /></button>
@@ -153,25 +155,26 @@ export default function AbastecimentosPage() {
               </div>
               <div className="mt-4 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-                <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar'}</button>
+                <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">{saving ? 'Salvando...' : 'Salvar'}</button>
               </div>
             </form>
           )}
 
-          <div className="overflow-hidden rounded-xl border bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando...</div> :
               filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhum abastecimento encontrado.</div> :
               <div className="divide-y">{filtered.map((row) => (
-                <div key={row.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-start gap-3"><div className="rounded-lg bg-slate-100 p-2"><Fuel size={20} /></div><div>
+                <div key={row.id} className="flex flex-col gap-3 p-4 transition hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3"><div className="rounded-xl bg-teal-50 p-2 text-teal-700"><Fuel size={20} /></div><div>
                     <div className="font-semibold text-slate-900">{row.vehicle?.plate ?? 'Veículo'}</div>
                     <div className="text-sm text-slate-500">{new Date(row.date).toLocaleString('pt-BR')} • {row.liters.toLocaleString('pt-BR')} L • R$ {row.total_value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} • {money(Number(row.total_value)/Number(row.liters))}/L</div>
                     <div className="text-xs text-slate-500">KM {row.mileage.toLocaleString('pt-BR')}{row.fuel_type ? ` • ${row.fuel_type}` : ''}</div>
                   </div></div>
-                  <button onClick={() => openEdit(row)} className="self-end rounded-lg border p-2 hover:bg-slate-50"><Pencil size={16} /></button>
+                  <button onClick={() => openEdit(row)} className="self-end rounded-lg border p-2 transition hover:bg-slate-50" title="Editar"><Pencil size={16} /></button>
                 </div>
               ))}</div>
             }
+          </div>
           </div>
         </div>
       </section>
@@ -180,4 +183,4 @@ export default function AbastecimentosPage() {
 }
 
 function money(v:number){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
-function Stat({label,value}:{label:string;value:string}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-xl font-bold">{value}</div></div>}
+function Stat({icon,label,value}:{icon:React.ReactNode;label:string;value:string}){return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="mb-3 grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>}
