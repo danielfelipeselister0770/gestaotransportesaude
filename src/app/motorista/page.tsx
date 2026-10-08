@@ -458,6 +458,13 @@ export default function DriverPortalPage() {
           </button>
         </div>
 
+        {completionPending && !syncWarning && (
+          <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <strong className="block font-semibold">Viagem concluída com registros pendentes</strong>
+            <p className="mt-1">A programação foi sincronizada, mas isso não confirma a correção dos registros pendentes. Não finalize a viagem novamente e avise a gestão para conferir a situação.</p>
+          </div>
+        )}
+
         {syncWarning && !loading && (
           <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
             <span>{completionPending ? 'A viagem foi concluída, mas há registros pendentes. Não finalize novamente. Avise a gestão e sincronize a programação antes de continuar.' : 'A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.'}</span>
