@@ -232,16 +232,16 @@ export default function DriverPortalPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-[#f4f7f9]">
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4 md:px-8">
           <div>
-            <div className="text-lg font-bold">🚐 Transporte Saúde</div>
+            <div className="text-lg font-bold tracking-tight text-slate-950">🚐 Transporte Saúde</div>
             <div className="text-sm text-slate-500">Área do motorista</div>
           </div>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-slate-600 sm:inline">{driverName}</span>
-            <button onClick={signOut} className="flex items-center gap-2 rounded-lg border px-3 py-2 text-sm hover:bg-slate-50">
+            <button type="button" onClick={signOut} className="flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
               <LogOut size={16} /> Sair
             </button>
           </div>
@@ -398,9 +398,9 @@ export default function DriverPortalPage() {
         )}
 
         {selectedTripData && (
-          <form onSubmit={addOccurrence} className="rounded-xl border bg-white p-5 shadow-sm">
+          <form onSubmit={addOccurrence} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
-            <div className="grid gap-3 md:grid-cols-[180px_1fr_auto]"><select value={occurrenceType} onChange={e=>setOccurrenceType(e.target.value)} className="rounded-lg border px-3 py-2.5 text-sm"><option value="ATRASO">Atraso</option><option value="AVARIA">Avaria</option><option value="ACIDENTE">Acidente</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option></select><input value={occurrenceDescription} onChange={e=>setOccurrenceDescription(e.target.value)} required placeholder="Descreva o ocorrido..." className="rounded-lg border px-3 py-2.5 text-sm"/><button disabled={actionLoading==='occurrence'} className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white">Registrar</button></div>
+            <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)_auto]"><select aria-label="Tipo de ocorrência" value={occurrenceType} onChange={e=>setOccurrenceType(e.target.value)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"><option value="ATRASO">Atraso</option><option value="AVARIA">Avaria</option><option value="ACIDENTE">Acidente</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option></select><input aria-label="Descrição da ocorrência" value={occurrenceDescription} onChange={e=>setOccurrenceDescription(e.target.value)} required placeholder="Descreva o ocorrido..." className="min-w-0 rounded-xl border border-slate-200 px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/><button disabled={actionLoading==='occurrence'} className="rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">Registrar</button></div>
           </form>
         )}
 
