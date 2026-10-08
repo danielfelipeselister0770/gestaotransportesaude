@@ -162,9 +162,10 @@ export default function DriverPortalPage() {
   async function loadPassengers(tripId: string, preserveMessage = false) {
     if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++passengerRequestId.current;
+    const switchingTrip = selectedTripRef.current !== tripId;
     selectedTripRef.current = tripId;
     setSelectedTrip(tripId);
-    setPassengers([]);
+    if (switchingTrip) setPassengers([]);
     setPassengersLoading(true);
     setPassengersError(false);
     if (!preserveMessage) setMessage('');
@@ -527,7 +528,8 @@ export default function DriverPortalPage() {
               <p role="status" className="text-sm text-slate-500">Carregando passageiros...</p>
             ) : passengersError ? (
               <div role="alert" className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <p>Não foi possível consultar os passageiros desta viagem.</p>
+                <p>Não foi possível atualizar os passageiros desta viagem. Os dados anteriores, se disponíveis, podem estar desatualizados.</p>
+                {passengers.length > 0 && <p className="text-xs">{passengers.length} passageiro(s) mantido(s) na memória. Aguarde a atualização para registrar embarques.</p>}
                 <button type="button" onClick={() => loadPassengers(selectedTrip)} className="rounded-lg bg-white px-4 py-2 font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700">Tentar novamente</button>
               </div>
             ) : passengers.length === 0 ? (
