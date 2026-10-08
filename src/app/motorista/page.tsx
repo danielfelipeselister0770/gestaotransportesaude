@@ -131,6 +131,7 @@ export default function DriverPortalPage() {
   }
 
   async function loadPassengers(tripId: string) {
+    if (actionInProgressRef.current) return;
     const requestId = ++passengerRequestId.current;
     selectedTripRef.current = tripId;
     setSelectedTrip(tripId);
@@ -388,7 +389,7 @@ export default function DriverPortalPage() {
                     <div className="grid gap-4 p-4 lg:grid-cols-2">
                       {dateTrips.map((trip) => (
               <div key={trip.id} className={`rounded-xl border bg-white p-5 shadow-sm ${selectedTrip === trip.id ? 'ring-2 ring-teal-500' : ''}`}>
-                <button type="button" aria-pressed={selectedTrip === trip.id} aria-label={`Ver passageiros da viagem de ${trip.origin} para ${trip.destination}`} onClick={() => loadPassengers(trip.id)} className="w-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
+                <button type="button" aria-pressed={selectedTrip === trip.id} aria-label={`Ver passageiros da viagem de ${trip.origin} para ${trip.destination}`} onClick={() => loadPassengers(trip.id)} disabled={actionLoading !== null} className="w-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-wait disabled:opacity-60">
                   <div className="flex items-start justify-between gap-3">
                     <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{statusLabel[trip.status]}</span>
                     <span className="text-sm font-medium text-slate-600">{new Date(trip.date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
@@ -424,7 +425,9 @@ export default function DriverPortalPage() {
                           min={trip.initial_mileage ?? 0}
                           step="1"
                           value={selectedTripData?.id === trip.id ? finishMileage : ''}
+                          disabled={actionLoading !== null}
                           onChange={(event) => {
+                            if (actionInProgressRef.current) return;
                             selectedTripRef.current = trip.id;
                             setSelectedTrip(trip.id);
                             setFinishMileage(event.target.value);
