@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Viagem e ação são obrigatórias.' }, { status: 400 });
   }
 
-  if (action === 'FINISH' && (typeof mileage !== 'number' || !Number.isFinite(mileage) || mileage < 0)) {
+  if (action === 'FINISH' && (typeof mileage !== 'number' || !Number.isSafeInteger(mileage) || mileage < 0)) {
     return NextResponse.json({ error: 'Informe uma quilometragem final válida.' }, { status: 400 });
   }
 
