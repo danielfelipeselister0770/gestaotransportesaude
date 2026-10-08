@@ -179,20 +179,26 @@ export async function POST(request: Request) {
       : 'Viagem concluída, mas o veículo não estava em uso. Avise a gestão para conferir a situação antes de continuar.' }, { status: vehicleError ? 500 : 409 });
   }
 
-  const { data: existingMileage } = await admin
+  const { data: existingMileage, error: mileageReadError } = await admin
     .from('mileage_records')
     .select('id')
     .eq('trip_id', trip.id)
     .eq('source', 'TRIP')
     .maybeSingle();
 
+  if (mileageReadError) {
+    return NextResponse.json({ error: 'Viagem concluída, mas não foi possível conferir o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
+  }
+
+  let mileageWriteError;
   if (existingMileage) {
-    await admin
+    const { error } = await admin
       .from('mileage_records')
       .update({ mileage: finalMileage, date: new Date().toISOString(), observations: 'Quilometragem final registrada pelo motorista.' })
       .eq('id', existingMileage.id);
+    mileageWriteError = error;
   } else {
-    await admin.from('mileage_records').insert({
+    const { error } = await admin.from('mileage_records').insert({
       vehicle_id: trip.vehicle_id,
       trip_id: trip.id,
       mileage: finalMileage,
@@ -201,6 +207,11 @@ export async function POST(request: Request) {
       created_by: userId,
       municipality_id: driver.municipality_id,
     });
+    mileageWriteError = error;
+  }
+
+  if (mileageWriteError) {
+    return NextResponse.json({ error: 'Viagem concluída, mas falhou o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
   await admin.from('trip_passengers').update({ boarding_status: 'NO_SHOW' }).eq('trip_id', trip.id).eq('boarding_status', 'EXPECTED');
