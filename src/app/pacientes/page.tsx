@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Archive,
@@ -615,9 +615,42 @@ function PatientDetail({
   onEdit: () => void;
   onToggleActive: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onCloseRef.current();
+      }
+      if (event.key !== 'Tab') return;
+      const controls = dialogRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled)');
+      if (!controls?.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:p-4">
-      <div role="dialog" aria-modal="true" aria-label={`Detalhes do paciente ${patient.name}`} className="max-h-[95dvh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[92vh]">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-label={`Detalhes do paciente ${patient.name}`} className="max-h-[95dvh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[92vh]">
         <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div>
             <div className="flex flex-wrap items-center gap-2">
@@ -628,7 +661,7 @@ function PatientDetail({
             </div>
             <p className="mt-1 text-sm text-slate-500">{municipalityName} · Atualizado em {formatDateTime(patient.updated_at)}</p>
           </div>
-          <button onClick={onClose} aria-label="Fechar detalhes do paciente" className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button>
+          <button ref={closeRef} onClick={onClose} aria-label="Fechar detalhes do paciente" className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button>
         </div>
 
         <div className="grid gap-4 p-4 sm:gap-6 sm:p-6 lg:grid-cols-3">
