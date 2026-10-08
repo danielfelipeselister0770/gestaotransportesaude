@@ -40,6 +40,7 @@ export default function DriverPortalPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [passengersLoading, setPassengersLoading] = useState(false);
   const passengerRequestId = useRef(0);
+  const tripsRequestId = useRef(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [finishMileage, setFinishMileage] = useState('');
@@ -50,11 +51,13 @@ export default function DriverPortalPage() {
   const [occurrenceDescription,setOccurrenceDescription]=useState('');
 
   async function loadData(preserveMessage = false) {
+    const requestId = ++tripsRequestId.current;
     setLoading(true);
     if (!preserveMessage) setMessage('');
 
     try {
       const { data: authData } = await supabase.auth.getUser();
+    if (requestId !== tripsRequestId.current) return;
     const userId = authData.user?.id;
 
     if (!userId) {
@@ -68,6 +71,7 @@ export default function DriverPortalPage() {
       .eq('profile_id', userId)
       .maybeSingle();
 
+    if (requestId !== tripsRequestId.current) return;
     if (driverError || !driver) {
       setMessage('Sua conta ainda não está vinculada a um cadastro de motorista.');
       return;
@@ -96,6 +100,7 @@ export default function DriverPortalPage() {
       .order('date', { ascending: true })
       .order('departure_time', { ascending: true });
 
+    if (requestId !== tripsRequestId.current) return;
     if (error) {
       setMessage(`Não foi possível carregar suas viagens: ${error.message}`);
     } else {
@@ -114,9 +119,11 @@ export default function DriverPortalPage() {
     }
 
     } catch {
-      setMessage('Falha de conexão ao atualizar a programação. Verifique sua internet e tente novamente.');
+      if (requestId === tripsRequestId.current) {
+        setMessage('Falha de conexão ao atualizar a programação. Verifique sua internet e tente novamente.');
+      }
     } finally {
-      setLoading(false);
+      if (requestId === tripsRequestId.current) setLoading(false);
     }
   }
 
