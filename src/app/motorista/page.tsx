@@ -330,7 +330,7 @@ export default function DriverPortalPage() {
                     <button
                       onClick={() => changeTripStatus(trip, 'START')}
                       disabled={actionLoading === trip.id}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Play size={17} /> {actionLoading === trip.id ? 'Iniciando...' : 'Iniciar viagem'}
                     </button>
@@ -339,8 +339,9 @@ export default function DriverPortalPage() {
                       <div className="text-sm text-slate-600">
                         Quilometragem inicial: <strong>{trip.initial_mileage ?? '—'} km</strong>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex flex-col gap-2 sm:flex-row">
                         <input
+                          aria-label="Quilometragem final da viagem"
                           type="number"
                           min={trip.initial_mileage ?? 0}
                           step="1"
@@ -350,12 +351,12 @@ export default function DriverPortalPage() {
                             setFinishMileage(event.target.value);
                           }}
                           placeholder="KM final"
-                          className="min-w-0 flex-1 rounded-lg border px-3 py-3 text-sm"
+                          className="min-w-0 w-full flex-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                         />
                         <button
                           onClick={() => changeTripStatus(trip, 'FINISH')}
                           disabled={actionLoading === trip.id}
-                          className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-3 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           <CheckCircle2 size={17} /> {actionLoading === trip.id ? 'Finalizando...' : 'Finalizar'}
                         </button>
@@ -374,7 +375,7 @@ export default function DriverPortalPage() {
         )}
 
         {selectedTrip && (
-          <div className="rounded-xl border bg-white p-5 shadow-sm">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2">
               <UserRound size={19} />
               <h2 className="font-semibold">Passageiros da viagem</h2>
@@ -384,12 +385,12 @@ export default function DriverPortalPage() {
             ) : (
               <div className="divide-y">
                 {passengers.map((passenger) => (
-                  <div key={passenger.id} className="flex items-center justify-between gap-3 py-3">
+                  <div key={passenger.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="font-medium">{passenger.patient?.name ?? 'Paciente não informado'}</div>
                       <div className="text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                     </div>
-                    <div className="flex flex-wrap justify-end gap-2"><button disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button><button disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border'}`}><X size={13} className="mr-1 inline"/> Faltou</button></div>
+                    <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" aria-pressed={passenger.boarding_status==='BOARDED'} disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button><button disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} aria-pressed={passenger.boarding_status==='NO_SHOW'} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border'}`}><X size={13} className="mr-1 inline"/> Faltou</button></div>
                   </div>
                 ))}
               </div>
