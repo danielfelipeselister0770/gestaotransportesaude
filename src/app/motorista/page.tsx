@@ -350,12 +350,14 @@ export default function DriverPortalPage() {
       <section className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
         {message && <div role="status" aria-live="polite" className="rounded-xl border border-teal-200 bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
+        {actionLoading !== null && <p role="status" aria-live="polite" className="text-sm font-medium text-teal-800">Salvando informações... Aguarde antes de trocar os filtros ou atualizar a programação.</p>}
+
         <div role="group" aria-label="Filtro de programação" className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row">
           <button
             onClick={() => setViewMode('TODAY')}
             disabled={actionLoading !== null}
             aria-pressed={viewMode === 'TODAY'}
-            className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${viewMode === 'TODAY' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-wait disabled:opacity-50 ${viewMode === 'TODAY' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Hoje
           </button>
@@ -363,7 +365,7 @@ export default function DriverPortalPage() {
             onClick={() => setViewMode('SCHEDULE')}
             disabled={actionLoading !== null}
             aria-pressed={viewMode === 'SCHEDULE'}
-            className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${viewMode === 'SCHEDULE' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-wait disabled:opacity-50 ${viewMode === 'SCHEDULE' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Minha programação
           </button>
