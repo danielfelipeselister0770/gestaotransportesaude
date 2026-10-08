@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { Building2, Pencil, Plus, Search, X } from 'lucide-react';
+import { Building2, CheckCircle2, Database, Pencil, Plus, Search, XCircle, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Role = 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA';
@@ -184,28 +184,30 @@ export default function EstablishmentsPage() {
   const counts={total:establishments.length,active:establishments.filter(x=>x.active).length,cnes:establishments.filter(x=>x.cnes).length,inactive:establishments.filter(x=>!x.active).length};
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
 <section className=" p-4 md:p-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Estabelecimentos de Saúde</h1>
-              <p className="text-sm text-slate-500">{municipalityName || 'Cadastro vinculado à prefeitura'}</p>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><Building2 size={15}/> Rede municipal de saúde</div>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Estabelecimentos de Saúde</h1>
+              <p className="mt-1 text-sm text-slate-500">{municipalityName || 'Cadastro vinculado à prefeitura'}</p>
             </div>
             {canManage && (
-              <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white">
+              <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
                 <Plus size={18} /> Novo estabelecimento
               </button>
             )}
           </div>
+          <div className="p-5 lg:p-8">
 
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Total" value={counts.total}/><Stat label="Ativos" value={counts.active}/><Stat label="Com CNES" value={counts.cnes}/><Stat label="Inativos" value={counts.inactive}/></div>
-          <div className="mb-4 grid gap-2 md:grid-cols-[1fr_180px_220px]"><div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNES, CNPJ ou cidade" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select>{role==='ADMIN'&&<select value={municipalityFilter} onChange={e=>setMunicipalityFilter(e.target.value)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todas as prefeituras</option>{municipalities.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select>}</div>
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<Building2 size={18}/>} label="Total" value={counts.total}/><Stat icon={<CheckCircle2 size={18}/>} label="Ativos" value={counts.active}/><Stat icon={<Database size={18}/>} label="Com CNES" value={counts.cnes}/><Stat icon={<XCircle size={18}/>} label="Inativos" value={counts.inactive} muted/></div>
+          <div className="mb-5 grid gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_180px_220px]"><div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nome, CNES, CNPJ ou cidade" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todos</option><option value="ACTIVE">Ativos</option><option value="INACTIVE">Inativos</option></select>{role==='ADMIN'&&<select value={municipalityFilter} onChange={e=>setMunicipalityFilter(e.target.value)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todas as prefeituras</option>{municipalities.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select>}</div>
 
           {showForm && (
-            <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+            <form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h2 className="font-semibold">{editing ? 'Editar estabelecimento' : 'Novo estabelecimento'}</h2>
@@ -260,12 +262,12 @@ export default function EstablishmentsPage() {
 
               <div className="mt-5 flex justify-end gap-2">
                 <button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-                <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar estabelecimento'}</button>
+                <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">{saving ? 'Salvando...' : 'Salvar estabelecimento'}</button>
               </div>
             </form>
           )}
 
-          <div className="overflow-hidden rounded-xl border bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             {loading ? (
               <div className="p-8 text-center text-sm text-slate-500">Carregando...</div>
             ) : filtered.length === 0 ? (
@@ -273,9 +275,9 @@ export default function EstablishmentsPage() {
             ) : (
               <div className="divide-y">
                 {filtered.map((item) => (
-                  <div key={item.id} className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
+                  <div key={item.id} className="flex flex-col gap-4 p-4 transition hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-start gap-3">
-                      <div className="rounded-lg bg-slate-100 p-2"><Building2 size={20} /></div>
+                      <div className="rounded-xl bg-teal-50 p-2 text-teal-700"><Building2 size={20} /></div>
                       <div>
                         <div className="flex flex-wrap items-center gap-2 font-semibold text-slate-900">
                           {item.name}
@@ -296,10 +298,11 @@ export default function EstablishmentsPage() {
               </div>
             )}
           </div>
+          </div>
         </div>
       </section>
     </main>
   );
 }
 
-function Stat({label,value}:{label:string;value:number}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold">{value}</div></div>}
+function Stat({icon,label,value,muted=false}:{icon:React.ReactNode;label:string;value:number;muted?:boolean}){return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={"mb-3 grid h-9 w-9 place-items-center rounded-xl " + (muted ? "bg-slate-100 text-slate-600" : "bg-teal-50 text-teal-700")}>{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>}
