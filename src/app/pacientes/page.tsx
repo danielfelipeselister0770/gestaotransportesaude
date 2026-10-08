@@ -401,7 +401,8 @@ export default function PatientsPage() {
       <section>
         <header className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
           <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><UserRound size={15} /> Cadastro e acompanhamento</div>\n            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Pacientes</h1>
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><UserRound size={15} /> Cadastro e acompanhamento</div>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Pacientes</h1>
             <p className="mt-1 text-sm text-slate-500">Cadastro completo, documentos SUS, necessidades de transporte e histórico.</p>
           </div>
           <div className="flex flex-wrap gap-2"><Link href="/pacientes/importar" className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-teal-200 hover:text-teal-700"><FileUp size={17}/> Importar arquivo</Link><button onClick={openNewPatient} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
@@ -711,7 +712,8 @@ function PatientDetail({
 function Indicator({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_1px_2px_rgba(15,23,42,.04)]">
-      <div className="mb-3 flex items-center justify-between text-slate-500"><span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</span><ArrowRight size={15} className="text-slate-300"/></div>\n      <div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div>
+      <div className="mb-3 flex items-center justify-between text-slate-500"><span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-50 text-teal-700">{icon}</span><ArrowRight size={15} className="text-slate-300"/></div>
+      <div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div>
     </div>
   );
 }
