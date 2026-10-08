@@ -188,9 +188,8 @@ export default function DriverPortalPage() {
     }
 
     const trip = trips.find((item) => item.id === tripId);
-    if (trip?.status === 'IN_PROGRESS' && trip.initial_mileage != null) {
-      setFinishMileage('');
-    }
+    // Preserve o KM digitado ao atualizar passageiros da mesma viagem.
+    if (switchingTrip) setFinishMileage('');
 
     try {
       const { data, error } = await supabase
