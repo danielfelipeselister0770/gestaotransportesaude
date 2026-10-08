@@ -162,14 +162,33 @@ export default function DriverPortalPage() {
     }
   }
 
-  async function addOccurrence(event:FormEvent<HTMLFormElement>){
-    event.preventDefault(); if(!selectedTripData||!occurrenceDescription.trim())return;
-    setActionLoading('occurrence'); setMessage('');
-    const response=await fetch('/api/motorista/viagem/ocorrencia',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tripId:selectedTripData.id,type:occurrenceType,description:occurrenceDescription.trim()})});
-    const result=await response.json().catch(()=>({}));
-    if(!response.ok)setMessage(result.error??'Não foi possível registrar a ocorrência.');
-    else{setOccurrenceDescription('');setMessage('Ocorrência registrada e enviada para a gestão.');}
-    setActionLoading(null);
+  async function addOccurrence(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (actionLoading || !selectedTripData || !occurrenceDescription.trim()) return;
+    setActionLoading('occurrence');
+    setMessage('');
+    try {
+      const response = await fetch('/api/motorista/viagem/ocorrencia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tripId: selectedTripData.id,
+          type: occurrenceType,
+          description: occurrenceDescription.trim(),
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(result.error ?? 'Não foi possível registrar a ocorrência.');
+      } else {
+        setOccurrenceDescription('');
+        setMessage('Ocorrência registrada e enviada para a gestão.');
+      }
+    } catch {
+      setMessage('Falha de conexão ao registrar a ocorrência. Verifique sua internet e tente novamente.');
+    } finally {
+      setActionLoading(null);
+    }
   }
 
   async function changeTripStatus(trip: Trip, action: 'START' | 'FINISH') {
