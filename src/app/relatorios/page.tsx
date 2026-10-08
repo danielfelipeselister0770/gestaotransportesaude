@@ -219,8 +219,8 @@ export default function RelatoriosPage() {
   function Comparison({ label, current, previous, format = 'number' }: { label: string; current: number; previous: number; format?: 'number' | 'money' }) {
     const change = variation(current, previous);
     const up = change != null && change >= 0;
-    return <div className="rounded-xl border bg-white p-5">
-      <div className="text-sm text-slate-500">{label}</div>
+    return <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="mt-1 text-sm font-semibold text-slate-700">{label}</div>
       <div className="mt-2 text-xl font-bold">{format === 'money' ? money(current) : current.toLocaleString('pt-BR')}</div>
       <div className="mt-2 flex items-center gap-1 text-xs text-slate-500">
         {change == null ? <span>Sem base no mês anterior</span> : <>
@@ -273,19 +273,19 @@ export default function RelatoriosPage() {
 
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {kpis.map(([label, value, Icon]) => (
-              <div key={String(label)} className="rounded-xl border bg-white p-5 shadow-sm">
-                <Icon size={20} className="mb-3 text-slate-500" />
-                <div className="text-2xl font-bold text-slate-900">{value}</div>
-                <div className="text-sm text-slate-500">{label}</div>
+              <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700"><Icon size={20} /></div>
+                <div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div>
+                <div className="mt-1 text-sm font-semibold text-slate-700">{label}</div>
               </div>
             ))}
           </div>
 
           <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo médio por KM</div><div className="mt-2 text-xl font-bold">{money(totals.km > 0 ? totals.totalCost / totals.km : 0)}</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por viagem concluída</div><div className="mt-2 text-xl font-bold">{money(totals.completedTrips > 0 ? totals.totalCost / totals.completedTrips : 0)}</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Custo por passageiro</div><div className="mt-2 text-xl font-bold">{money(totals.passengers > 0 ? totals.totalCost / totals.passengers : 0)}</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Taxa de conclusão</div><div className="mt-2 text-xl font-bold">{totals.trips > 0 ? ((totals.completedTrips / totals.trips) * 100).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}%</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Custo médio por KM</div><div className="mt-2 text-xl font-bold">{money(totals.km > 0 ? totals.totalCost / totals.km : 0)}</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Custo por viagem concluída</div><div className="mt-2 text-xl font-bold">{money(totals.completedTrips > 0 ? totals.totalCost / totals.completedTrips : 0)}</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Custo por passageiro</div><div className="mt-2 text-xl font-bold">{money(totals.passengers > 0 ? totals.totalCost / totals.passengers : 0)}</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Taxa de conclusão</div><div className="mt-2 text-xl font-bold">{totals.trips > 0 ? ((totals.completedTrips / totals.trips) * 100).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}%</div></div>
           </div>
 
           <div className="mb-6">
@@ -298,9 +298,9 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="mb-6 grid gap-4 lg:grid-cols-3">
-            <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Fuel size={18} /> Combustível</div><div className="mt-3 text-xl font-bold">{money(totals.fuelCost)}</div><div className="text-sm text-slate-500">{totals.liters.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} litros</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><Wrench size={18} /> Manutenção</div><div className="mt-3 text-xl font-bold">{money(totals.maintenanceCost)}</div><div className="text-sm text-slate-500">Serviços não cancelados</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} /> Operação</div><div className="mt-3 text-xl font-bold">{totals.completedTrips}/{totals.trips}</div><div className="text-sm text-slate-500">viagens concluídas</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 font-semibold"><Fuel size={18} /> Combustível</div><div className="mt-3 text-xl font-bold">{money(totals.fuelCost)}</div><div className="text-sm text-slate-500">{totals.liters.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} litros</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 font-semibold"><Wrench size={18} /> Manutenção</div><div className="mt-3 text-xl font-bold">{money(totals.maintenanceCost)}</div><div className="text-sm text-slate-500">Serviços não cancelados</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} /> Operação</div><div className="mt-3 text-xl font-bold">{totals.completedTrips}/{totals.trips}</div><div className="text-sm text-slate-500">viagens concluídas</div></div>
           </div>
 
           <div className="mb-6 rounded-xl border bg-white p-5">
@@ -319,9 +319,9 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="mb-6 grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Veículos utilizados</div><div className="mt-2 text-xl font-bold">{reports.filter((r) => r.trips > 0).length}/{vehicles.length}</div><div className="text-xs text-slate-500">com viagens no período</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Média da frota por KM</div><div className="mt-2 text-xl font-bold">{money(fleetAverageCostPerKm)}</div><div className="text-xs text-slate-500">média entre veículos com KM registrado</div></div>
-            <div className="rounded-xl border bg-white p-5"><div className="text-sm text-slate-500">Ocupação média</div><div className="mt-2 text-xl font-bold">{totals.completedTrips > 0 ? (totals.passengers / totals.completedTrips).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}</div><div className="text-xs text-slate-500">passageiros por viagem concluída</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Veículos utilizados</div><div className="mt-2 text-xl font-bold">{reports.filter((r) => r.trips > 0).length}/{vehicles.length}</div><div className="text-xs text-slate-500">com viagens no período</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Média da frota por KM</div><div className="mt-2 text-xl font-bold">{money(fleetAverageCostPerKm)}</div><div className="text-xs text-slate-500">média entre veículos com KM registrado</div></div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="text-sm text-slate-500">Ocupação média</div><div className="mt-2 text-xl font-bold">{totals.completedTrips > 0 ? (totals.passengers / totals.completedTrips).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '0'}</div><div className="text-xs text-slate-500">passageiros por viagem concluída</div></div>
           </div>
 
           {managementAlerts.length > 0 && <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-5">
