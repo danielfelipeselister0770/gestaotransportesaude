@@ -345,7 +345,8 @@ export default function TripsPage() {
         <header className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 md:flex-row md:items-center md:justify-between lg:px-8">
           <div>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><CalendarDays size={15}/> Planejamento operacional</div>
-            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Agenda / Viagens</h1>\n            <p className="mt-1 text-sm text-slate-500">Monte a agenda, agrupe passageiros e acompanhe a execução das viagens.</p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Agenda / Viagens</h1>
+            <p className="mt-1 text-sm text-slate-500">Monte a agenda, agrupe passageiros e acompanhe a execução das viagens.</p>
           </div>
           <button onClick={() => setShowForm(true)} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
             <Plus size={18}/> Nova viagem
