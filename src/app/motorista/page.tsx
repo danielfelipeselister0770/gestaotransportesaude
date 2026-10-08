@@ -312,6 +312,10 @@ export default function DriverPortalPage() {
         setMessage('Informe a quilometragem final.');
         return;
       }
+      if (!Number.isSafeInteger(mileage) || mileage < 0) {
+        setMessage('Informe uma quilometragem final válida, em quilômetros inteiros e não negativos.');
+        return;
+      }
       if (trip.initial_mileage != null && mileage < Number(trip.initial_mileage)) {
         setMessage(`A quilometragem final deve ser igual ou maior que ${trip.initial_mileage} km.`);
         return;
