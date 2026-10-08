@@ -46,6 +46,7 @@ export default function DriverPortalPage() {
   const [loading, setLoading] = useState(true);
   const [tripsError, setTripsError] = useState(false);
   const [driverLinkMissing, setDriverLinkMissing] = useState(false);
+  const [syncWarning, setSyncWarning] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
@@ -59,11 +60,13 @@ export default function DriverPortalPage() {
     if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++tripsRequestId.current;
     setLoading(true);
+    setSyncWarning(false);
     setTripsError(false);
     setDriverLinkMissing(false);
     if (!preserveMessage) setMessage('');
     const reportError = (detail: string) => {
       if (!afterConfirmedAction) setTripsError(true);
+      if (afterConfirmedAction) setSyncWarning(true);
       setMessage((previous) => afterConfirmedAction
         ? `${previous} A viagem foi atualizada, mas não foi possível sincronizar a programação. Use Atualizar para tentar novamente.`
         : detail);
@@ -386,6 +389,13 @@ export default function DriverPortalPage() {
             <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} /> {loading ? 'Atualizando...' : 'Atualizar'}
           </button>
         </div>
+
+        {syncWarning && !loading && (
+          <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+            <span>A operação foi confirmada, mas a programação pode estar desatualizada.</span>
+            <button type="button" onClick={() => loadData()} disabled={actionLoading !== null} className="rounded-xl bg-white px-4 py-2 font-semibold ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-50">Sincronizar novamente</button>
+          </div>
+        )}
 
         {loading ? (
           <div role="status" aria-live="polite" className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500"><RefreshCw size={22} className="mx-auto mb-3 animate-spin text-teal-700" aria-hidden="true" />Carregando viagens...</div>
