@@ -51,6 +51,7 @@ export default function DriverPortalPage() {
   const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
   const [message, setMessage] = useState('');
+  const [messageTone, setMessageTone] = useState<'success' | 'warning'>('warning');
   const [viewMode, setViewMode] = useState<'TODAY' | 'SCHEDULE'>('TODAY');
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
   const [occurrenceType,setOccurrenceType]=useState('ATRASO');
@@ -68,7 +69,9 @@ export default function DriverPortalPage() {
     setTripsError(false);
     setDriverLinkMissing(false);
     if (!preserveMessage) setMessage('');
+    setMessageTone('warning');
     const reportError = (detail: string) => {
+      setMessageTone('warning');
       if (!recoveringSync) setTripsError(true);
       if (recoveringSync) setSyncWarning(true);
       setMessage((previous) => afterConfirmedAction
@@ -173,6 +176,7 @@ export default function DriverPortalPage() {
     setPassengersLoading(true);
     setPassengersError(false);
     if (!preserveMessage) setMessage('');
+    setMessageTone('warning');
 
     const trip = trips.find((item) => item.id === tripId);
     if (trip?.status === 'IN_PROGRESS' && trip.initial_mileage != null) {
@@ -214,6 +218,7 @@ export default function DriverPortalPage() {
     actionInProgressRef.current = true;
     setActionLoading(passenger.id);
     setMessage('');
+    setMessageTone('warning');
     try {
       const response = await fetch('/api/motorista/viagem/passageiro', {
         method: 'POST',
@@ -225,6 +230,7 @@ export default function DriverPortalPage() {
         setMessage(result.error ?? 'Não foi possível atualizar o passageiro.');
       } else {
         setPassengers(current => current.map(p => p.id === passenger.id ? { ...p, boarding_status: boardingStatus } : p));
+        setMessageTone('success');
         setMessage('Situação de embarque atualizada com sucesso.');
       }
     } catch {
@@ -243,6 +249,7 @@ export default function DriverPortalPage() {
     actionInProgressRef.current = true;
     setActionLoading('occurrence');
     setMessage('');
+    setMessageTone('warning');
     try {
       const response = await fetch('/api/motorista/viagem/ocorrencia', {
         method: 'POST',
@@ -258,6 +265,7 @@ export default function DriverPortalPage() {
         setMessage(result.error ?? 'Não foi possível registrar a ocorrência.');
       } else {
         setOccurrenceDescription('');
+        setMessageTone('success');
         setMessage('Ocorrência registrada e enviada para a gestão.');
       }
     } catch {
@@ -295,6 +303,7 @@ export default function DriverPortalPage() {
     actionInProgressRef.current = true;
     setActionLoading(trip.id);
     setMessage('');
+    setMessageTone('warning');
     try {
       const response = await fetch('/api/motorista/viagem/status', {
         method: 'POST',
@@ -379,7 +388,7 @@ export default function DriverPortalPage() {
       </header>
 
       <section className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
-        {message && <div role={/não foi possível|falha|erro|aguarde|sincronize|informe|deve ser|não está|ainda não/i.test(message) ? "alert" : "status"} aria-live="polite" className={`rounded-xl border px-4 py-3 text-sm ${/não foi possível|falha|erro|aguarde|sincronize|informe|deve ser|não está|ainda não/i.test(message) ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</div>}
+        {message && <div role={messageTone === "warning" ? "alert" : "status"} aria-live="polite" className={`rounded-xl border px-4 py-3 text-sm ${messageTone === "warning" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</div>}
 
         {actionLoading !== null && <p role="status" aria-live="polite" className="text-sm font-medium text-teal-800">Salvando informações... Aguarde antes de trocar os filtros ou atualizar a programação.</p>}
 
