@@ -40,6 +40,7 @@ export default function DriverPortalPage() {
   const selectedTripRef = useRef<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [passengersLoading, setPassengersLoading] = useState(false);
+  const [passengersError, setPassengersError] = useState(false);
   const passengerRequestId = useRef(0);
   const tripsRequestId = useRef(0);
   const [loading, setLoading] = useState(true);
@@ -137,6 +138,7 @@ export default function DriverPortalPage() {
     setSelectedTrip(tripId);
     setPassengers([]);
     setPassengersLoading(true);
+    setPassengersError(false);
     setMessage('');
 
     const trip = trips.find((item) => item.id === tripId);
@@ -152,6 +154,7 @@ export default function DriverPortalPage() {
 
       if (requestId !== passengerRequestId.current) return;
       if (error) {
+        setPassengersError(true);
         setMessage(`Não foi possível carregar os passageiros: ${error.message}`);
         return;
       }
@@ -162,6 +165,7 @@ export default function DriverPortalPage() {
       })) as Passenger[]);
     } catch {
       if (requestId === passengerRequestId.current) {
+        setPassengersError(true);
         setMessage('Falha de conexão ao carregar passageiros. Verifique sua internet e selecione a viagem novamente.');
       }
     } finally {
@@ -464,6 +468,11 @@ export default function DriverPortalPage() {
             </div>
             {passengersLoading ? (
               <p role="status" className="text-sm text-slate-500">Carregando passageiros...</p>
+            ) : passengersError ? (
+              <div role="alert" className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p>Não foi possível consultar os passageiros desta viagem.</p>
+                <button type="button" onClick={() => loadPassengers(selectedTrip)} className="rounded-lg bg-white px-4 py-2 font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700">Tentar novamente</button>
+              </div>
             ) : passengers.length === 0 ? (
               <p className="text-sm text-slate-500">Nenhum passageiro encontrado.</p>
             ) : (
