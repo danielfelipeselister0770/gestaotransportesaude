@@ -289,7 +289,7 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="mb-6">
-            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Comparativo mensal</h2>
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-teal-700">Comparativo mensal</h2>
             <div className="grid gap-4 sm:grid-cols-3">
               <Comparison label="Viagens" current={totals.trips} previous={previousTotals.trips} />
               <Comparison label="KM rodados" current={totals.km} previous={previousTotals.km} />
@@ -303,13 +303,13 @@ export default function RelatoriosPage() {
             <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex items-center gap-2 font-semibold"><FileSpreadsheet size={18} /> Operação</div><div className="mt-3 text-xl font-bold">{totals.completedTrips}/{totals.trips}</div><div className="text-sm text-slate-500">viagens concluídas</div></div>
           </div>
 
-          <div className="mb-6 rounded-xl border bg-white p-5">
-            <div className="mb-1 font-semibold">Evolução dos últimos 6 meses</div>
+          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-1 font-semibold text-slate-950">Evolução dos últimos 6 meses</div>
             <div className="mb-5 text-sm text-slate-500">Custos, viagens e quilômetros até o mês selecionado.</div>
             <div className="grid grid-cols-6 gap-2">
               {monthlyHistory.map((item) => <div key={item.key} className="min-w-0 text-center">
-                <div className="flex h-36 items-end justify-center">
-                  <div className="w-full max-w-12 rounded-t bg-slate-800" style={{ height: `${Math.max((item.cost / maxHistoryCost) * 100, item.cost > 0 ? 6 : 2)}%` }} title={money(item.cost)} />
+                <div className="flex h-36 items-end justify-center rounded-xl border border-slate-100 bg-slate-50 p-2">
+                  <div className="w-full max-w-12 rounded-t-lg bg-teal-700" style={{ height: `${Math.max((item.cost / maxHistoryCost) * 100, item.cost > 0 ? 6 : 2)}%` }} title={money(item.cost)} />
                 </div>
                 <div className="mt-2 text-xs font-medium capitalize text-slate-700">{item.label}</div>
                 <div className="mt-1 text-xs font-semibold">{money(item.cost)}</div>
@@ -330,7 +330,7 @@ export default function RelatoriosPage() {
             <div className="mt-3 text-xs text-amber-700">Alertas indicativos baseados nos registros do período; devem ser analisados pelo gestor antes de qualquer decisão.</div>
           </div>}
 
-          {ranking.length > 0 && <div className="mb-6 rounded-xl border bg-white p-5">
+          {ranking.length > 0 && <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center gap-2 font-semibold"><Trophy size={18} /> Ranking de custo por veículo</div>
             <div className="space-y-3">
               {ranking.map((r, index) => <div key={r.vehicle.id} className="flex items-center justify-between gap-4 border-b pb-3 last:border-0 last:pb-0">
