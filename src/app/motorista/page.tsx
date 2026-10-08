@@ -137,6 +137,9 @@ export default function DriverPortalPage() {
       })) as Trip[];
       setTrips(normalized);
       setSyncWarning(false);
+      if (recoveringSync && selectedTripRef.current && normalized.some((trip) => trip.id === selectedTripRef.current)) {
+        await loadPassengers(selectedTripRef.current, true);
+      }
       if (selectedTripRef.current && !normalized.some((trip) => trip.id === selectedTripRef.current)) {
         passengerRequestId.current += 1;
         selectedTripRef.current = null;
@@ -156,7 +159,7 @@ export default function DriverPortalPage() {
     }
   }
 
-  async function loadPassengers(tripId: string) {
+  async function loadPassengers(tripId: string, preserveMessage = false) {
     if (actionInProgressRef.current) return;
     const requestId = ++passengerRequestId.current;
     selectedTripRef.current = tripId;
@@ -164,7 +167,7 @@ export default function DriverPortalPage() {
     setPassengers([]);
     setPassengersLoading(true);
     setPassengersError(false);
-    setMessage('');
+    if (!preserveMessage) setMessage('');
 
     const trip = trips.find((item) => item.id === tripId);
     if (trip?.status === 'IN_PROGRESS' && trip.initial_mileage != null) {
