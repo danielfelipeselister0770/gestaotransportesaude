@@ -616,22 +616,22 @@ function PatientDetail({
   onToggleActive: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
-      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-        <div className="sticky top-0 z-10 flex items-start justify-between border-b bg-white px-6 py-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-2 backdrop-blur-sm sm:p-4">
+      <div role="dialog" aria-modal="true" aria-label={`Detalhes do paciente ${patient.name}`} className="max-h-[95dvh] w-full max-w-5xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[92vh]">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-slate-200 bg-white px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-slate-900">{patient.name}</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="break-words text-lg font-bold text-slate-950 sm:text-xl">{patient.name}</h2>
               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${patient.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
                 {patient.active ? 'Ativo' : 'Inativo'}
               </span>
             </div>
             <p className="mt-1 text-sm text-slate-500">{municipalityName} · Atualizado em {formatDateTime(patient.updated_at)}</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={20} /></button>
+          <button onClick={onClose} aria-label="Fechar detalhes do paciente" className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button>
         </div>
 
-        <div className="grid gap-6 p-6 lg:grid-cols-3">
+        <div className="grid gap-4 p-4 sm:gap-6 sm:p-6 lg:grid-cols-3">
           <div className="space-y-4 lg:col-span-2">
             <DetailSection title="Identificação">
               <DetailItem label="CPF" value={formatCpf(patient.cpf) || 'Não informado'} />
@@ -699,7 +699,7 @@ function PatientDetail({
           </aside>
         </div>
 
-        <div className="sticky bottom-0 flex justify-end gap-2 border-t bg-white px-6 py-4">
+        <div className="sticky bottom-0 flex flex-col gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:flex-row sm:justify-end sm:px-6 sm:py-4">
           <button onClick={onClose} className="rounded-lg border px-4 py-2 text-sm">Fechar</button>
           <button onClick={onToggleActive} className="rounded-lg border px-4 py-2 text-sm">
             {patient.active ? 'Inativar paciente' : 'Reativar paciente'}
@@ -722,7 +722,7 @@ function Indicator({ icon, label, value }: { icon: React.ReactNode; label: strin
 
 function DetailSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-xl border p-4">
+    <section className="rounded-xl border border-slate-200 p-4">
       <h3 className="mb-4 text-sm font-semibold text-slate-800">{title}</h3>
       <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">{children}</div>
     </section>
