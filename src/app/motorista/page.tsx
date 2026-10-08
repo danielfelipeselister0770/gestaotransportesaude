@@ -270,6 +270,10 @@ export default function DriverPortalPage() {
 
   async function changeTripStatus(trip: Trip, action: 'START' | 'FINISH') {
     if (actionInProgressRef.current) return;
+    if (loading || passengersLoading || passengersError) {
+      setMessage('Aguarde a atualização da programação e dos passageiros antes de iniciar ou finalizar viagens.');
+      return;
+    }
     if (syncWarning) {
       setMessage('Sincronize a programação antes de iniciar ou finalizar outra viagem.');
       return;
@@ -476,7 +480,7 @@ export default function DriverPortalPage() {
                   {trip.status === 'SCHEDULED' ? (
                     <button
                       onClick={() => changeTripStatus(trip, 'START')}
-                      disabled={actionLoading !== null || syncWarning}
+                      disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <Play size={17} aria-hidden="true" /> {actionLoading === trip.id ? 'Iniciando...' : 'Iniciar viagem'}
@@ -493,7 +497,7 @@ export default function DriverPortalPage() {
                           min={trip.initial_mileage ?? 0}
                           step="1"
                           value={selectedTripData?.id === trip.id ? finishMileage : ''}
-                          disabled={actionLoading !== null || syncWarning}
+                          disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning}
                           onChange={(event) => {
                             if (actionInProgressRef.current) return;
                             selectedTripRef.current = trip.id;
@@ -505,7 +509,7 @@ export default function DriverPortalPage() {
                         />
                         <button
                           onClick={() => changeTripStatus(trip, 'FINISH')}
-                          disabled={actionLoading !== null || syncWarning}
+                          disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning}
                           className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           <CheckCircle2 size={17} aria-hidden="true" /> {actionLoading === trip.id ? 'Finalizando...' : 'Finalizar'}
