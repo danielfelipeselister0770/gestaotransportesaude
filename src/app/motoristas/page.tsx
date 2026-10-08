@@ -154,9 +154,12 @@ export default function DriversPage() {
         <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18}/> Novo motorista</button>
       </div>
 
-      <div className="p-5 lg:p-8">\n      {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
+      <div className="p-5 lg:p-8">
+      {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<UsersRound size={18}/>} label="Motoristas" value={drivers.length}/><Stat icon={<BadgeCheck size={18}/>} label="Ativos" value={activeCount}/><Stat icon={<IdCard size={18}/>} label="CNHs vencidas" value={expiredCount} attention={expiredCount > 0}/><Stat icon={<ShieldCheck size={18}/>} label="Com acesso" value={accessCount}/></div>\n\n      <div className="mb-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
+      <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<UsersRound size={18}/>} label="Motoristas" value={drivers.length}/><Stat icon={<BadgeCheck size={18}/>} label="Ativos" value={activeCount}/><Stat icon={<IdCard size={18}/>} label="CNHs vencidas" value={expiredCount} attention={expiredCount > 0}/><Stat icon={<ShieldCheck size={18}/>} label="Com acesso" value={accessCount}/></div>
+
+      <div className="mb-5 flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
         <Search size={18} className="text-slate-400"/>
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome, CPF ou CNH" className="w-full outline-none text-sm"/>
       </div>
