@@ -110,15 +110,20 @@ export async function POST(request: Request) {
 
     if (!startedTrip) return NextResponse.json({ error: 'Viagem já iniciada ou alterada. Atualize a programação.' }, { status: 409 });
 
-    const { error: vehicleError } = await admin
+    const { data: reservedVehicle, error: vehicleError } = await admin
       .from('vehicles')
       .update({ status: 'IN_USE' })
       .eq('id', vehicle.id)
-      .eq('status', 'AVAILABLE');
+      .eq('status', 'AVAILABLE')
+      .select('id')
+      .maybeSingle();
 
-    if (vehicleError) {
-      await admin.from('trips').update({ status: 'SCHEDULED', initial_mileage: null }).eq('id', trip.id);
-      return NextResponse.json({ error: vehicleError.message }, { status: 400 });
+    if (vehicleError || !reservedVehicle) {
+      await admin.from('trips')
+        .update({ status: 'SCHEDULED', initial_mileage: null, started_at: null })
+        .eq('id', trip.id)
+        .eq('status', 'IN_PROGRESS');
+      return NextResponse.json({ error: vehicleError?.message ?? 'O veículo deixou de estar disponível. Atualize a programação.' }, { status: vehicleError ? 400 : 409 });
     }
 
     return NextResponse.json({ ok: true, status: 'IN_PROGRESS', initialMileage });
