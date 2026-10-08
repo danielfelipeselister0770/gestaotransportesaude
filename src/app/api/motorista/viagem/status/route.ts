@@ -219,11 +219,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização dos passageiros. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
-  const { data: passengers } = await admin
+  const { data: passengers, error: passengersReadError } = await admin
     .from('trip_passengers')
     .select('request_id,boarding_status')
     .eq('trip_id', trip.id)
     .not('request_id', 'is', null);
+
+  if (passengersReadError) {
+    return NextResponse.json({ error: 'Viagem concluída, mas falhou a consulta dos passageiros vinculados às solicitações. Avise a gestão; não finalize novamente.' }, { status: 500 });
+  }
 
   const completedIds = [...new Set((passengers ?? []).filter(row => row.boarding_status === 'BOARDED').map(row => row.request_id).filter(Boolean))];
   const noShowIds = [...new Set((passengers ?? []).filter(row => row.boarding_status !== 'BOARDED').map(row => row.request_id).filter(Boolean))];
