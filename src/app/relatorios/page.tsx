@@ -331,10 +331,10 @@ export default function RelatoriosPage() {
           </div>}
 
           {ranking.length > 0 && <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center gap-2 font-semibold"><Trophy size={18} /> Ranking de custo por veículo</div>
+            <div className="mb-4 flex items-center gap-2 font-semibold text-slate-950"><Trophy size={18} className="text-teal-700" /> Ranking de custo por veículo</div>
             <div className="space-y-3">
-              {ranking.map((r, index) => <div key={r.vehicle.id} className="flex items-center justify-between gap-4 border-b pb-3 last:border-0 last:pb-0">
-                <div><span className="mr-3 text-sm font-bold text-slate-400">{index + 1}º</span><span className="font-medium">{r.vehicle.plate}</span><span className="ml-2 text-xs text-slate-500">{[r.vehicle.brand, r.vehicle.model].filter(Boolean).join(' ')}</span></div>
+              {ranking.map((r, index) => <div key={r.vehicle.id} className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+                <div><span className="mr-3 text-sm font-bold text-slate-400">{index + 1}º</span><span className="font-semibold text-slate-900">{r.vehicle.plate}</span><span className="ml-2 text-xs text-slate-500">{[r.vehicle.brand, r.vehicle.model].filter(Boolean).join(' ')}</span></div>
                 <div className="text-right"><div className="font-semibold">{money(r.totalCost)}</div><div className="text-xs text-slate-500">{money(r.costPerKm)}/km</div></div>
               </div>)}
             </div>
@@ -346,8 +346,8 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando relatório...</div> :
-              filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhum dado encontrado para o período.</div> :
+            {loading ? <div role="status" className="p-10 text-center text-sm text-slate-500">Carregando relatório...</div> :
+              filtered.length === 0 ? <div className="p-10 text-center text-sm text-slate-500">Nenhum dado encontrado para o período.</div> :
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -360,7 +360,7 @@ export default function RelatoriosPage() {
                   <tbody className="divide-y divide-slate-100">
                     {filtered.map((r) => (
                       <tr key={r.vehicle.id} className="transition hover:bg-teal-50/40">
-                        <td className="px-4 py-3"><div className="font-medium">{r.vehicle.plate}</div><div className="text-xs text-slate-500">{[r.vehicle.brand, r.vehicle.model].filter(Boolean).join(' ')}</div></td>
+                        <td className="px-4 py-3"><div className="font-semibold text-slate-900">{r.vehicle.plate}</div><div className="text-xs text-slate-500">{[r.vehicle.brand, r.vehicle.model].filter(Boolean).join(' ')}</div></td>
                         <td className="px-4 py-3">{r.completedTrips}/{r.trips}</td>
                         <td className="px-4 py-3">{r.passengers}</td>
                         <td className="px-4 py-3">{r.km.toLocaleString('pt-BR')}</td>
