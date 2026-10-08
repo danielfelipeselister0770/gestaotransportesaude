@@ -224,4 +224,8 @@ export default function DriversPage() {
       </div>
     </div></section>
   </main>;
-}\n\nfunction Stat({icon,label,value,attention=false}:{icon:React.ReactNode;label:string;value:number;attention?:boolean}) {\n  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={"mb-3 grid h-9 w-9 place-items-center rounded-xl " + (attention ? "bg-amber-50 text-amber-700" : "bg-teal-50 text-teal-700")}>{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>;\n}\n
+}
+
+function Stat({icon,label,value,attention=false}:{icon:React.ReactNode;label:string;value:number;attention?:boolean}) {
+  return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={"mb-3 grid h-9 w-9 place-items-center rounded-xl " + (attention ? "bg-amber-50 text-amber-700" : "bg-teal-50 text-teal-700")}>{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>;
+}
