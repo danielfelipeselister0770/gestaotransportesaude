@@ -305,37 +305,37 @@ export default function ConfiguracoesPage() {
           {currentProfile && (
             <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center gap-3">
-                <div className="rounded-lg bg-slate-100 p-2"><UserCog size={20} /></div>
+                <div className="rounded-xl bg-teal-50 p-2.5 text-teal-700"><UserCog size={20} /></div>
                 <div>
-                  <h2 className="font-semibold">Meu perfil</h2>
+                  <h2 className="font-semibold text-slate-950">Meu perfil</h2>
                   <p className="text-xs text-slate-500">{roleLabels[currentProfile.role]} • acesso atual</p>
                 </div>
               </div>
               <form onSubmit={saveMyProfile} className="grid gap-4 sm:grid-cols-3">
-                <label className="text-sm">Nome<input name="name" defaultValue={currentProfile.name} required className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                <label className="text-sm">CPF<input name="cpf" defaultValue={currentProfile.cpf ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                <label className="text-sm">Telefone<input name="phone" defaultValue={currentProfile.phone ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                <label className="text-sm">Nome<input name="name" defaultValue={currentProfile.name} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                <label className="text-sm">CPF<input name="cpf" defaultValue={currentProfile.cpf ?? ''} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                <label className="text-sm">Telefone<input name="phone" defaultValue={currentProfile.phone ?? ''} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                 <div className="sm:col-span-3 flex justify-end">
-                  <button disabled={saving} className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Save size={16} /> Salvar meu perfil</button>
+                  <button disabled={saving} className="flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"><Save size={16} /> Salvar meu perfil</button>
                 </div>
               </form>
             </section>
           )}
 
           {canCreateUsers && !isAdmin && currentProfile?.municipality_id && (
-            <section className="mb-6 rounded-xl border bg-white shadow-sm">
+            <section className="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div><h2 className="font-semibold">Usuários da minha prefeitura</h2><p className="text-xs text-slate-500">Como gestor, você pode cadastrar operadores e motoristas na sua própria prefeitura.</p></div>
-                <button onClick={() => openUserModal(currentProfile.municipality_id!)} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Plus size={16} /> Novo usuário</button>
+                <button onClick={() => openUserModal(currentProfile.municipality_id!)} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800"><Plus size={16} /> Novo usuário</button>
               </div>
             </section>
           )}
 
           {isAdmin && (
-            <section className="mb-6 rounded-xl border bg-white shadow-sm">
+            <section className="mb-6 rounded-2xl border border-slate-200 bg-white shadow-sm">
               <div className="flex flex-col gap-3 border-b p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div><h2 className="font-semibold">Prefeituras / Municípios</h2><p className="text-xs text-slate-500">Cada prefeitura concentra seus usuários e sua operação.</p></div>
-                <button onClick={() => openMunicipality()} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"><Plus size={16} /> Nova prefeitura</button>
+                <button onClick={() => openMunicipality()} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800"><Plus size={16} /> Nova prefeitura</button>
               </div>
               {municipalities.length === 0 ? <div className="p-6 text-sm text-slate-500">Nenhuma prefeitura cadastrada.</div> : <div className="divide-y">
                 {municipalities.map((municipality) => {
@@ -427,11 +427,11 @@ export default function ConfiguracoesPage() {
               <form onSubmit={saveMunicipality} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
                 <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }}><X size={20} /></button></div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="text-sm sm:col-span-2">Nome da prefeitura<input value={municipalityName} onChange={(e) => setMunicipalityName(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Prefeitura Municipal de ..." /></label>
-                  <label className="text-sm">CNPJ<input value={municipalityCnpj} onChange={(e) => setMunicipalityCnpj(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                  <label className="text-sm">Cidade<input value={municipalityCity} onChange={(e) => setMunicipalityCity(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                  <label className="text-sm sm:col-span-2">Nome da prefeitura<input value={municipalityName} onChange={(e) => setMunicipalityName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" placeholder="Prefeitura Municipal de ..." /></label>
+                  <label className="text-sm">CNPJ<input value={municipalityCnpj} onChange={(e) => setMunicipalityCnpj(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                  <label className="text-sm">Cidade<input value={municipalityCity} onChange={(e) => setMunicipalityCity(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">UF<input maxLength={2} value={municipalityState} onChange={(e) => setMunicipalityState(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 uppercase" /></label>
-                  <label className="text-sm">Status<select value={municipalityActive ? 'true' : 'false'} onChange={(e) => setMunicipalityActive(e.target.value === 'true')} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="true">Ativa</option><option value="false">Inativa</option></select></label>
+                  <label className="text-sm">Status<select value={municipalityActive ? 'true' : 'false'} onChange={(e) => setMunicipalityActive(e.target.value === 'true')} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"><option value="true">Ativa</option><option value="false">Inativa</option></select></label>
                 </div>
                 <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>
               </form>
@@ -446,12 +446,12 @@ export default function ConfiguracoesPage() {
                   <button type="button" onClick={closeUserModal}><X size={20} /></button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="text-sm sm:col-span-2">Nome<input value={userName} onChange={(e) => setUserName(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                  <label className="text-sm">CPF<input value={userCpf} onChange={(e) => setUserCpf(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                  <label className="text-sm">Telefone<input value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                  <label className="text-sm sm:col-span-2">E-mail de acesso<input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="usuario@prefeitura.gov.br" /></label>
-                  <label className="text-sm">Perfil<select value={userRole} onChange={(e) => setUserRole(e.target.value as Role)} className="mt-1 w-full rounded-lg border px-3 py-2">{isAdmin && <option value="GESTOR">Gestor</option>}<option value="OPERADOR">Operador</option><option value="MOTORISTA">Motorista</option></select></label>
-                  <label className="text-sm">Senha inicial<input type="password" minLength={8} value={userPassword} onChange={(e) => setUserPassword(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Mínimo 8 caracteres" /></label>
+                  <label className="text-sm sm:col-span-2">Nome<input value={userName} onChange={(e) => setUserName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                  <label className="text-sm">CPF<input value={userCpf} onChange={(e) => setUserCpf(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                  <label className="text-sm">Telefone<input value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                  <label className="text-sm sm:col-span-2">E-mail de acesso<input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" placeholder="usuario@prefeitura.gov.br" /></label>
+                  <label className="text-sm">Perfil<select value={userRole} onChange={(e) => setUserRole(e.target.value as Role)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100">{isAdmin && <option value="GESTOR">Gestor</option>}<option value="OPERADOR">Operador</option><option value="MOTORISTA">Motorista</option></select></label>
+                  <label className="text-sm">Senha inicial<input type="password" minLength={8} value={userPassword} onChange={(e) => setUserPassword(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" placeholder="Mínimo 8 caracteres" /></label>
                 </div>
                 <p className="mt-4 text-xs text-slate-500">A conta será criada com e-mail confirmado e a senha inicial deverá ser trocada no primeiro acesso.</p>
                 <div className="mt-6 flex justify-end gap-2">
@@ -474,9 +474,9 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <label className="text-sm sm:col-span-2">Nome<input value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                  <label className="text-sm">CPF<input value={cpf} onChange={(e) => setCpf(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                  <label className="text-sm">Telefone<input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                  <label className="text-sm sm:col-span-2">Nome<input value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                  <label className="text-sm">CPF<input value={cpf} onChange={(e) => setCpf(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
+                  <label className="text-sm">Telefone<input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Perfil<select value={role} onChange={(e) => setRole(e.target.value as Role)} disabled={!isAdmin} className="mt-1 w-full rounded-lg border px-3 py-2 disabled:bg-slate-100">
                     {Object.entries(roleLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                   </select><span className="mt-1 block text-xs text-slate-500">{roleDescriptions[role]}</span></label>
