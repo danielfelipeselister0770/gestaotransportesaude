@@ -55,20 +55,25 @@ export default function DriverPortalPage() {
   const [occurrenceType,setOccurrenceType]=useState('ATRASO');
   const [occurrenceDescription,setOccurrenceDescription]=useState('');
 
-  async function loadData(preserveMessage = false) {
+  async function loadData(preserveMessage = false, afterConfirmedAction = false) {
     if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++tripsRequestId.current;
     setLoading(true);
     setTripsError(false);
     setDriverLinkMissing(false);
     if (!preserveMessage) setMessage('');
+    const reportError = (detail: string) => {
+      if (!afterConfirmedAction) setTripsError(true);
+      setMessage((previous) => afterConfirmedAction
+        ? `${previous} A viagem foi atualizada, mas não foi possível sincronizar a programação. Use Atualizar para tentar novamente.`
+        : detail);
+    };
 
     try {
       const { data: authData, error: authError } = await supabase.auth.getUser();
     if (requestId !== tripsRequestId.current) return;
     if (authError) {
-      setTripsError(true);
-      setMessage('Não foi possível verificar seu acesso. Confira a conexão e tente novamente.');
+      reportError('Não foi possível verificar seu acesso. Confira a conexão e tente novamente.');
       return;
     }
     const userId = authData.user?.id;
@@ -86,14 +91,12 @@ export default function DriverPortalPage() {
 
     if (requestId !== tripsRequestId.current) return;
     if (driverError) {
-      setTripsError(true);
-      setMessage('Não foi possível verificar seu cadastro de motorista. Confira a conexão e tente novamente.');
+      reportError('Não foi possível verificar seu cadastro de motorista. Confira a conexão e tente novamente.');
       return;
     }
     if (!driver) {
-      setTripsError(true);
-      setDriverLinkMissing(true);
-      setMessage('Sua conta ainda não está vinculada a um cadastro de motorista. Entre em contato com a gestão.');
+      if (!afterConfirmedAction) setDriverLinkMissing(true);
+      reportError('Sua conta ainda não está vinculada a um cadastro de motorista. Entre em contato com a gestão.');
       return;
     }
 
@@ -122,8 +125,7 @@ export default function DriverPortalPage() {
 
     if (requestId !== tripsRequestId.current) return;
     if (error) {
-      setTripsError(true);
-      setMessage(`Não foi possível carregar suas viagens: ${error.message}`);
+      reportError(`Não foi possível carregar suas viagens: ${error.message}`);
     } else {
       const normalized = (data ?? []).map((trip) => ({
         ...trip,
@@ -142,8 +144,7 @@ export default function DriverPortalPage() {
 
     } catch {
       if (requestId === tripsRequestId.current) {
-        setTripsError(true);
-        setMessage('Falha de conexão ao atualizar a programação. Verifique sua internet e tente novamente.');
+        reportError('Falha de conexão ao atualizar a programação. Verifique sua internet e tente novamente.');
       }
     } finally {
       if (requestId === tripsRequestId.current) setLoading(false);
@@ -298,7 +299,7 @@ export default function DriverPortalPage() {
       setSelectedTrip(null);
       setPassengers([]);
       setFinishMileage('');
-      await loadData(true);
+      await loadData(true, true);
     } catch {
       setMessage('Falha de conexão ao atualizar a viagem. Verifique sua internet e confira a situação da viagem antes de tentar novamente.');
     } finally {
