@@ -128,22 +128,29 @@ export default function DriverPortalPage() {
       setFinishMileage('');
     }
 
-    const { data, error } = await supabase
-      .from('trip_passengers')
-      .select('id,boarding_status,companion,observations,patient:patients(name)')
-      .eq('trip_id', tripId);
+    try {
+      const { data, error } = await supabase
+        .from('trip_passengers')
+        .select('id,boarding_status,companion,observations,patient:patients(name)')
+        .eq('trip_id', tripId);
 
-    if (requestId !== passengerRequestId.current) return;
-    setPassengersLoading(false);
-    if (error) {
-      setMessage(`Não foi possível carregar os passageiros: ${error.message}`);
-      return;
+      if (requestId !== passengerRequestId.current) return;
+      if (error) {
+        setMessage(`Não foi possível carregar os passageiros: ${error.message}`);
+        return;
+      }
+
+      setPassengers((data ?? []).map((row) => ({
+        ...row,
+        patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
+      })) as Passenger[]);
+    } catch {
+      if (requestId === passengerRequestId.current) {
+        setMessage('Falha de conexão ao carregar passageiros. Verifique sua internet e selecione a viagem novamente.');
+      }
+    } finally {
+      if (requestId === passengerRequestId.current) setPassengersLoading(false);
     }
-
-    setPassengers((data ?? []).map((row) => ({
-      ...row,
-      patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
-    })) as Passenger[]);
   }
 
   async function updatePassenger(passenger: Passenger, boardingStatus: 'BOARDED'|'NO_SHOW') {
