@@ -56,6 +56,7 @@ export default function DriverPortalPage() {
   const [occurrenceDescription,setOccurrenceDescription]=useState('');
 
   async function loadData(preserveMessage = false) {
+    if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++tripsRequestId.current;
     setLoading(true);
     setTripsError(false);
@@ -352,6 +353,7 @@ export default function DriverPortalPage() {
         <div role="group" aria-label="Filtro de programação" className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row">
           <button
             onClick={() => setViewMode('TODAY')}
+            disabled={actionLoading !== null}
             aria-pressed={viewMode === 'TODAY'}
             className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${viewMode === 'TODAY' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
@@ -359,6 +361,7 @@ export default function DriverPortalPage() {
           </button>
           <button
             onClick={() => setViewMode('SCHEDULE')}
+            disabled={actionLoading !== null}
             aria-pressed={viewMode === 'SCHEDULE'}
             className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${viewMode === 'SCHEDULE' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
@@ -371,7 +374,7 @@ export default function DriverPortalPage() {
             <h1 className="text-2xl font-bold">Minha programação</h1>
             <p className="text-sm text-slate-500">Consulte as viagens de hoje ou as próximas viagens já programadas para você.</p>
           </div>
-          <button type="button" onClick={() => loadData()} disabled={loading} aria-label={loading ? 'Atualizando programação' : 'Atualizar programação'} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="button" onClick={() => loadData()} disabled={loading || actionLoading !== null} aria-label={loading ? 'Atualizando programação' : 'Atualizar programação'} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
             <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} /> {loading ? 'Atualizando...' : 'Atualizar'}
           </button>
         </div>
