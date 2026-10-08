@@ -192,49 +192,50 @@ export default function DriverPortalPage() {
   }
 
   async function changeTripStatus(trip: Trip, action: 'START' | 'FINISH') {
-    setActionLoading(trip.id);
-    setMessage('');
+    if (actionLoading) return;
 
     let mileage: number | undefined;
     if (action === 'FINISH') {
       mileage = Number(finishMileage);
       if (!finishMileage.trim() || !Number.isFinite(mileage)) {
         setMessage('Informe a quilometragem final.');
-        setActionLoading(null);
         return;
       }
       if (trip.initial_mileage != null && mileage < Number(trip.initial_mileage)) {
         setMessage(`A quilometragem final deve ser igual ou maior que ${trip.initial_mileage} km.`);
-        setActionLoading(null);
         return;
       }
     }
 
-    const response = await fetch('/api/motorista/viagem/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tripId: trip.id, action, mileage }),
-    });
+    setActionLoading(trip.id);
+    setMessage('');
+    try {
+      const response = await fetch('/api/motorista/viagem/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tripId: trip.id, action, mileage }),
+      });
+      const result = await response.json().catch(() => ({}));
 
-    const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setMessage(result.error ?? 'Não foi possível atualizar a viagem.');
+        return;
+      }
 
-    if (!response.ok) {
-      setMessage(result.error ?? 'Não foi possível atualizar a viagem.');
+      setMessage(
+        action === 'START'
+          ? `Viagem iniciada. Quilometragem inicial: ${result.initialMileage} km.`
+          : `Viagem finalizada. ${result.distance} km percorridos.`,
+      );
+      setSelectedTrip(null);
+      setPassengers([]);
+      setFinishMileage('');
+      await loadData(true);
+    } catch {
+      setMessage('Falha de conexão ao atualizar a viagem. Verifique sua internet e confira a situação da viagem antes de tentar novamente.');
+    } finally {
       setActionLoading(null);
-      return;
     }
-
-    setMessage(
-      action === 'START'
-        ? `Viagem iniciada. Quilometragem inicial: ${result.initialMileage} km.`
-        : `Viagem finalizada. ${result.distance} km percorridos.`,
-    );
-
-    setSelectedTrip(null);
-    setPassengers([]);
-    setFinishMileage('');
-    await loadData(true);
-    setActionLoading(null);
   }
 
   useEffect(() => {
