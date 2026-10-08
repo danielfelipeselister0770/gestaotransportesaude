@@ -68,8 +68,10 @@ export default function DriverPortalPage() {
     if (!recoveringSync) setSyncWarning(false);
     setTripsError(false);
     setDriverLinkMissing(false);
-    if (!preserveMessage) setMessage('');
-    setMessageTone('warning');
+    if (!preserveMessage) {
+      setMessage('');
+      setMessageTone('warning');
+    }
     const reportError = (detail: string) => {
       setMessageTone('warning');
       if (!recoveringSync) setTripsError(true);
@@ -322,6 +324,7 @@ export default function DriverPortalPage() {
           ? { ...item, status: 'IN_PROGRESS', initial_mileage: result.initialMileage }
           : item)
         : current.filter((item) => item.id !== trip.id));
+      setMessageTone('success');
       setMessage(
         action === 'START'
           ? `Viagem iniciada. Quilometragem inicial: ${result.initialMileage} km.`
