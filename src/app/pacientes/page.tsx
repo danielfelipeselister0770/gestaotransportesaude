@@ -427,10 +427,12 @@ export default function PatientsPage() {
               <label className="lg:col-span-2">
                 <span className="sr-only">Buscar paciente</span>
                 <input
+                  type="search"
+                  aria-label="Buscar paciente por nome, CPF, CNS ou telefone"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Nome, CPF, CNS ou telefone..."
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"
                 />
               </label>
               <SelectFilter value={statusFilter} onChange={(v) => setStatusFilter(v as typeof statusFilter)} options={[['ACTIVE','Ativos'],['INACTIVE','Inativos'],['ALL','Todos']]} />
@@ -541,7 +543,7 @@ function PatientForm({
           <h2 className="font-semibold">{patient ? 'Editar paciente' : 'Novo paciente'}</h2>
           <p className="mt-1 text-xs text-slate-500">CPF e CNS são armazenados somente com números.</p>
         </div>
-        <button type="button" onClick={onCancel} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18} /></button>
+        <button type="button" onClick={onCancel} aria-label="Fechar formulário de paciente" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={18} /></button>
       </div>
 
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
@@ -583,7 +585,7 @@ function PatientForm({
 
       <label className="mt-5 block">
         <span className="mb-1.5 block text-sm font-medium text-slate-700">Observações</span>
-        <textarea name="observations" defaultValue={value('observations')} rows={3} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
+        <textarea name="observations" defaultValue={value('observations')} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
       </label>
 
       <div className="mt-5 flex justify-end gap-2">
@@ -749,7 +751,7 @@ function Field({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span>
-      <input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue ?? ''} className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
+      <input name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue ?? ''} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
     </label>
   );
 }
@@ -768,7 +770,7 @@ function SelectField({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span>
-      <select name={name} defaultValue={defaultValue ?? ''} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">
+      <select name={name} defaultValue={defaultValue ?? ''} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">
         {options.map(([value, text]) => <option key={value} value={value}>{text}</option>)}
       </select>
     </label>
@@ -776,7 +778,7 @@ function SelectField({
 }
 
 function SelectFilter({ value, onChange, options }: { value: string; onChange: (value: string) => void; options: [string, string][] }) {
-  return <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">{options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select>;
+  return <select aria-label={options[0]?.[1] ?? "Filtrar pacientes"} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100">{options.map(([v, label]) => <option key={v} value={v}>{label}</option>)}</select>;
 }
 
 function Check({ name, label, defaultChecked }: { name: string; label: string; defaultChecked?: boolean }) {
