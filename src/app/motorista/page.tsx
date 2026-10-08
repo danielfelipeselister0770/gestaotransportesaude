@@ -534,11 +534,9 @@ export default function DriverPortalPage() {
                           min={trip.initial_mileage ?? 0}
                           step="1"
                           value={selectedTripData?.id === trip.id ? finishMileage : ''}
-                          disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning}
+                          disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning || selectedTrip !== trip.id}
                           onChange={(event) => {
-                            if (actionInProgressRef.current) return;
-                            selectedTripRef.current = trip.id;
-                            setSelectedTrip(trip.id);
+                            if (actionInProgressRef.current || selectedTripRef.current !== trip.id) return;
                             setFinishMileage(event.target.value);
                           }}
                           placeholder="KM final"
