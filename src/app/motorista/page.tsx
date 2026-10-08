@@ -335,7 +335,7 @@ export default function DriverPortalPage() {
                       disabled={actionLoading === trip.id}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Play size={17} /> {actionLoading === trip.id ? 'Iniciando...' : 'Iniciar viagem'}
+                      <Play size={17} aria-hidden="true" /> {actionLoading === trip.id ? 'Iniciando...' : 'Iniciar viagem'}
                     </button>
                   ) : (
                     <div className="space-y-3">
@@ -361,7 +361,7 @@ export default function DriverPortalPage() {
                           disabled={actionLoading === trip.id}
                           className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
-                          <CheckCircle2 size={17} /> {actionLoading === trip.id ? 'Finalizando...' : 'Finalizar'}
+                          <CheckCircle2 size={17} aria-hidden="true" /> {actionLoading === trip.id ? 'Finalizando...' : 'Finalizar'}
                         </button>
                       </div>
                     </div>
@@ -393,7 +393,7 @@ export default function DriverPortalPage() {
                       <div className="font-medium">{passenger.patient?.name ?? 'Paciente não informado'}</div>
                       <div className="text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" aria-pressed={passenger.boarding_status==='BOARDED'} disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button><button disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} aria-pressed={passenger.boarding_status==='NO_SHOW'} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border'}`}><X size={13} className="mr-1 inline"/> Faltou</button></div>
+                    <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" aria-pressed={passenger.boarding_status==='BOARDED'} disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Embarcou'}</button><button type="button" disabled={actionLoading===passenger.id||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} aria-pressed={passenger.boarding_status==='NO_SHOW'} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><X size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Faltou'}</button></div>
                   </div>
                 ))}
               </div>
@@ -404,7 +404,7 @@ export default function DriverPortalPage() {
         {selectedTripData && (
           <form onSubmit={addOccurrence} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="mb-4 flex items-center gap-2"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
-            <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)_auto]"><select aria-label="Tipo de ocorrência" value={occurrenceType} onChange={e=>setOccurrenceType(e.target.value)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"><option value="ATRASO">Atraso</option><option value="AVARIA">Avaria</option><option value="ACIDENTE">Acidente</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option></select><input aria-label="Descrição da ocorrência" value={occurrenceDescription} onChange={e=>setOccurrenceDescription(e.target.value)} required placeholder="Descreva o ocorrido..." className="min-w-0 rounded-xl border border-slate-200 px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/><button disabled={actionLoading==='occurrence'} className="rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">Registrar</button></div>
+            <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)_auto]"><select aria-label="Tipo de ocorrência" value={occurrenceType} onChange={e=>setOccurrenceType(e.target.value)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"><option value="ATRASO">Atraso</option><option value="AVARIA">Avaria</option><option value="ACIDENTE">Acidente</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option></select><input aria-label="Descrição da ocorrência" value={occurrenceDescription} onChange={e=>setOccurrenceDescription(e.target.value)} required placeholder="Descreva o ocorrido..." className="min-w-0 rounded-xl border border-slate-200 px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/><button disabled={actionLoading==='occurrence'} className="rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">{actionLoading==='occurrence' ? 'Registrando...' : 'Registrar'}</button></div>
           </form>
         )}
 
