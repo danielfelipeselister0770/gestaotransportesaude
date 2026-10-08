@@ -44,6 +44,7 @@ export default function DriverPortalPage() {
   const tripsRequestId = useRef(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
   const [message, setMessage] = useState('');
   const [viewMode, setViewMode] = useState<'TODAY' | 'SCHEDULE'>('TODAY');
@@ -168,8 +169,9 @@ export default function DriverPortalPage() {
   }
 
   async function updatePassenger(passenger: Passenger, boardingStatus: 'BOARDED'|'NO_SHOW') {
-    if (actionLoading) return;
+    if (actionInProgressRef.current) return;
     if (!selectedTripData || selectedTripData.status !== 'IN_PROGRESS') { setMessage('Inicie a viagem antes de registrar embarques.'); return; }
+    actionInProgressRef.current = true;
     setActionLoading(passenger.id);
     setMessage('');
     try {
@@ -188,13 +190,15 @@ export default function DriverPortalPage() {
     } catch {
       setMessage('Falha de conexão ao atualizar o passageiro. Verifique sua internet e tente novamente.');
     } finally {
+      actionInProgressRef.current = false;
       setActionLoading(null);
     }
   }
 
   async function addOccurrence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (actionLoading || !selectedTripData || !occurrenceDescription.trim()) return;
+    if (actionInProgressRef.current || !selectedTripData || !occurrenceDescription.trim()) return;
+    actionInProgressRef.current = true;
     setActionLoading('occurrence');
     setMessage('');
     try {
@@ -217,12 +221,13 @@ export default function DriverPortalPage() {
     } catch {
       setMessage('Falha de conexão ao registrar a ocorrência. Verifique sua internet e tente novamente.');
     } finally {
+      actionInProgressRef.current = false;
       setActionLoading(null);
     }
   }
 
   async function changeTripStatus(trip: Trip, action: 'START' | 'FINISH') {
-    if (actionLoading) return;
+    if (actionInProgressRef.current) return;
 
     let mileage: number | undefined;
     if (action === 'FINISH') {
@@ -237,6 +242,7 @@ export default function DriverPortalPage() {
       }
     }
 
+    actionInProgressRef.current = true;
     setActionLoading(trip.id);
     setMessage('');
     try {
@@ -267,6 +273,7 @@ export default function DriverPortalPage() {
     } catch {
       setMessage('Falha de conexão ao atualizar a viagem. Verifique sua internet e confira a situação da viagem antes de tentar novamente.');
     } finally {
+      actionInProgressRef.current = false;
       setActionLoading(null);
     }
   }
