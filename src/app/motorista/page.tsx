@@ -303,6 +303,10 @@ export default function DriverPortalPage() {
 
     let mileage: number | undefined;
     if (action === 'FINISH') {
+      if (selectedTripRef.current !== trip.id) {
+        setMessage('Selecione a viagem e informe a quilometragem final antes de finalizar.');
+        return;
+      }
       mileage = Number(finishMileage);
       if (!finishMileage.trim() || !Number.isFinite(mileage)) {
         setMessage('Informe a quilometragem final.');
@@ -539,7 +543,7 @@ export default function DriverPortalPage() {
                         />
                         <button
                           onClick={() => changeTripStatus(trip, 'FINISH')}
-                          disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning}
+                          disabled={actionLoading !== null || loading || passengersLoading || passengersError || syncWarning || selectedTrip !== trip.id}
                           className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                         >
                           <CheckCircle2 size={17} aria-hidden="true" /> {actionLoading === trip.id ? 'Finalizando...' : 'Finalizar'}
