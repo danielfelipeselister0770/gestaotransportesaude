@@ -47,9 +47,9 @@ export default function DriverPortalPage() {
   const [occurrenceType,setOccurrenceType]=useState('ATRASO');
   const [occurrenceDescription,setOccurrenceDescription]=useState('');
 
-  async function loadData() {
+  async function loadData(preserveMessage = false) {
     setLoading(true);
-    setMessage('');
+    if (!preserveMessage) setMessage('');
 
     const { data: authData } = await supabase.auth.getUser();
     const userId = authData.user?.id;
@@ -164,7 +164,7 @@ export default function DriverPortalPage() {
     let mileage: number | undefined;
     if (action === 'FINISH') {
       mileage = Number(finishMileage);
-      if (!Number.isFinite(mileage)) {
+      if (!finishMileage.trim() || !Number.isFinite(mileage)) {
         setMessage('Informe a quilometragem final.');
         setActionLoading(null);
         return;
@@ -199,7 +199,7 @@ export default function DriverPortalPage() {
     setSelectedTrip(null);
     setPassengers([]);
     setFinishMileage('');
-    await loadData();
+    await loadData(true);
     setActionLoading(null);
   }
 
@@ -273,7 +273,7 @@ export default function DriverPortalPage() {
             <h1 className="text-2xl font-bold">Minha programação</h1>
             <p className="text-sm text-slate-500">Consulte as viagens de hoje ou as próximas viagens já programadas para você.</p>
           </div>
-          <button type="button" onClick={loadData} disabled={loading} aria-label={loading ? 'Atualizando programação' : 'Atualizar programação'} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
+          <button type="button" onClick={() => loadData()} disabled={loading} aria-label={loading ? 'Atualizando programação' : 'Atualizar programação'} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
             <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} /> {loading ? 'Atualizando...' : 'Atualizar'}
           </button>
         </div>
