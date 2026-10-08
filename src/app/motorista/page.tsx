@@ -249,7 +249,7 @@ export default function DriverPortalPage() {
       </header>
 
       <section className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
-        {message && <div className="rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
+        {message && <div role="status" aria-live="polite" className="rounded-xl border border-teal-200 bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
         <div role="group" aria-label="Filtro de programação" className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row">
           <button
@@ -273,15 +273,15 @@ export default function DriverPortalPage() {
             <h1 className="text-2xl font-bold">Minha programação</h1>
             <p className="text-sm text-slate-500">Consulte as viagens de hoje ou as próximas viagens já programadas para você.</p>
           </div>
-          <button type="button" onClick={loadData} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
-            <RefreshCw size={16} /> Atualizar
+          <button type="button" onClick={loadData} disabled={loading} aria-label={loading ? 'Atualizando programação' : 'Atualizar programação'} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60">
+            <RefreshCw size={16} className={loading ? 'animate-spin' : undefined} /> {loading ? 'Atualizando...' : 'Atualizar'}
           </button>
         </div>
 
         {loading ? (
-          <div className="rounded-xl border bg-white p-8 text-center text-sm text-slate-500">Carregando...</div>
+          <div role="status" aria-live="polite" className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500"><RefreshCw size={22} className="mx-auto mb-3 animate-spin text-teal-700" aria-hidden="true" />Carregando viagens...</div>
         ) : trips.length === 0 ? (
-          <div className="rounded-xl border bg-white p-8 text-center">
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
             <CalendarDays className="mx-auto mb-3 text-slate-400" size={32} />
             <p className="font-medium">{viewMode === 'TODAY' ? 'Nenhuma viagem para hoje' : 'Nenhuma viagem programada'}</p>
             <p className="mt-1 text-sm text-slate-500">{viewMode === 'TODAY' ? 'Consulte a aba “Minha programação” para ver as próximas viagens.' : 'Quando uma viagem for atribuída a você, ela aparecerá aqui.'}</p>
