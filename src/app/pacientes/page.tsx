@@ -537,10 +537,10 @@ function PatientForm({
   };
 
   return (
-    <form key={patient?.id ?? 'new'} onSubmit={onSubmit} className="mb-6 rounded-xl border bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center justify-between">
+    <form key={patient?.id ?? 'new'} onSubmit={onSubmit} className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+      <div className="mb-5 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold">{patient ? 'Editar paciente' : 'Novo paciente'}</h2>
+          <h2 className="text-lg font-bold tracking-tight text-slate-950">{patient ? 'Editar paciente' : 'Novo paciente'}</h2>
           <p className="mt-1 text-xs text-slate-500">CPF e CNS são armazenados somente com números.</p>
         </div>
         <button type="button" onClick={onCancel} aria-label="Fechar formulário de paciente" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={18} /></button>
@@ -557,7 +557,7 @@ function PatientForm({
         <Field name="city" label="Cidade (cadastro operacional)" defaultValue={value('city')} />
       </div>
 
-      <div className="mt-6 border-t pt-5">
+      <div className="mt-6 border-t border-slate-200 pt-5">
         <h3 className="mb-1 font-semibold text-slate-800">Dados cadastrais SUS</h3>
         <p className="mb-4 text-xs text-slate-500">Esses campos ajudam a preparar o cadastro para produção e integrações futuras.</p>
         <div className="grid gap-4 md:grid-cols-2">
@@ -576,7 +576,7 @@ function PatientForm({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-700">
+      <div className="mt-5 grid gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 sm:grid-cols-2">
         <Check name="wheelchair" label="Cadeira de rodas" defaultChecked={patient?.wheelchair ?? false} />
         <Check name="reduced_mobility" label="Mobilidade reduzida" defaultChecked={patient?.reduced_mobility ?? false} />
         <Check name="stretcher" label="Maca" defaultChecked={patient?.stretcher ?? false} />
@@ -588,9 +588,9 @@ function PatientForm({
         <textarea name="observations" defaultValue={value('observations')} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100" />
       </label>
 
-      <div className="mt-5 flex justify-end gap-2">
-        <button type="button" onClick={onCancel} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-        <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">
+      <div className="mt-6 flex flex-col-reverse gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+        <button type="button" onClick={onCancel} className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+        <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">
           {saving ? 'Salvando...' : patient ? 'Salvar alterações' : 'Cadastrar paciente'}
         </button>
       </div>
