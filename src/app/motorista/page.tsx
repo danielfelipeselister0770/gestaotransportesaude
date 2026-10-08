@@ -282,6 +282,11 @@ export default function DriverPortalPage() {
         return;
       }
 
+      setTrips((current) => action === 'START'
+        ? current.map((item) => item.id === trip.id
+          ? { ...item, status: 'IN_PROGRESS', initial_mileage: result.initialMileage }
+          : item)
+        : current.filter((item) => item.id !== trip.id));
       setMessage(
         action === 'START'
           ? `Viagem iniciada. Quilometragem inicial: ${result.initialMileage} km.`
