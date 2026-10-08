@@ -131,14 +131,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'A quilometragem final não pode ser menor que a inicial.' }, { status: 400 });
   }
 
-  const { error: updateTripError } = await admin
+  const { data: completedTrip, error: updateTripError } = await admin
     .from('trips')
     .update({ status: 'COMPLETED', final_mileage: finalMileage, completed_at: new Date().toISOString() })
     .eq('id', trip.id)
-    .eq('status', 'IN_PROGRESS');
+    .eq('status', 'IN_PROGRESS')
+    .select('id')
+    .maybeSingle();
 
   if (updateTripError) {
     return NextResponse.json({ error: updateTripError.message }, { status: 400 });
+  }
+  if (!completedTrip) {
+    return NextResponse.json({ error: 'Esta viagem já foi finalizada ou alterada. Atualize a programação antes de tentar novamente.' }, { status: 409 });
   }
 
   const { data: vehicle, error: vehicleReadError } = await admin
