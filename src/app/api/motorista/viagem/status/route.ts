@@ -165,13 +165,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Viagem concluída, mas não foi possível localizar o veículo.' }, { status: 500 });
   }
 
-  const { error: vehicleError } = await admin
+  const { data: updatedVehicle, error: vehicleError } = await admin
     .from('vehicles')
     .update({ current_mileage: finalMileage, status: 'AVAILABLE' })
-    .eq('id', vehicle.id);
+    .eq('id', vehicle.id)
+    .eq('status', 'IN_USE')
+    .select('id')
+    .maybeSingle();
 
-  if (vehicleError) {
-    return NextResponse.json({ error: `Viagem concluída, mas não foi possível atualizar o veículo: ${vehicleError.message}` }, { status: 500 });
+  if (vehicleError || !updatedVehicle) {
+    return NextResponse.json({ error: vehicleError
+      ? `Viagem concluída, mas não foi possível atualizar o veículo: ${vehicleError.message}`
+      : 'Viagem concluída, mas o veículo não estava em uso. Avise a gestão para conferir a situação antes de continuar.' }, { status: vehicleError ? 500 : 409 });
   }
 
   const { data: existingMileage } = await admin
