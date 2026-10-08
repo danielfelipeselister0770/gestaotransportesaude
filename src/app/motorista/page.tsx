@@ -137,7 +137,8 @@ export default function DriverPortalPage() {
       })) as Trip[];
       setTrips(normalized);
       setSyncWarning(false);
-      if (recoveringSync && selectedTripRef.current && normalized.some((trip) => trip.id === selectedTripRef.current)) {
+      if (selectedTripRef.current && normalized.some((trip) => trip.id === selectedTripRef.current)) {
+        // Toda atualização bem-sucedida da agenda também atualiza a lista aberta.
         await loadPassengers(selectedTripRef.current, true);
       }
       if (selectedTripRef.current && !normalized.some((trip) => trip.id === selectedTripRef.current)) {
