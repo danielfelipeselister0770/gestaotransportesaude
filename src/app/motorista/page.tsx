@@ -77,7 +77,7 @@ export default function DriverPortalPage() {
       if (!recoveringSync) setTripsError(true);
       if (recoveringSync) setSyncWarning(true);
       setMessage((previous) => afterConfirmedAction
-        ? `${previous} A viagem foi atualizada, mas não foi possível sincronizar a programação. Use Atualizar para tentar novamente.`
+        ? `${previous ? `${previous} ` : ''}A alteração da viagem foi confirmada, mas a programação não foi sincronizada. Não repita a operação; use Sincronizar novamente.`
         : recoveringSync ? 'Ainda não foi possível sincronizar a programação. Confira a conexão e tente novamente.' : detail);
     };
 
@@ -432,7 +432,7 @@ export default function DriverPortalPage() {
 
         {syncWarning && !loading && (
           <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-            <span>A operação foi confirmada, mas a programação pode estar desatualizada. Sincronize antes de iniciar ou finalizar outra viagem.</span>
+            <span>A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.</span>
             <button type="button" onClick={() => loadData()} disabled={actionLoading !== null} className="rounded-xl bg-white px-4 py-2 font-semibold ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-50">Sincronizar novamente</button>
           </div>
         )}
