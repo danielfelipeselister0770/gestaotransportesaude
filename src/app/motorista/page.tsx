@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, CalendarDays, CarFront, Check, CheckCircle2, ChevronDown, ChevronUp, LogOut, MapPin, Play, RefreshCw, UserRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -38,6 +38,8 @@ export default function DriverPortalPage() {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [passengersLoading, setPassengersLoading] = useState(false);
+  const passengerRequestId = useRef(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [finishMileage, setFinishMileage] = useState('');
@@ -103,6 +105,8 @@ export default function DriverPortalPage() {
       })) as Trip[];
       setTrips(normalized);
       if (selectedTrip && !normalized.some((trip) => trip.id === selectedTrip)) {
+        passengerRequestId.current += 1;
+        setPassengersLoading(false);
         setSelectedTrip(null);
         setPassengers([]);
         setFinishMileage('');
@@ -113,7 +117,10 @@ export default function DriverPortalPage() {
   }
 
   async function loadPassengers(tripId: string) {
+    const requestId = ++passengerRequestId.current;
     setSelectedTrip(tripId);
+    setPassengers([]);
+    setPassengersLoading(true);
     setMessage('');
 
     const trip = trips.find((item) => item.id === tripId);
@@ -126,6 +133,8 @@ export default function DriverPortalPage() {
       .select('id,boarding_status,companion,observations,patient:patients(name)')
       .eq('trip_id', tripId);
 
+    if (requestId !== passengerRequestId.current) return;
+    setPassengersLoading(false);
     if (error) {
       setMessage(`Não foi possível carregar os passageiros: ${error.message}`);
       return;
@@ -227,6 +236,8 @@ export default function DriverPortalPage() {
           ? `Viagem iniciada. Quilometragem inicial: ${result.initialMileage} km.`
           : `Viagem finalizada. ${result.distance} km percorridos.`,
       );
+      passengerRequestId.current += 1;
+      setPassengersLoading(false);
       setSelectedTrip(null);
       setPassengers([]);
       setFinishMileage('');
@@ -418,7 +429,9 @@ export default function DriverPortalPage() {
               <UserRound size={19} />
               <h2 className="font-semibold">Passageiros da viagem</h2>
             </div>
-            {passengers.length === 0 ? (
+            {passengersLoading ? (
+              <p role="status" className="text-sm text-slate-500">Carregando passageiros...</p>
+            ) : passengers.length === 0 ? (
               <p className="text-sm text-slate-500">Nenhum passageiro encontrado.</p>
             ) : (
               <div className="divide-y">
