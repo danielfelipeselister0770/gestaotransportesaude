@@ -423,24 +423,24 @@ export default function ConfiguracoesPage() {
           </section>
 
           {isAdmin && municipalityModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-              <form onSubmit={saveMunicipality} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm">
+              <form onSubmit={saveMunicipality} className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
                 <div className="mb-5 flex items-center justify-between"><div><h2 className="text-lg font-semibold">{municipalityEditing ? 'Editar prefeitura' : 'Nova prefeitura'}</h2><p className="text-xs text-slate-500">Dados básicos da prefeitura.</p></div><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }}><X size={20} /></button></div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="text-sm sm:col-span-2">Nome da prefeitura<input value={municipalityName} onChange={(e) => setMunicipalityName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" placeholder="Prefeitura Municipal de ..." /></label>
                   <label className="text-sm">CNPJ<input value={municipalityCnpj} onChange={(e) => setMunicipalityCnpj(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Cidade<input value={municipalityCity} onChange={(e) => setMunicipalityCity(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
-                  <label className="text-sm">UF<input maxLength={2} value={municipalityState} onChange={(e) => setMunicipalityState(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2 uppercase" /></label>
+                  <label className="text-sm">UF<input maxLength={2} value={municipalityState} onChange={(e) => setMunicipalityState(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 uppercase focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Status<select value={municipalityActive ? 'true' : 'false'} onChange={(e) => setMunicipalityActive(e.target.value === 'true')} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100"><option value="true">Ativa</option><option value="false">Inativa</option></select></label>
                 </div>
-                <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>
+                <div className="mt-6 flex justify-end gap-2"><button type="button" onClick={() => { setMunicipalityEditing(null); setMunicipalityModalOpen(false); }} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar prefeitura'}</button></div>
               </form>
             </div>
           )}
 
           {canCreateUsers && userModalOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-              <form onSubmit={saveNewUser} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm">
+              <form onSubmit={saveNewUser} className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
                 <div className="mb-5 flex items-center justify-between">
                   <div><h2 className="text-lg font-semibold">Novo usuário</h2><p className="text-xs text-slate-500">{municipalities.find((m) => m.id === userMunicipalityId)?.name ?? (userMunicipalityId === currentProfile?.municipality_id ? currentProfile?.name?.includes('') ? 'Minha prefeitura' : 'Minha prefeitura' : '')}</p></div>
                   <button type="button" onClick={closeUserModal}><X size={20} /></button>
@@ -455,16 +455,16 @@ export default function ConfiguracoesPage() {
                 </div>
                 <p className="mt-4 text-xs text-slate-500">A conta será criada com e-mail confirmado e a senha inicial deverá ser trocada no primeiro acesso.</p>
                 <div className="mt-6 flex justify-end gap-2">
-                  <button type="button" onClick={closeUserModal} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-                  <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Cadastrando...' : 'Cadastrar usuário'}</button>
+                  <button type="button" onClick={closeUserModal} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+                  <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">{saving ? 'Cadastrando...' : 'Cadastrar usuário'}</button>
                 </div>
               </form>
             </div>
           )}
 
           {editing && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-              <form onSubmit={saveProfile} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/60 p-4 backdrop-blur-sm">
+              <form onSubmit={saveProfile} className="my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl sm:p-6">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
                     <h2 className="text-lg font-semibold">Editar usuário</h2>
@@ -487,8 +487,8 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="mt-6 flex justify-end gap-2">
-                  <button type="button" onClick={closeEdit} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button>
-                  <button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar alterações'}</button>
+                  <button type="button" onClick={closeEdit} className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">Cancelar</button>
+                  <button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50">{saving ? 'Salvando...' : 'Salvar alterações'}</button>
                 </div>
               </form>
             </div>
