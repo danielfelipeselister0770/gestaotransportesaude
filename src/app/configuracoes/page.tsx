@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { History, Pencil, Plus, Save, ShieldCheck, Trash2, UserCog, X } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -76,6 +76,21 @@ export default function ConfiguracoesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const modalOpenerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!municipalityModalOpen && !userModalOpen && !editing) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || saving) return;
+      setMunicipalityModalOpen(false);
+      setMunicipalityEditing(null);
+      setUserModalOpen(false);
+      setEditing(null);
+      modalOpenerRef.current?.focus();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [municipalityModalOpen, userModalOpen, editing, saving]);
 
   const isAdmin = currentProfile?.role === 'ADMIN';
   const canCreateUsers = currentProfile?.role === 'ADMIN' || currentProfile?.role === 'GESTOR';
@@ -122,6 +137,7 @@ export default function ConfiguracoesPage() {
   useEffect(() => { loadData(); }, []);
 
   function openMunicipality(municipality?: Municipality) {
+    modalOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setMunicipalityEditing(municipality ?? null);
     setMunicipalityModalOpen(true);
     setMunicipalityName(municipality?.name ?? '');
@@ -146,6 +162,7 @@ export default function ConfiguracoesPage() {
   }
 
   function openUserModal(municipalityId: string) {
+    modalOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setUserMunicipalityId(municipalityId);
     setUserName('');
     setUserCpf('');
@@ -159,6 +176,7 @@ export default function ConfiguracoesPage() {
 
   function closeUserModal() {
     setUserModalOpen(false);
+    modalOpenerRef.current?.focus();
     setMessage('');
   }
 
@@ -231,6 +249,7 @@ export default function ConfiguracoesPage() {
   }
 
   function openEdit(profile: Profile) {
+    modalOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setEditing(profile);
     setName(profile.name);
     setCpf(profile.cpf ?? '');
@@ -243,6 +262,7 @@ export default function ConfiguracoesPage() {
 
   function closeEdit() {
     setEditing(null);
+    modalOpenerRef.current?.focus();
     setMessage('');
   }
 
