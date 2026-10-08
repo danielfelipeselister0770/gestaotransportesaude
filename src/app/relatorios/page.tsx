@@ -255,17 +255,17 @@ export default function RelatoriosPage() {
   ];
 
   return (
-    <main className="min-h-screen bg-slate-50">
-<section className=" p-4 md:p-8">
+    <main className="min-h-screen">
+<section className="p-5 lg:p-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Relatórios</h1>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><BarChart3 size={16} /> Gestão operacional / Indicadores</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Relatórios</h1>
               <p className="text-sm text-slate-500">Resumo mensal da operação, quilometragem e custos da frota.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="rounded-lg border bg-white px-3 py-2 text-sm" />
-              <button onClick={exportCsv} disabled={loading || filtered.length === 0} className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"><Download size={16} /> Exportar CSV</button>
+              <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" />
+              <button onClick={exportCsv} disabled={loading || filtered.length === 0} className="flex items-center gap-2 rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-50"><Download size={16} /> Exportar CSV</button>
             </div>
           </div>
 
