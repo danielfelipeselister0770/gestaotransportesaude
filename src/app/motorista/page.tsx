@@ -251,27 +251,29 @@ export default function DriverPortalPage() {
       <section className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
         {message && <div className="rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-        <div className="flex flex-wrap gap-2 rounded-xl border bg-white p-2 shadow-sm">
+        <div role="group" aria-label="Filtro de programação" className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm sm:flex-row">
           <button
             onClick={() => setViewMode('TODAY')}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === 'TODAY' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            aria-pressed={viewMode === 'TODAY'}
+            className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${viewMode === 'TODAY' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Hoje
           </button>
           <button
             onClick={() => setViewMode('SCHEDULE')}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition ${viewMode === 'SCHEDULE' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
+            aria-pressed={viewMode === 'SCHEDULE'}
+            className={`rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 ${viewMode === 'SCHEDULE' ? 'bg-teal-700 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
           >
             Minha programação
           </button>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Minha programação</h1>
             <p className="text-sm text-slate-500">Consulte as viagens de hoje ou as próximas viagens já programadas para você.</p>
           </div>
-          <button onClick={loadData} className="flex items-center gap-2 rounded-lg border bg-white px-3 py-2 text-sm hover:bg-slate-50">
+          <button type="button" onClick={loadData} className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
             <RefreshCw size={16} /> Atualizar
           </button>
         </div>
@@ -289,10 +291,11 @@ export default function DriverPortalPage() {
             {Object.entries(groupedTrips).map(([date, dateTrips]) => {
               const expanded = expandedDates[date] !== false;
               return (
-                <section key={date} className="overflow-hidden rounded-xl border bg-white shadow-sm">
+                <section key={date} className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                   <button
                     onClick={() => toggleDate(date)}
-                    className="flex w-full items-center justify-between gap-4 border-b bg-slate-50 px-5 py-4 text-left"
+                    aria-expanded={expanded}
+                    className="flex w-full items-center justify-between gap-4 border-b bg-slate-50 px-4 py-4 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 sm:px-5"
                   >
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -309,8 +312,8 @@ export default function DriverPortalPage() {
                   {expanded && (
                     <div className="grid gap-4 p-4 lg:grid-cols-2">
                       {dateTrips.map((trip) => (
-              <div key={trip.id} className={`rounded-xl border bg-white p-5 shadow-sm ${selectedTrip === trip.id ? 'ring-2 ring-slate-300' : ''}`}>
-                <button onClick={() => loadPassengers(trip.id)} className="w-full text-left">
+              <div key={trip.id} className={`rounded-xl border bg-white p-5 shadow-sm ${selectedTrip === trip.id ? 'ring-2 ring-teal-500' : ''}`}>
+                <button type="button" aria-pressed={selectedTrip === trip.id} aria-label={`Ver passageiros da viagem de ${trip.origin} para ${trip.destination}`} onClick={() => loadPassengers(trip.id)} className="w-full rounded-lg text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600">
                   <div className="flex items-start justify-between gap-3">
                     <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">{statusLabel[trip.status]}</span>
                     <span className="text-sm font-medium text-slate-600">{new Date(trip.date + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
