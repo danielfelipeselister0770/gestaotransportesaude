@@ -379,7 +379,7 @@ export default function DriverPortalPage() {
       </header>
 
       <section className="mx-auto max-w-5xl space-y-6 p-4 md:p-8">
-        {message && <div role="status" aria-live="polite" className="rounded-xl border border-teal-200 bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
+        {message && <div role={/não foi possível|falha|erro|aguarde|sincronize|informe|deve ser|não está|ainda não/i.test(message) ? "alert" : "status"} aria-live="polite" className={`rounded-xl border px-4 py-3 text-sm ${/não foi possível|falha|erro|aguarde|sincronize|informe|deve ser|não está|ainda não/i.test(message) ? "border-amber-200 bg-amber-50 text-amber-900" : "border-emerald-200 bg-emerald-50 text-emerald-900"}`}>{message}</div>}
 
         {actionLoading !== null && <p role="status" aria-live="polite" className="text-sm font-medium text-teal-800">Salvando informações... Aguarde antes de trocar os filtros ou atualizar a programação.</p>}
 
