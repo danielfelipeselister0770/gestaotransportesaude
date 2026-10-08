@@ -1,7 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
-import { AlertTriangle, Pencil, Plus, Search, X } from 'lucide-react';
+import { AlertCircle, AlertTriangle, CheckCircle2, ClipboardList, Pencil, Plus, Search, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Vehicle = { id: string; plate: string; brand: string | null; model: string | null };
@@ -125,22 +125,24 @@ export default function OcorrenciasPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen">
 <section className=" p-4 md:p-8">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-slate-200/80 bg-white px-5 py-5 sm:flex-row sm:items-center sm:justify-between lg:px-8">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Ocorrências</h1>
-              <p className="text-sm text-slate-500">Registre problemas, incidentes e situações da frota e das viagens.</p>
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><AlertTriangle size={15}/> Segurança operacional</div>
+              <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Ocorrências</h1>
+              <p className="mt-1 text-sm text-slate-500">Registre, acompanhe e resolva incidentes relacionados à operação do transporte.</p>
             </div>
-            <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white"><Plus size={18} /> Nova ocorrência</button>
+            <button onClick={openNew} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18} /> Nova ocorrência</button>
           </div>
+          <div className="p-5 lg:p-8">
 
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat label="Total" value={counts.total}/><Stat label="Abertas" value={counts.open}/><Stat label="Em análise" value={counts.review}/><Stat label="Resolvidas" value={counts.resolved}/></div>
-          <div className="mb-4 grid gap-3 sm:grid-cols-[1fr_180px]">
-            <div className="flex items-center gap-2 rounded-xl border bg-white px-3 py-2">
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<ClipboardList size={18}/>} label="Total" value={counts.total}/><Stat icon={<AlertCircle size={18}/>} label="Abertas" value={counts.open} attention={counts.open > 0}/><Stat icon={<Search size={18}/>} label="Em análise" value={counts.review}/><Stat icon={<CheckCircle2 size={18}/>} label="Resolvidas" value={counts.resolved}/></div>
+          <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_180px]">
+            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
               <Search size={18} className="text-slate-400" />
               <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por placa, tipo, descrição ou responsável" className="w-full outline-none text-sm" />
             </div>
@@ -151,7 +153,7 @@ export default function OcorrenciasPage() {
           </div>
 
           {showForm && (
-            <form onSubmit={save} className="mb-6 rounded-xl border bg-white p-5 shadow-sm">
+            <form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-semibold">{editing ? 'Editar ocorrência' : 'Nova ocorrência'}</h2>
                 <button type="button" onClick={() => setShowForm(false)}><X size={20} /></button>
@@ -166,15 +168,15 @@ export default function OcorrenciasPage() {
                 <label className="text-sm">Responsável<input name="responsible" defaultValue={editing?.responsible ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
                 <label className="text-sm sm:col-span-2">Resolução<textarea name="resolution" rows={2} placeholder="Obrigatória ao marcar como resolvida" defaultValue={editing?.resolution??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm sm:col-span-2">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
               </div>
-              <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white">{saving ? 'Salvando...' : 'Salvar'}</button></div>
+              <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">{saving ? 'Salvando...' : 'Salvar'}</button></div>
             </form>
           )}
 
-          <div className="overflow-hidden rounded-xl border bg-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
             {loading ? <div className="p-8 text-center text-sm text-slate-500">Carregando...</div> :
               filtered.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma ocorrência encontrada.</div> :
               <div className="divide-y">{filtered.map((row) => (
-                <div key={row.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
+                <div key={row.id} className="flex flex-col gap-3 p-4 transition hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-3">
                     <div className="rounded-lg bg-red-50 p-2 text-red-600"><AlertTriangle size={20} /></div>
                     <div>
@@ -185,11 +187,12 @@ export default function OcorrenciasPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${statusClass(row.status)}`}>{statusLabels[row.status]}</span>
-                    <button onClick={() => openEdit(row)} className="rounded-lg border p-2"><Pencil size={16} /></button>
+                    <button onClick={() => openEdit(row)} className="rounded-lg border p-2 transition hover:bg-slate-50" title="Editar"><Pencil size={16} /></button>
                   </div>
                 </div>
               ))}</div>
             }
+          </div>
           </div>
         </div>
       </section>
@@ -197,4 +200,4 @@ export default function OcorrenciasPage() {
   );
 }
 
-function Stat({label,value}:{label:string;value:number}){return <div className="rounded-xl border bg-white p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold">{value}</div></div>}
+function Stat({icon,label,value,attention=false}:{icon:React.ReactNode;label:string;value:number;attention?:boolean}){return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className={"mb-3 grid h-9 w-9 place-items-center rounded-xl " + (attention ? "bg-red-50 text-red-700" : "bg-teal-50 text-teal-700")}>{icon}</div><div className="text-2xl font-bold tracking-tight text-slate-950">{value}</div><div className="mt-1 text-xs font-semibold text-slate-500">{label}</div></div>}
