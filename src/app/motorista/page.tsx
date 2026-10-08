@@ -59,6 +59,9 @@ export default function DriverPortalPage() {
   async function loadData(preserveMessage = false, afterConfirmedAction = false) {
     if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++tripsRequestId.current;
+    // Cancela logicamente a consulta anterior de passageiros ao iniciar nova atualização.
+    passengerRequestId.current += 1;
+    setPassengersLoading(false);
     const recoveringSync = syncWarning || afterConfirmedAction;
     setLoading(true);
     if (!recoveringSync) setSyncWarning(false);
