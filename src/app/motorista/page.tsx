@@ -47,6 +47,7 @@ export default function DriverPortalPage() {
   const [tripsError, setTripsError] = useState(false);
   const [driverLinkMissing, setDriverLinkMissing] = useState(false);
   const [syncWarning, setSyncWarning] = useState(false);
+  const [completionPending, setCompletionPending] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
@@ -337,6 +338,7 @@ export default function DriverPortalPage() {
       if (!response.ok) {
         if (action === 'FINISH' && result.completedWithPending === true) {
           setSyncWarning(true);
+          setCompletionPending(true);
           setMessageTone('warning');
           setMessage(`${result.error ?? 'A viagem foi concluída, mas existem registros pendentes.'} Não tente finalizar novamente. Avise a gestão para conferir os registros e sincronize a programação antes de continuar.`);
           return;
@@ -458,7 +460,7 @@ export default function DriverPortalPage() {
 
         {syncWarning && !loading && (
           <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-            <span>A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.</span>
+            <span>{completionPending ? 'A viagem foi concluída, mas há registros pendentes. Não finalize novamente. Avise a gestão e sincronize a programação antes de continuar.' : 'A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.'}</span>
             <button type="button" onClick={() => loadData()} disabled={actionLoading !== null} className="rounded-xl bg-white px-4 py-2 font-semibold ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-50">Sincronizar novamente</button>
           </div>
         )}
