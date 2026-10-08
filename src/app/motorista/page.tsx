@@ -139,7 +139,7 @@ export default function DriverPortalPage() {
       setSyncWarning(false);
       if (selectedTripRef.current && normalized.some((trip) => trip.id === selectedTripRef.current)) {
         // Toda atualização bem-sucedida da agenda também atualiza a lista aberta.
-        await loadPassengers(selectedTripRef.current, true);
+        await loadPassengers(selectedTripRef.current, true, requestId);
       }
       if (selectedTripRef.current && !normalized.some((trip) => trip.id === selectedTripRef.current)) {
         passengerRequestId.current += 1;
@@ -160,7 +160,7 @@ export default function DriverPortalPage() {
     }
   }
 
-  async function loadPassengers(tripId: string, preserveMessage = false) {
+  async function loadPassengers(tripId: string, preserveMessage = false, parentRequestId?: number) {
     if (actionInProgressRef.current && !preserveMessage) return;
     const requestId = ++passengerRequestId.current;
     const switchingTrip = selectedTripRef.current !== tripId;
@@ -182,7 +182,7 @@ export default function DriverPortalPage() {
         .select('id,boarding_status,companion,observations,patient:patients(name)')
         .eq('trip_id', tripId);
 
-      if (requestId !== passengerRequestId.current) return;
+      if (requestId !== passengerRequestId.current || (parentRequestId !== undefined && parentRequestId !== tripsRequestId.current)) return;
       if (error) {
         setPassengersError(true);
         setMessage(preserveMessage ? 'A programação foi sincronizada, mas não foi possível atualizar os passageiros. Tente novamente na lista abaixo.' : `Não foi possível carregar os passageiros: ${error.message}`);
@@ -194,12 +194,12 @@ export default function DriverPortalPage() {
         patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
       })) as Passenger[]);
     } catch {
-      if (requestId === passengerRequestId.current) {
+      if (requestId === passengerRequestId.current && (parentRequestId === undefined || parentRequestId === tripsRequestId.current)) {
         setPassengersError(true);
         setMessage(preserveMessage ? 'A programação foi sincronizada, mas a conexão falhou ao atualizar os passageiros. Tente novamente na lista abaixo.' : 'Falha de conexão ao carregar passageiros. Verifique sua internet e selecione a viagem novamente.');
       }
     } finally {
-      if (requestId === passengerRequestId.current) setPassengersLoading(false);
+      if (requestId === passengerRequestId.current && (parentRequestId === undefined || parentRequestId === tripsRequestId.current)) setPassengersLoading(false);
     }
   }
 
