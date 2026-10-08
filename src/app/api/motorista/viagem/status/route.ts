@@ -214,7 +214,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Viagem concluída, mas falhou o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
   }
 
-  await admin.from('trip_passengers').update({ boarding_status: 'NO_SHOW' }).eq('trip_id', trip.id).eq('boarding_status', 'EXPECTED');
+  const { error: passengerUpdateError } = await admin.from('trip_passengers').update({ boarding_status: 'NO_SHOW' }).eq('trip_id', trip.id).eq('boarding_status', 'EXPECTED');
+  if (passengerUpdateError) {
+    return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização dos passageiros. Avise a gestão; não finalize novamente.' }, { status: 500 });
+  }
 
   const { data: passengers } = await admin
     .from('trip_passengers')
