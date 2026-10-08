@@ -104,6 +104,7 @@ export default function VehiclesPage() {
           </div>)}</div>}
         </div>
       </div>
+      </div>
     </section>
   </main>;
 }
