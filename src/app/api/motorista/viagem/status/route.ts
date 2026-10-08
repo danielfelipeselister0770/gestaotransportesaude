@@ -227,8 +227,14 @@ export async function POST(request: Request) {
 
   const completedIds = [...new Set((passengers ?? []).filter(row => row.boarding_status === 'BOARDED').map(row => row.request_id).filter(Boolean))];
   const noShowIds = [...new Set((passengers ?? []).filter(row => row.boarding_status !== 'BOARDED').map(row => row.request_id).filter(Boolean))];
-  if (completedIds.length > 0) await admin.from('transport_requests').update({ status: 'COMPLETED' }).in('id', completedIds);
-  if (noShowIds.length > 0) await admin.from('transport_requests').update({ status: 'NO_SHOW' }).in('id', noShowIds);
+  if (completedIds.length > 0) {
+    const { error } = await admin.from('transport_requests').update({ status: 'COMPLETED' }).in('id', completedIds);
+    if (error) return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização das solicitações atendidas. Avise a gestão; não finalize novamente.' }, { status: 500 });
+  }
+  if (noShowIds.length > 0) {
+    const { error } = await admin.from('transport_requests').update({ status: 'NO_SHOW' }).in('id', noShowIds);
+    if (error) return NextResponse.json({ error: 'Viagem concluída, mas falhou a atualização das solicitações de não comparecimento. Avise a gestão; não finalize novamente.' }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true, status: 'COMPLETED', finalMileage, distance: finalMileage - initialMileage });
 }
