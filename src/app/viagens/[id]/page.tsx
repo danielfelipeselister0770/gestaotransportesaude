@@ -331,7 +331,7 @@ export default function TripDetailPage() {
   }
 
   async function updatePassenger(id: string, boarding_status: Passenger['boarding_status']) {
-    if (saving) return;
+    if (!trip || saving) return;
     if (trip?.status === 'COMPLETED' || trip?.status === 'CANCELLED') {
       setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
       return;
