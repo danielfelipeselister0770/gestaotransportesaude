@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState, type ReactNode } from 'react';
+import { FormEvent, useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Check, Copy, Gauge, Save, UserRound, AlertTriangle, History } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
@@ -49,6 +49,7 @@ export default function TripDetailPage() {
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [passengersLoadError, setPassengersLoadError] = useState(false);
   const [updatingPassengerId, setUpdatingPassengerId] = useState<string | null>(null);
+  const updatingPassengerRef = useRef(false);
   const [initialMileage, setInitialMileage] = useState('');
   const [finalMileage, setFinalMileage] = useState('');
   const [observation, setObservation] = useState('');
@@ -272,7 +273,8 @@ export default function TripDetailPage() {
       setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
       return;
     }
-    if (updatingPassengerId) return;
+    if (updatingPassengerRef.current) return;
+    updatingPassengerRef.current = true;
     setUpdatingPassengerId(id);
     try {
       const { error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id);
@@ -281,6 +283,7 @@ export default function TripDetailPage() {
     } catch {
       setMessage('Não foi possível atualizar o passageiro. Verifique a conexão e tente novamente.');
     } finally {
+      updatingPassengerRef.current = false;
       setUpdatingPassengerId(null);
     }
   }
