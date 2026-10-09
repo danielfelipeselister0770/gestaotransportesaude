@@ -111,7 +111,7 @@ export default function TripDetailPage() {
   useEffect(() => { setIdCopied(false); if (tripId) loadData(); }, [tripId]);
 
   async function saveMileage(status?: Trip['status']) {
-    if (!trip) return;
+    if (!trip || saving || updatingPassengerRef.current) return;
     setSaving(true);
     setMessage('');
 
