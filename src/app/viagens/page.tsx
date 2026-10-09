@@ -600,7 +600,7 @@ export default function TripsPage() {
                       <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
                         <span>{trip.driver?.name ?? 'Motorista não informado'}</span>
                         <span>{trip.vehicle?.plate ?? 'Veículo não informado'}</span>
-                        <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count === null ? 'Contagem indisponível' : `${trip.passenger_count} passageiro(s)`}</span>
+                        <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count === null ? 'Contagem indisponível' : `${trip.passenger_count} ocupante(s)`}</span>
                       </div>
                     </Link>
                     <div className="flex gap-2">
