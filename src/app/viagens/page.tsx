@@ -147,6 +147,11 @@ export default function TripsPage() {
       return;
     }
 
+    if (!drivers.some((driver) => driver.id === driverId)) {
+      setMessage('Selecione um motorista ativo para esta viagem.');
+      return;
+    }
+
     const vehicle = vehicles.find((item) => item.id === vehicleId);
     if (!vehicle) {
       setMessage('Selecione um veículo disponível.');
