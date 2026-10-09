@@ -470,7 +470,7 @@ export default function DriverPortalPage() {
 
         {syncWarning && !loading && (
           <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-            <span>{completionPending ? 'A viagem foi concluída, mas há registros pendentes. Não finalize novamente. Avise a gestão e sincronize a programação antes de continuar.' : 'A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.'}</span>
+            <div><span>{completionPending ? 'A viagem foi concluída, mas há registros pendentes. Não finalize novamente. Avise a gestão e sincronize a programação antes de continuar.' : 'A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.'}</span>{completionPending && pendingTripId && <p className="mt-2 break-all text-xs font-semibold">Identificação da viagem: {pendingTripId}</p>}</div>
             <button type="button" onClick={() => loadData()} disabled={actionLoading !== null} className="rounded-xl bg-white px-4 py-2 font-semibold ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-50">Sincronizar novamente</button>
           </div>
         )}
