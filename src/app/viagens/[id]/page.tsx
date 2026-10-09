@@ -186,13 +186,14 @@ export default function TripDetailPage() {
         .filter((id): id is string => Boolean(id)))];
 
       if (requestIds.length > 0) {
-        const { error: requestsError } = await supabase
+        const { data: updatedRequests, error: requestsError } = await supabase
           .from('transport_requests')
           .update({ status: 'COMPLETED' })
-          .in('id', requestIds);
+          .in('id', requestIds)
+          .select('id');
 
-        if (requestsError) {
-          setMessage(`Viagem concluída, mas não foi possível atualizar as solicitações para Concluída: ${requestsError.message}`);
+        if (requestsError || (updatedRequests?.length ?? 0) !== requestIds.length) {
+          setMessage(requestsError ? `Viagem concluída, mas não foi possível atualizar as solicitações para Concluída: ${requestsError.message}` : 'Viagem concluída, mas nem todas as solicitações vinculadas foram atualizadas. Avise a gestão para conferir os registros.');
           setSaving(false);
           await loadData();
           return;
