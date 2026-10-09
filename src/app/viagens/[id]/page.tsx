@@ -269,11 +269,11 @@ export default function TripDetailPage() {
         };
 
         const mileageResult = existingFinalRecord
-          ? await supabase.from('mileage_records').update(mileagePayload).eq('id', existingFinalRecord.id)
-          : await supabase.from('mileage_records').insert(mileagePayload);
+          ? await supabase.from('mileage_records').update(mileagePayload).eq('id', existingFinalRecord.id).select('id').maybeSingle()
+          : await supabase.from('mileage_records').insert(mileagePayload).select('id').maybeSingle();
 
-        if (mileageResult.error) {
-          setMessage(`Viagem concluída, mas não foi possível registrar o KM final: ${mileageResult.error.message}`);
+        if (mileageResult.error || !mileageResult.data) {
+          setMessage(mileageResult.error ? `Viagem concluída, mas não foi possível registrar o KM final: ${mileageResult.error.message}` : 'Viagem concluída, mas o registro de KM final não foi confirmado. Avise a gestão para conferir os dados.');
           setSaving(false);
           await loadData();
           return;
