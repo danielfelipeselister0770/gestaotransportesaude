@@ -48,6 +48,7 @@ export default function TripDetailPage() {
   const [trip, setTrip] = useState<Trip | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [passengersLoadError, setPassengersLoadError] = useState(false);
+  const [updatingPassengerId, setUpdatingPassengerId] = useState<string | null>(null);
   const [initialMileage, setInitialMileage] = useState('');
   const [finalMileage, setFinalMileage] = useState('');
   const [observation, setObservation] = useState('');
@@ -271,9 +272,17 @@ export default function TripDetailPage() {
       setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
       return;
     }
-    const { error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id);
-    if (error) setMessage(`Não foi possível atualizar o passageiro: ${error.message}`);
-    else setPassengers((current) => current.map((item) => item.id === id ? { ...item, boarding_status } : item));
+    if (updatingPassengerId) return;
+    setUpdatingPassengerId(id);
+    try {
+      const { error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id);
+      if (error) setMessage(`Não foi possível atualizar o passageiro: ${error.message}`);
+      else setPassengers((current) => current.map((item) => item.id === id ? { ...item, boarding_status } : item));
+    } catch {
+      setMessage('Não foi possível atualizar o passageiro. Verifique a conexão e tente novamente.');
+    } finally {
+      setUpdatingPassengerId(null);
+    }
   }
 
   async function addOccurrence(event: FormEvent<HTMLFormElement>) {
@@ -370,7 +379,7 @@ export default function TripDetailPage() {
                     <div className="mt-1 text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <button type="button" disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
+                    <button type="button" disabled={saving || updatingPassengerId !== null || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
                     <button type="button" disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
                   </div>
                 </div>
