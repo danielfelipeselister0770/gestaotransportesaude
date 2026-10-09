@@ -154,6 +154,12 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED' && passengersLoadError) {
+      setMessage('Não é possível concluir a viagem sem conferir os passageiros. Recarregue a página e tente novamente.');
+      setSaving(false);
+      return;
+    }
+
     const { data: updatedTrip, error } = await supabase.from('trips').update({
       initial_mileage: initial,
       final_mileage: final,
