@@ -365,12 +365,15 @@ export default function TripsPage() {
         return;
       }
 
-      const { error: vehicleError } = await supabase.from('vehicles')
+      const { data: updatedVehicle, error: vehicleError } = await supabase.from('vehicles')
         .update({ status: 'IN_USE' })
-        .eq('id', vehicle.id);
+        .eq('id', vehicle.id)
+        .eq('status', 'AVAILABLE')
+        .select('id')
+        .maybeSingle();
 
-      if (vehicleError) {
-        setMessage(`Viagem iniciada, mas não foi possível atualizar o veículo: ${vehicleError.message}`);
+      if (vehicleError || !updatedVehicle) {
+        setMessage(vehicleError ? `Viagem iniciada, mas não foi possível atualizar o veículo: ${vehicleError.message}` : 'Viagem iniciada, mas o veículo deixou de estar disponível. Confira a situação antes de continuar.');
         await loadData();
         return;
       }
