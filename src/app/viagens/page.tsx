@@ -95,10 +95,10 @@ export default function TripsPage() {
 
       if (normalizedTrips.length) {
         const tripIds = normalizedTrips.map((trip) => trip.id);
-        const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id').in('trip_id', tripIds);
+        const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id,companion').in('trip_id', tripIds);
         if (passengerCountError) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError.message}`);
         const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
-          acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1;
+          acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1 + (item.companion ? 1 : 0);
           return acc;
         }, {});
         if (!passengerCountError) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
