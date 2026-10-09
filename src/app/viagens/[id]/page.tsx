@@ -211,6 +211,7 @@ export default function TripDetailPage() {
         observations: 'Quilometragem inicial da viagem',
       }).select('id').maybeSingle();
       if (mileageError || !initialRecord) {
+        await loadData();
         setMessage(mileageError ? `Viagem salva, mas não foi possível registrar o KM inicial: ${mileageError.message}` : 'Viagem salva, mas o registro de KM inicial não foi confirmado. Avise a gestão para conferir os dados.');
         setSaving(false);
         return;
