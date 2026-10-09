@@ -136,6 +136,11 @@ export default function TripsPage() {
       return;
     }
 
+    if (new Set(selectedIds).size !== selectedIds.length || selectedRequests.length !== selectedIds.length) {
+      setMessage('A seleção de solicitações está desatualizada ou duplicada. Atualize a agenda e selecione novamente.');
+      return;
+    }
+
     if (selectedRequests.some((request) => !request.patient_id)) {
       setMessage('Há uma solicitação sem paciente vinculado. Corrija o cadastro antes de agendar.');
       return;
