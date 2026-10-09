@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { AlertTriangle, CalendarDays, CarFront, Check, CheckCircle2, ChevronDown, ChevronUp, LogOut, MapPin, Play, RefreshCw, UserRound, X } from 'lucide-react';
+import { AlertTriangle, CalendarDays, CarFront, Check, CheckCircle2, ChevronDown, ChevronUp, Copy, LogOut, MapPin, Play, RefreshCw, UserRound, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Trip = {
@@ -49,6 +49,7 @@ export default function DriverPortalPage() {
   const [syncWarning, setSyncWarning] = useState(false);
   const [completionPending, setCompletionPending] = useState(false);
   const [pendingTripId, setPendingTripId] = useState<string | null>(null);
+  const [pendingIdCopied, setPendingIdCopied] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
@@ -58,6 +59,18 @@ export default function DriverPortalPage() {
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
   const [occurrenceType,setOccurrenceType]=useState('ATRASO');
   const [occurrenceDescription,setOccurrenceDescription]=useState('');
+
+  async function copyPendingTripId() {
+    if (!pendingTripId) return;
+    try {
+      await navigator.clipboard.writeText(pendingTripId);
+      setPendingIdCopied(true);
+    } catch {
+      setPendingIdCopied(false);
+      setMessageTone('warning');
+      setMessage('Não foi possível copiar o ID automaticamente. Selecione o código e copie manualmente.');
+    }
+  }
 
   async function loadData(preserveMessage = false, afterConfirmedAction = false) {
     if (actionInProgressRef.current && !preserveMessage) return;
@@ -341,6 +354,7 @@ export default function DriverPortalPage() {
           setSyncWarning(true);
           setCompletionPending(true);
           setPendingTripId(typeof result.tripId === 'string' ? result.tripId : trip.id);
+          setPendingIdCopied(false);
           setMessageTone('warning');
           setMessage(`${result.error ?? 'A viagem foi concluída, mas existem registros pendentes.'} Não tente finalizar novamente. Avise a gestão para conferir os registros e sincronize a programação antes de continuar.`);
           return;
@@ -463,14 +477,14 @@ export default function DriverPortalPage() {
         {completionPending && !syncWarning && (
           <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
             <strong className="block font-semibold">Viagem concluída com registros pendentes</strong>
-            {pendingTripId && <p className="mt-1 break-all text-xs">Identificação da viagem: {pendingTripId}</p>}
+            {pendingTripId && <p className="mt-1 break-all text-xs">Identificação da viagem: {pendingTripId}</p><button type="button" onClick={copyPendingTripId} className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-semibold hover:bg-amber-100" aria-label="Copiar ID da viagem pendente" aria-live="polite"><Copy size={13} />{pendingIdCopied ? "Copiado!" : "Copiar ID"}</button>}
             <p className="mt-1">A programação foi sincronizada, mas isso não confirma a correção dos registros pendentes. Não finalize a viagem novamente e avise a gestão para conferir a situação.</p>
           </div>
         )}
 
         {syncWarning && !loading && (
           <div role="alert" className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-            <div><span>{completionPending ? 'A viagem foi concluída, mas há registros pendentes. Não finalize novamente. Avise a gestão e sincronize a programação antes de continuar.' : 'A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.'}</span>{completionPending && pendingTripId && <p className="mt-2 break-all text-xs font-semibold">Identificação da viagem: {pendingTripId}</p>}</div>
+            <div><span>{completionPending ? 'A viagem foi concluída, mas há registros pendentes. Não finalize novamente. Avise a gestão e sincronize a programação antes de continuar.' : 'A alteração da viagem foi confirmada e não precisa ser repetida. Porém, a atualização da programação falhou. Toque em Sincronizar novamente antes de registrar novas ações.'}</span>{completionPending && pendingTripId && <p className="mt-2 break-all text-xs font-semibold">Identificação da viagem: {pendingTripId}</p><button type="button" onClick={copyPendingTripId} className="mt-2 inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 text-xs font-semibold hover:bg-amber-100" aria-label="Copiar ID da viagem pendente" aria-live="polite"><Copy size={13} />{pendingIdCopied ? "Copiado!" : "Copiar ID"}</button>}</div>
             <button type="button" onClick={() => loadData()} disabled={actionLoading !== null} className="rounded-xl bg-white px-4 py-2 font-semibold ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-50">Sincronizar novamente</button>
           </div>
         )}
