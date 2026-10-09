@@ -386,15 +386,29 @@ export default function TripsPage() {
         return;
       }
 
-      const { data: activeTrip } = await supabase.from('trips')
+      const { data: activeTrip, error: activeTripError } = await supabase.from('trips')
         .select('id')
         .eq('vehicle_id', currentTrip.vehicle_id)
         .in('status', ['SCHEDULED', 'IN_PROGRESS'])
         .neq('id', id)
         .limit(1);
 
-      if (!activeTrip?.length) {
-        await supabase.from('vehicles').update({ status: 'AVAILABLE' }).eq('id', currentTrip.vehicle_id);
+      if (activeTripError || !activeTrip) {
+        setMessage(activeTripError ? `Viagem cancelada, mas não foi possível conferir outras viagens do veículo: ${activeTripError.message}` : 'Viagem cancelada, mas não foi possível confirmar a disponibilidade do veículo.');
+        await loadData();
+        return;
+      }
+
+      if (activeTrip.length === 0 && currentTrip.vehicle_id) {
+        const { error: releaseError } = await supabase.from('vehicles')
+          .update({ status: 'AVAILABLE' })
+          .eq('id', currentTrip.vehicle_id)
+          .eq('status', 'IN_USE');
+        if (releaseError) {
+          setMessage(`Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}`);
+          await loadData();
+          return;
+        }
       }
     } else {
       const { error } = await supabase.from('trips').update({ status }).eq('id', id);
