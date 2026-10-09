@@ -136,6 +136,12 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED' && initial === null) {
+      setMessage('Informe a quilometragem inicial antes de concluir a viagem.');
+      setSaving(false);
+      return;
+    }
+
     if (status === 'COMPLETED' && final === null) {
       setMessage('Informe a quilometragem final antes de concluir a viagem.');
       setSaving(false);
