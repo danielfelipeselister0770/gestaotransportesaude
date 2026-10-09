@@ -476,7 +476,7 @@ export default function TripDetailPage() {
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b px-5 py-4"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
             <form onSubmit={addOccurrence} aria-busy={saving || updatingPassengerId !== null} className="space-y-4 p-4 sm:p-5">
-              <SelectField name="occurrence_type" label="Tipo" value={occurrenceType} onChange={setOccurrenceType}>
+              <SelectField name="occurrence_type" label="Tipo" value={occurrenceType} onChange={setOccurrenceType} disabled={saving || updatingPassengerId !== null}>
                 <option value="ACIDENTE">Acidente</option><option value="AVARIA">Avaria</option><option value="ATRASO">Atraso</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option>
               </SelectField>
               <label className="block"><span className="mb-1.5 block text-sm font-medium">Descrição</span><textarea value={occurrenceDescription} onChange={(e) => setOccurrenceDescription(e.target.value)} rows={4} maxLength={1000} minLength={1} required disabled={saving || updatingPassengerId !== null} placeholder="Descreva a ocorrência (até 1.000 caracteres)" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>
@@ -507,8 +507,8 @@ export default function TripDetailPage() {
 function Field({label,type,value,onChange}:{label:string;type?:string;value:string;onChange:(value:string)=>void}) {
   return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><input type={type} min={type === 'number' ? '0' : undefined} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>;
 }
-function SelectField({name,label,value,onChange,children}:{name?:string;label:string;value:string;onChange:(value:string)=>void;children:ReactNode}) {
-  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><select name={name} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border px-3 py-2.5 text-sm">{children}</select></label>;
+function SelectField({name,label,value,onChange,children,disabled=false}:{name?:string;label:string;value:string;onChange:(value:string)=>void;children:ReactNode;disabled?:boolean}) {
+  return <label className="block"><span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span><select name={name} disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} className="w-full rounded-lg border px-3 py-2.5 text-sm">{children}</select></label>;
 }
 function Summary({label,value}:{label:string;value:string}) {
   return <div className="rounded-lg bg-slate-50 p-4"><div className="text-xs text-slate-500">{label}</div><div className="mt-1 text-lg font-semibold">{value}</div></div>;
