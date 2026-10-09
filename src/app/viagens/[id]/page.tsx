@@ -154,15 +154,15 @@ export default function TripDetailPage() {
       return;
     }
 
-    const { error } = await supabase.from('trips').update({
+    const { data: updatedTrip, error } = await supabase.from('trips').update({
       initial_mileage: initial,
       final_mileage: final,
       observations: observation.trim() || null,
       ...(status ? { status, ...(status === 'COMPLETED' ? { completed_at: new Date().toISOString() } : {}) } : {}),
-    }).eq('id', trip.id);
+    }).eq('id', trip.id).eq('status', trip.status).select('id').maybeSingle();
 
-    if (error) {
-      setMessage(`Não foi possível salvar: ${error.message}`);
+    if (error || !updatedTrip) {
+      setMessage(error ? `Não foi possível salvar: ${error.message}` : 'A viagem foi alterada por outro usuário. Recarregue os dados antes de tentar novamente.');
       setSaving(false);
       return;
     }
