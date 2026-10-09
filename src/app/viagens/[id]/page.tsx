@@ -63,6 +63,10 @@ export default function TripDetailPage() {
 
   async function loadData() {
     setLoading(true);
+    setMessage('');
+    setTrip(null);
+    setPassengers([]);
+    setHistory([]);
     setPassengersLoadError(false);
     const [tripResult, passengersResult, historyResult] = await Promise.all([
       supabase.from('trips')
