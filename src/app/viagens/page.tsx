@@ -289,8 +289,12 @@ export default function TripsPage() {
     const { error: passengersError } = await supabase.from('trip_passengers').insert(passengerRows);
 
     if (passengersError) {
-      await supabase.from('trips').update({ status: 'CANCELLED' }).eq('id', trip.id);
-      setMessage(`Não foi possível adicionar os passageiros: ${passengersError.message}`);
+      const { error: rollbackError } = await supabase.from('trips')
+        .update({ status: 'CANCELLED' })
+        .eq('id', trip.id);
+      setMessage(rollbackError
+        ? `Falha ao adicionar passageiros: ${passengersError.message}. Também não foi possível cancelar a viagem criada: ${rollbackError.message}. Verifique a viagem antes de tentar novamente.`
+        : `Não foi possível adicionar os passageiros: ${passengersError.message}. A viagem foi cancelada automaticamente.`);
       setSaving(false);
       return;
     }
