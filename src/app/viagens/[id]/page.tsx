@@ -510,7 +510,7 @@ export default function TripDetailPage() {
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="border-b px-5 py-4"><h2 className="font-semibold">Resumo operacional</h2></div>
             <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
-              <Summary label="Passageiros" value={String(passengers.length)}/>
+              <Summary label="Passageiros" value={passengersLoadError ? "Indisponível" : String(passengers.length)}/>
               <Summary label="Embarcados" value={String(passengers.filter(p => p.boarding_status === 'BOARDED').length)}/>
               <Summary label="Não compareceram" value={String(passengers.filter(p => p.boarding_status === 'NO_SHOW').length)}/>
               <Summary label="Aguardando embarque" value={String(passengers.filter(p => p.boarding_status === 'EXPECTED').length)}/>
