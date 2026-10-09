@@ -128,7 +128,7 @@ export default function TripDetailPage() {
       return;
     }
 
-    if (final !== null && (!Number.isFinite(final) || final < 0)) {
+    if (final !== null && (!Number.isSafeInteger(final) || final < 0)) {
       setMessage('A quilometragem final é inválida.');
       setSaving(false);
       return;
