@@ -345,12 +345,17 @@ export default function TripsPage() {
         return;
       }
 
-      const { data: vehicle } = await supabase.from('vehicles')
+      const { data: vehicle, error: vehicleLoadError } = await supabase.from('vehicles')
         .select('id,current_mileage,status')
         .eq('id', currentTrip.vehicle_id)
         .single();
 
-      if (!vehicle || vehicle.status !== 'AVAILABLE') {
+      if (vehicleLoadError || !vehicle) {
+        setMessage(vehicleLoadError ? `Não foi possível consultar o veículo: ${vehicleLoadError.message}` : 'Não foi possível localizar o veículo da viagem.');
+        return;
+      }
+
+      if (vehicle.status !== 'AVAILABLE') {
         setMessage('O veículo não está disponível para iniciar esta viagem.');
         return;
       }
