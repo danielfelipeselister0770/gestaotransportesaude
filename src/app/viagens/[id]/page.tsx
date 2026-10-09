@@ -338,6 +338,18 @@ export default function TripDetailPage() {
           </div>
         )}
 
+        {trip.status === 'COMPLETED' && (trip.initial_mileage === null || trip.final_mileage === null || trip.final_mileage < trip.initial_mileage) && (
+          <div role="alert" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <div>
+                <strong className="block font-semibold">Conferência necessária: quilometragem da viagem</strong>
+                <p className="mt-1">Esta viagem está concluída, mas a quilometragem inicial ou final está ausente ou inconsistente. Confira os registros antes de considerar a operação regularizada.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-5 lg:grid-cols-3">
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between border-b px-5 py-4">
