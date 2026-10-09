@@ -364,8 +364,8 @@ export default function TripDetailPage() {
                     <div className="mt-1 text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    <button type="button" aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
-                    <button type="button" aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
+                    <button type="button" disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
+                    <button type="button" disabled={saving || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
                   </div>
                 </div>
               ))}
