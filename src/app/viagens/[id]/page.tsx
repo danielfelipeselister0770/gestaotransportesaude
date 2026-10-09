@@ -277,9 +277,9 @@ export default function TripDetailPage() {
         return;
       }
 
-      if (!updatedVehicle || Number(updatedVehicle.current_mileage) !== final) {
+      if (!updatedVehicle || Number(updatedVehicle.current_mileage) !== final || (status === 'COMPLETED' && updatedVehicle.status !== 'AVAILABLE')) {
         await loadData();
-        setMessage('A viagem foi salva, mas o KM do veículo não foi atualizado. Verifique as permissões do cadastro de veículos.');
+        setMessage('A viagem foi salva, mas a atualização do veículo não foi confirmada (quilometragem ou disponibilidade). Confira o cadastro do veículo e avise a gestão.');
         setSaving(false);
         return;
       }
