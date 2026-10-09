@@ -306,11 +306,13 @@ export default function TripsPage() {
       .select('id');
 
     if (requestsError || (updatedRequests?.length ?? 0) !== selectedIds.length) {
-      setMessage(requestsError ? `A viagem foi criada, mas as solicitações não foram atualizadas: ${requestsError.message}` : 'A viagem foi criada, mas nem todas as solicitações foram atualizadas. Confira os vínculos antes de continuar.');
-    } else {
-      setMessage('Viagem criada e solicitações agendadas com sucesso.');
+      setMessage(requestsError ? `A viagem foi criada, mas as solicitações não foram atualizadas: ${requestsError.message}. Confira os vínculos antes de tentar novamente.` : 'A viagem foi criada, mas nem todas as solicitações foram atualizadas. Confira os vínculos antes de continuar.');
+      setSaving(false);
+      await loadData();
+      return;
     }
 
+    setMessage('Viagem criada e solicitações agendadas com sucesso.');
     setSelectedIds([]);
     setShowForm(false);
     await loadData();
