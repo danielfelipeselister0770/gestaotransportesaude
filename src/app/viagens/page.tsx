@@ -426,11 +426,8 @@ export default function TripsPage() {
         }
       }
     } else {
-      const { error } = await supabase.from('trips').update({ status }).eq('id', id);
-      if (error) {
-        setMessage(`Não foi possível atualizar a viagem: ${error.message}`);
-        return;
-      }
+      setMessage('Esta mudança de situação deve ser realizada pelo fluxo específico da viagem.');
+      return;
     }
 
     await loadData();
