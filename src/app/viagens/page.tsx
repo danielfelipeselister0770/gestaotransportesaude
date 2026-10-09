@@ -267,6 +267,24 @@ export default function TripsPage() {
       return;
     }
 
+    const { data: existingLinks, error: linksError } = await supabase
+      .from('trip_passengers')
+      .select('request_id')
+      .in('request_id', selectedIds)
+      .limit(1);
+
+    if (linksError || !existingLinks) {
+      setMessage('Não foi possível conferir se as solicitações já estão vinculadas a uma viagem.');
+      setSaving(false);
+      return;
+    }
+
+    if (existingLinks.length > 0) {
+      setMessage('Uma ou mais solicitações já estão vinculadas a uma viagem. Confira a agenda antes de continuar.');
+      setSaving(false);
+      return;
+    }
+
     const { data: currentVehicle, error: vehicleCheckError } = await supabase
       .from('vehicles')
       .select('id,status,capacity')
