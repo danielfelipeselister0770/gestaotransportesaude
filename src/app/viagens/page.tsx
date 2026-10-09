@@ -102,10 +102,10 @@ export default function TripsPage() {
       if (!passengerCountError) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
     }
 
-    setRequests(normalizedRequests);
-    setDrivers((driversResult.data ?? []) as Driver[]);
-    setVehicles((vehiclesResult.data ?? []) as Vehicle[]);
-    setTrips(normalizedTrips);
+    if (!requestsResult.error) setRequests(normalizedRequests);
+    if (!driversResult.error) setDrivers((driversResult.data ?? []) as Driver[]);
+    if (!vehiclesResult.error) setVehicles((vehiclesResult.data ?? []) as Vehicle[]);
+    if (!tripsResult.error) setTrips(normalizedTrips);
     setLoading(false);
   }
 
