@@ -245,12 +245,19 @@ export default function TripDetailPage() {
       }
 
       if (status === 'COMPLETED') {
-        const { data: existingFinalRecord } = await supabase.from('mileage_records')
+        const { data: existingFinalRecord, error: finalRecordLookupError } = await supabase.from('mileage_records')
           .select('id')
           .eq('trip_id', trip.id)
           .eq('source', 'TRIP')
           .eq('observations', 'Quilometragem final da viagem')
           .maybeSingle();
+
+        if (finalRecordLookupError) {
+          setMessage(`Viagem concluída, mas não foi possível conferir o registro de KM final: ${finalRecordLookupError.message}. Avise a gestão antes de tentar novamente.`);
+          setSaving(false);
+          await loadData();
+          return;
+        }
 
         const mileagePayload = {
           vehicle_id: trip.vehicle.id,
