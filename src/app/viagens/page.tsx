@@ -62,55 +62,61 @@ export default function TripsPage() {
 
   async function loadData() {
     setLoading(true);
-    const [requestsResult, driversResult, vehiclesResult, tripsResult] = await Promise.all([
-      supabase.from('transport_requests')
-        .select('id,patient_id,date,time,origin,destination,purpose,needs_companion,patient:patients(name)')
-        .eq('status', 'APPROVED')
-        .order('date', { ascending: true }).order('time', { ascending: true }),
-      supabase.from('drivers').select('id,name').eq('active', true).order('name'),
-      supabase.from('vehicles').select('id,plate,brand,model,capacity,status').in('status', ['AVAILABLE']).order('plate'),
-      supabase.from('trips')
-        .select('id,date,departure_time,origin,destination,status,driver:drivers(name),vehicle:vehicles(plate,brand,model)')
-        .order('date', { ascending: false }).order('departure_time', { ascending: false }).limit(100),
-    ]);
+    try {
+      const [requestsResult, driversResult, vehiclesResult, tripsResult] = await Promise.all([
+        supabase.from('transport_requests')
+          .select('id,patient_id,date,time,origin,destination,purpose,needs_companion,patient:patients(name)')
+          .eq('status', 'APPROVED')
+          .order('date', { ascending: true }).order('time', { ascending: true }),
+        supabase.from('drivers').select('id,name').eq('active', true).order('name'),
+        supabase.from('vehicles').select('id,plate,brand,model,capacity,status').in('status', ['AVAILABLE']).order('plate'),
+        supabase.from('trips')
+          .select('id,date,departure_time,origin,destination,status,driver:drivers(name),vehicle:vehicles(plate,brand,model)')
+          .order('date', { ascending: false }).order('departure_time', { ascending: false }).limit(100),
+      ]);
 
-    const errors = [requestsResult.error, driversResult.error, vehiclesResult.error, tripsResult.error].filter(Boolean);
-    if (errors.length) {
-      setMessage(`Erro ao carregar agenda: ${errors[0]?.message ?? 'erro desconhecido'}`);
+      const errors = [requestsResult.error, driversResult.error, vehiclesResult.error, tripsResult.error].filter(Boolean);
+      if (errors.length) {
+        setMessage(`Erro ao carregar agenda: ${errors[0]?.message ?? 'erro desconhecido'}`);
+      }
+
+      const normalizedRequests = (requestsResult.data ?? []).map((row) => ({
+        ...row,
+        patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
+      })) as RequestRow[];
+
+      const normalizedTrips = (tripsResult.data ?? []).map((row) => ({
+        ...row,
+        driver: Array.isArray(row.driver) ? row.driver[0] ?? null : row.driver,
+        vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
+        passenger_count: null,
+      })) as TripRow[];
+
+      if (normalizedTrips.length) {
+        const tripIds = normalizedTrips.map((trip) => trip.id);
+        const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id').in('trip_id', tripIds);
+        if (passengerCountError) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError.message}`);
+        const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
+          acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1;
+          return acc;
+        }, {});
+        if (!passengerCountError) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
+      }
+
+      if (!requestsResult.error) {
+        setRequests(normalizedRequests);
+        const approvedIds = new Set(normalizedRequests.map((request) => request.id));
+        setSelectedIds((current) => current.filter((id) => approvedIds.has(id)));
+      }
+      if (!driversResult.error) setDrivers((driversResult.data ?? []) as Driver[]);
+      if (!vehiclesResult.error) setVehicles((vehiclesResult.data ?? []) as Vehicle[]);
+      if (!tripsResult.error) setTrips(normalizedTrips);
+
+    } catch (error) {
+      setMessage(`Não foi possível carregar a agenda: ${error instanceof Error ? error.message : 'erro inesperado'}`);
+    } finally {
+      setLoading(false);
     }
-
-    const normalizedRequests = (requestsResult.data ?? []).map((row) => ({
-      ...row,
-      patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
-    })) as RequestRow[];
-
-    const normalizedTrips = (tripsResult.data ?? []).map((row) => ({
-      ...row,
-      driver: Array.isArray(row.driver) ? row.driver[0] ?? null : row.driver,
-      vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
-      passenger_count: null,
-    })) as TripRow[];
-
-    if (normalizedTrips.length) {
-      const tripIds = normalizedTrips.map((trip) => trip.id);
-      const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id').in('trip_id', tripIds);
-      if (passengerCountError) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError.message}`);
-      const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
-        acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1;
-        return acc;
-      }, {});
-      if (!passengerCountError) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
-    }
-
-    if (!requestsResult.error) {
-      setRequests(normalizedRequests);
-      const approvedIds = new Set(normalizedRequests.map((request) => request.id));
-      setSelectedIds((current) => current.filter((id) => approvedIds.has(id)));
-    }
-    if (!driversResult.error) setDrivers((driversResult.data ?? []) as Driver[]);
-    if (!vehiclesResult.error) setVehicles((vehiclesResult.data ?? []) as Vehicle[]);
-    if (!tripsResult.error) setTrips(normalizedTrips);
-    setLoading(false);
   }
 
   useEffect(() => { loadData(); }, []);
