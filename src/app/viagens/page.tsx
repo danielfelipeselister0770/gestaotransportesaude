@@ -160,11 +160,17 @@ export default function TripsPage() {
 
     setSaving(true);
 
-    const { data: conflictTrips } = await supabase.from('trips')
+    const { data: conflictTrips, error: conflictError } = await supabase.from('trips')
       .select('id,driver_id,vehicle_id,departure_time,status')
       .eq('date', date)
       .in('status', ['SCHEDULED', 'IN_PROGRESS'])
       .or(`driver_id.eq.${driverId},vehicle_id.eq.${vehicleId}`);
+
+    if (conflictError || !conflictTrips) {
+      setMessage(conflictError ? `Não foi possível conferir a disponibilidade do motorista e do veículo: ${conflictError.message}` : 'Não foi possível confirmar a disponibilidade. Tente novamente.');
+      setSaving(false);
+      return;
+    }
 
     const driverConflict = (conflictTrips ?? []).find((item) => item.driver_id === driverId);
     const vehicleConflict = (conflictTrips ?? []).find((item) => item.vehicle_id === vehicleId);
