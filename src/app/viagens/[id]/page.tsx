@@ -355,32 +355,38 @@ export default function TripDetailPage() {
 
   async function addOccurrence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving || updatingPassengerRef.current) return;
     if (!trip || !occurrenceDescription.trim()) return;
     setSaving(true);
+    setMessage('');
 
-    const { data: userResult } = await supabase.auth.getUser();
-    if (!userResult.user) {
-      setMessage('Sessão expirada. Faça login novamente.');
+    try {
+      const { data: userResult, error: authError } = await supabase.auth.getUser();
+      if (authError || !userResult.user) {
+        setMessage('Sessão expirada. Faça login novamente.');
+        return;
+      }
+
+      const { error } = await supabase.from('occurrences').insert({
+        vehicle_id: trip.vehicle?.id ?? null,
+        trip_id: trip.id,
+        date: new Date().toISOString(),
+        type: occurrenceType,
+        description: occurrenceDescription.trim(),
+        status: 'OPEN',
+        created_by: userResult.user.id,
+      });
+
+      if (error) setMessage(`Não foi possível registrar a ocorrência: ${error.message}`);
+      else {
+        setOccurrenceDescription('');
+        setMessage('Ocorrência registrada.');
+      }
+    } catch {
+      setMessage('Não foi possível registrar a ocorrência. Verifique a conexão e tente novamente.');
+    } finally {
       setSaving(false);
-      return;
     }
-
-    const { error } = await supabase.from('occurrences').insert({
-      vehicle_id: trip.vehicle?.id ?? null,
-      trip_id: trip.id,
-      date: new Date().toISOString(),
-      type: occurrenceType,
-      description: occurrenceDescription.trim(),
-      status: 'OPEN',
-      created_by: userResult.user.id,
-    });
-
-    if (error) setMessage(`Não foi possível registrar a ocorrência: ${error.message}`);
-    else {
-      setOccurrenceDescription('');
-      setMessage('Ocorrência registrada.');
-    }
-    setSaving(false);
   }
 
   if (loading) return <main className="min-h-screen bg-slate-50 p-8 text-center text-sm text-slate-500">Carregando viagem...</main>;
