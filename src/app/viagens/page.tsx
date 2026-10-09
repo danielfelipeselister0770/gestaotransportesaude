@@ -199,11 +199,18 @@ export default function TripsPage() {
       return;
     }
 
-    const { data: driverData } = await supabase
+    const { data: driverData, error: driverError } = await supabase
       .from('drivers')
       .select('municipality_id')
       .eq('id', driverId)
+      .eq('active', true)
       .maybeSingle();
+
+    if (driverError) {
+      setMessage(`Não foi possível conferir o vínculo do motorista: ${driverError.message}`);
+      setSaving(false);
+      return;
+    }
 
     if (!driverData?.municipality_id) {
       setMessage('O motorista selecionado não está vinculado a uma prefeitura.');
