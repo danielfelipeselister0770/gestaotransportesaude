@@ -96,7 +96,7 @@ export default function TripDetailPage() {
     setLoading(false);
   }
 
-  useEffect(() => { if (tripId) loadData(); }, [tripId]);
+  useEffect(() => { setIdCopied(false); if (tripId) loadData(); }, [tripId]);
 
   async function saveMileage(status?: Trip['status']) {
     if (!trip) return;
@@ -314,7 +314,7 @@ export default function TripDetailPage() {
             <div>
               <div className="text-sm text-slate-500">{trip.date.split('-').reverse().join('/')} às {trip.departure_time.slice(0,5)}</div>
               <h1 className="mt-1 break-words text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">{trip.origin} → {trip.destination}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>Identificação da viagem: <span className="select-all break-all font-mono text-slate-700">{trip.id}</span></span><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(trip.id); setIdCopied(true); } catch { setIdCopied(false); setMessage("Não foi possível copiar o ID automaticamente. Selecione o código e copie manualmente."); } }} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 font-semibold text-teal-700 hover:bg-teal-50" aria-label="Copiar identificação da viagem">{idCopied ? <Check size={13} /> : <Copy size={13} />}{idCopied ? "Copiado!" : "Copiar ID"}</button></div>
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500"><span>Identificação da viagem: <span className="select-all break-all font-mono text-slate-700">{trip.id}</span></span><button type="button" onClick={async () => { try { await navigator.clipboard.writeText(trip.id); setIdCopied(true); } catch { setIdCopied(false); setMessage("Não foi possível copiar o ID automaticamente. Selecione o código e copie manualmente."); } }} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 font-semibold text-teal-700 hover:bg-teal-50" aria-label="Copiar identificação da viagem" aria-live="polite">{idCopied ? <Check size={13} /> : <Copy size={13} />}{idCopied ? "Copiado!" : "Copiar ID"}</button></div>
               <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500">
                 <span>Motorista: {trip.driver?.name ?? 'Não informado'}</span>
                 <span>Veículo: {trip.vehicle?.plate ?? 'Não informado'}</span>
