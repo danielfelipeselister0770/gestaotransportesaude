@@ -48,6 +48,7 @@ export default function DriverPortalPage() {
   const [driverLinkMissing, setDriverLinkMissing] = useState(false);
   const [syncWarning, setSyncWarning] = useState(false);
   const [completionPending, setCompletionPending] = useState(false);
+  const [pendingTripId, setPendingTripId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const actionInProgressRef = useRef(false);
   const [finishMileage, setFinishMileage] = useState('');
@@ -339,6 +340,7 @@ export default function DriverPortalPage() {
         if (action === 'FINISH' && result.completedWithPending === true) {
           setSyncWarning(true);
           setCompletionPending(true);
+          setPendingTripId(typeof result.tripId === 'string' ? result.tripId : trip.id);
           setMessageTone('warning');
           setMessage(`${result.error ?? 'A viagem foi concluída, mas existem registros pendentes.'} Não tente finalizar novamente. Avise a gestão para conferir os registros e sincronize a programação antes de continuar.`);
           return;
@@ -461,6 +463,7 @@ export default function DriverPortalPage() {
         {completionPending && !syncWarning && (
           <div role="alert" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
             <strong className="block font-semibold">Viagem concluída com registros pendentes</strong>
+            {pendingTripId && <p className="mt-1 break-all text-xs">Identificação da viagem: {pendingTripId}</p>}
             <p className="mt-1">A programação foi sincronizada, mas isso não confirma a correção dos registros pendentes. Não finalize a viagem novamente e avise a gestão para conferir a situação.</p>
           </div>
         )}
