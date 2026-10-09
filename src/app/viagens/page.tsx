@@ -476,7 +476,10 @@ export default function TripsPage() {
         </header>
 
         <div className="p-5 lg:p-8">
-          {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
+          {message && <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">
+            <span>{message}</span>
+            {message.includes('carregar agenda') && <button type="button" disabled={loading} onClick={() => { setMessage(''); void loadData(); }} className="rounded-lg border border-teal-200 px-3 py-1.5 font-semibold text-teal-700 hover:bg-teal-50 disabled:opacity-50">Tentar novamente</button>}
+          </div>}
 
           {showForm && (
             <form onSubmit={createTrip} className="mb-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
