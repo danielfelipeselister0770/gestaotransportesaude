@@ -274,10 +274,15 @@ export default function TripDetailPage() {
       return;
     }
     if (updatingPassengerRef.current) return;
+    const currentPassenger = passengers.find((passenger) => passenger.id === id);
+    if (!currentPassenger) {
+      setMessage('Passageiro não encontrado nesta viagem. Recarregue os dados.');
+      return;
+    }
     updatingPassengerRef.current = true;
     setUpdatingPassengerId(id);
     try {
-      const { data, error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id).eq('trip_id', tripId).select('id').maybeSingle();
+      const { data, error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id).eq('trip_id', tripId).eq('boarding_status', currentPassenger.boarding_status).select('id').maybeSingle();
       if (error) setMessage(`Não foi possível atualizar o passageiro: ${error.message}`);
       else if (!data) setMessage('O embarque não foi atualizado. Recarregue a viagem e confira os dados antes de tentar novamente.');
       else setPassengers((current) => current.map((item) => item.id === id ? { ...item, boarding_status } : item));
