@@ -120,7 +120,7 @@ export default function TripDetailPage() {
     setMessage('');
 
     const initial = initialMileage.trim() === '' ? null : Number(initialMileage);
-    const final = finalMileage === '' ? null : Number(finalMileage);
+    const final = finalMileage.trim() === '' ? null : Number(finalMileage);
 
     if (initial !== null && (!Number.isSafeInteger(initial) || initial < 0)) {
       setMessage('A quilometragem inicial é inválida.');
