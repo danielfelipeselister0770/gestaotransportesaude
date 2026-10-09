@@ -434,7 +434,7 @@ export default function TripDetailPage() {
           </div>
         </header>
 
-        {message && <div className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
+        {message && <div role="status" aria-live="polite" className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
         {trip.status === 'COMPLETED' && passengers.some((passenger) => passenger.boarding_status === 'EXPECTED') && (
           <div role="alert" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
