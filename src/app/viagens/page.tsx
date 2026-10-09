@@ -414,7 +414,7 @@ export default function TripsPage() {
         return;
       }
 
-      if (activeTrip.length === 0 && currentTrip.vehicle_id) {
+      if (currentTrip.status === 'IN_PROGRESS' && activeTrip.length === 0 && currentTrip.vehicle_id) {
         const { error: releaseError } = await supabase.from('vehicles')
           .update({ status: 'AVAILABLE' })
           .eq('id', currentTrip.vehicle_id)
