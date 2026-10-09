@@ -177,6 +177,14 @@ export default function TripDetailPage() {
         setSaving(false);
         return;
       }
+
+      const knownStatuses = new Map(passengers.map((passenger) => [passenger.id, passenger.boarding_status]));
+      const passengerListChanged = currentPassengers.length !== passengers.length || currentPassengers.some((passenger) => knownStatuses.get(passenger.id) !== passenger.boarding_status);
+      if (passengerListChanged || currentPassengers.some((passenger) => passenger.boarding_status === 'EXPECTED')) {
+        setMessage('A lista ou a situação dos passageiros mudou desde a última consulta. Recarregue a viagem, confira os embarques e tente novamente.');
+        setSaving(false);
+        return;
+      }
     }
 
     const { data: updatedTrip, error } = await supabase.from('trips').update({
