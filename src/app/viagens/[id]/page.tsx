@@ -326,6 +326,18 @@ export default function TripDetailPage() {
 
         {message && <div className="mb-5 rounded-lg border bg-white px-4 py-3 text-sm text-slate-700">{message}</div>}
 
+        {trip.status === 'COMPLETED' && passengers.some((passenger) => passenger.boarding_status === 'EXPECTED') && (
+          <div role="alert" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+              <div>
+                <strong className="block font-semibold">Conferência necessária: passageiros sem situação final</strong>
+                <p className="mt-1">Esta viagem está concluída, mas {passengers.filter((passenger) => passenger.boarding_status === 'EXPECTED').length} passageiro(s) ainda constam como aguardando embarque. Confira os registros antes de considerar a operação regularizada.</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid gap-5 lg:grid-cols-3">
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between border-b px-5 py-4">
