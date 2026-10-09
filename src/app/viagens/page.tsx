@@ -63,6 +63,7 @@ export default function TripsPage() {
   async function loadData() {
     setLoading(true);
     try {
+      setMessage((current) => current.startsWith('Erro ao carregar agenda:') || current.startsWith('Não foi possível carregar a agenda:') ? '' : current);
       const [requestsResult, driversResult, vehiclesResult, tripsResult] = await Promise.all([
         supabase.from('transport_requests')
           .select('id,patient_id,date,time,origin,destination,purpose,needs_companion,patient:patients(name)')
