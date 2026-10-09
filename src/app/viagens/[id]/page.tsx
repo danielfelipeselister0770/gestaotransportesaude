@@ -68,6 +68,7 @@ export default function TripDetailPage() {
     setPassengers([]);
     setHistory([]);
     setPassengersLoadError(false);
+    try {
     const [tripResult, passengersResult, historyResult] = await Promise.all([
       supabase.from('trips')
         .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
@@ -105,7 +106,15 @@ export default function TripDetailPage() {
       setPassengers(normalized);
     }
     if (!historyResult.error) setHistory((historyResult.data ?? []) as TripHistory[]);
-    setLoading(false);
+    } catch {
+      setTrip(null);
+      setPassengers([]);
+      setHistory([]);
+      setPassengersLoadError(true);
+      setMessage('Não foi possível carregar a viagem. Verifique a conexão e tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { setIdCopied(false); if (tripId) loadData(); }, [tripId]);
@@ -412,7 +421,7 @@ export default function TripDetailPage() {
 
   if (loading) return <main className="min-h-screen bg-slate-50 p-8 text-center text-sm text-slate-500">Carregando viagem...</main>;
 
-  if (!trip) return <main className="min-h-screen bg-slate-50 p-8"><Link href="/viagens" className="text-sm text-slate-700">← Voltar para viagens</Link><div className="mt-6 rounded-xl border bg-white p-6">Viagem não encontrada.</div></main>;
+  if (!trip) return <main className="min-h-screen bg-slate-50 p-8"><Link href="/viagens" className="text-sm text-slate-700">← Voltar para viagens</Link><div className="mt-6 rounded-xl border bg-white p-6">{message || "Viagem não encontrada."}</div><button type="button" onClick={() => void loadData()} className="mt-4 rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-800">Tentar novamente</button></main>;
 
   return (
     <main className="min-h-screen bg-slate-50">
