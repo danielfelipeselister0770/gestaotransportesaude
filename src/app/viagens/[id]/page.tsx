@@ -119,7 +119,7 @@ export default function TripDetailPage() {
     setSaving(true);
     setMessage('');
 
-    const initial = initialMileage === '' ? null : Number(initialMileage);
+    const initial = initialMileage.trim() === '' ? null : Number(initialMileage);
     const final = finalMileage === '' ? null : Number(finalMileage);
 
     if (initial !== null && (!Number.isSafeInteger(initial) || initial < 0)) {
