@@ -415,12 +415,14 @@ export default function TripsPage() {
       }
 
       if (currentTrip.status === 'IN_PROGRESS' && activeTrip.length === 0 && currentTrip.vehicle_id) {
-        const { error: releaseError } = await supabase.from('vehicles')
+        const { data: releasedVehicle, error: releaseError } = await supabase.from('vehicles')
           .update({ status: 'AVAILABLE' })
           .eq('id', currentTrip.vehicle_id)
-          .eq('status', 'IN_USE');
-        if (releaseError) {
-          setMessage(`Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}`);
+          .eq('status', 'IN_USE')
+          .select('id')
+          .maybeSingle();
+        if (releaseError || !releasedVehicle) {
+          setMessage(releaseError ? `Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}` : 'Viagem cancelada, mas o veículo não estava mais em uso. Confira a disponibilidade dele.');
           await loadData();
           return;
         }
