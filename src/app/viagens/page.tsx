@@ -355,13 +355,13 @@ export default function TripsPage() {
         return;
       }
 
-      const { error } = await supabase.from('trips').update({
+      const { data: startedTrip, error } = await supabase.from('trips').update({
         status,
         initial_mileage: currentTrip.initial_mileage ?? vehicle.current_mileage,
-      }).eq('id', id);
+      }).eq('id', id).eq('status', 'SCHEDULED').select('id').maybeSingle();
 
-      if (error) {
-        setMessage(`Não foi possível iniciar a viagem: ${error.message}`);
+      if (error || !startedTrip) {
+        setMessage(error ? `Não foi possível iniciar a viagem: ${error.message}` : 'A viagem foi alterada por outro usuário. Atualize a agenda antes de tentar novamente.');
         return;
       }
 
