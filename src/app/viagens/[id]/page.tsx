@@ -407,6 +407,7 @@ export default function TripDetailPage() {
               <Summary label="Passageiros" value={String(passengers.length)}/>
               <Summary label="Embarcados" value={String(passengers.filter(p => p.boarding_status === 'BOARDED').length)}/>
               <Summary label="Não compareceram" value={String(passengers.filter(p => p.boarding_status === 'NO_SHOW').length)}/>
+              <Summary label="Aguardando embarque" value={String(passengers.filter(p => p.boarding_status === 'EXPECTED').length)}/>
               <Summary label="KM percorridos" value={trip.initial_mileage !== null && trip.final_mileage !== null ? String(trip.final_mileage - trip.initial_mileage) : '—'}/>
             </div>
           </section>
