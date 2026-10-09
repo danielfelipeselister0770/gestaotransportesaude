@@ -358,6 +358,10 @@ export default function TripDetailPage() {
     event.preventDefault();
     if (saving || updatingPassengerRef.current) return;
     if (!trip || !occurrenceDescription.trim()) return;
+    if (occurrenceDescription.trim().length > 1000) {
+      setMessage('A descrição da ocorrência deve ter no máximo 1.000 caracteres.');
+      return;
+    }
     setSaving(true);
     setMessage('');
 
