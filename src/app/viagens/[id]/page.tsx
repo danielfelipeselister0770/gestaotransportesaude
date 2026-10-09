@@ -281,8 +281,8 @@ export default function TripDetailPage() {
       }
     }
 
-    setMessage(status === 'COMPLETED' ? 'Viagem concluída com sucesso.' : 'Dados da viagem salvos.');
     await loadData();
+    setMessage(status === 'COMPLETED' ? 'Viagem concluída com sucesso.' : 'Dados da viagem salvos.');
     setSaving(false);
   }
 
