@@ -232,9 +232,9 @@ export default function TripDetailPage() {
         .maybeSingle();
 
       if (vehicleError) {
+        await loadData();
         setMessage(`Viagem salva, mas não foi possível atualizar o KM do veículo: ${vehicleError.message}`);
         setSaving(false);
-        await loadData();
         return;
       }
 
