@@ -361,7 +361,11 @@ export default function TripDetailPage() {
   async function addOccurrence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving || updatingPassengerRef.current) return;
-    if (!trip || !occurrenceDescription.trim()) return;
+    if (!trip) return;
+    if (!occurrenceDescription.trim()) {
+      setMessage('Descreva a ocorrência antes de registrar.');
+      return;
+    }
     if (occurrenceDescription.trim().length > 1000) {
       setMessage('A descrição da ocorrência deve ter no máximo 1.000 caracteres.');
       return;
