@@ -332,7 +332,7 @@ export default function TripDetailPage() {
               <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <strong className="block font-semibold">Conferência necessária: passageiros sem situação final</strong>
-                <p className="mt-1">Esta viagem está concluída, mas {passengers.filter((passenger) => passenger.boarding_status === 'EXPECTED').length} passageiro(s) ainda constam como aguardando embarque. Confira os registros antes de considerar a operação regularizada.</p>
+                <p className="mt-1">Esta viagem está concluída, mas {passengers.filter((passenger) => passenger.boarding_status === 'EXPECTED').length} {passengers.filter((passenger) => passenger.boarding_status === 'EXPECTED').length === 1 ? 'passageiro ainda consta' : 'passageiros ainda constam'} como aguardando embarque. Confira os registros antes de considerar a operação regularizada.</p>
               </div>
             </div>
           </div>
