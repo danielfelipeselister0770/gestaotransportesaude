@@ -28,7 +28,7 @@ type TripRow = {
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   driver: { name: string } | null;
   vehicle: { plate: string; brand: string | null; model: string | null } | null;
-  passenger_count: number;
+  passenger_count: number | null;
 };
 
 const statusLabels = {
@@ -88,17 +88,18 @@ export default function TripsPage() {
       ...row,
       driver: Array.isArray(row.driver) ? row.driver[0] ?? null : row.driver,
       vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
-      passenger_count: 0,
+      passenger_count: null,
     })) as TripRow[];
 
     if (normalizedTrips.length) {
       const tripIds = normalizedTrips.map((trip) => trip.id);
-      const { data: passengers } = await supabase.from('trip_passengers').select('trip_id').in('trip_id', tripIds);
+      const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id').in('trip_id', tripIds);
+      if (passengerCountError) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError.message}`);
       const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
         acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1;
         return acc;
       }, {});
-      normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
+      if (!passengerCountError) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
     }
 
     setRequests(normalizedRequests);
