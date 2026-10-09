@@ -313,6 +313,7 @@ export default function TripDetailPage() {
             <div>
               <div className="text-sm text-slate-500">{trip.date.split('-').reverse().join('/')} às {trip.departure_time.slice(0,5)}</div>
               <h1 className="mt-1 break-words text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">{trip.origin} → {trip.destination}</h1>
+              <p className="mt-2 text-xs text-slate-500">Identificação da viagem: <span className="select-all break-all font-mono text-slate-700">{trip.id}</span></p>
               <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500">
                 <span>Motorista: {trip.driver?.name ?? 'Não informado'}</span>
                 <span>Veículo: {trip.vehicle?.plate ?? 'Não informado'}</span>
