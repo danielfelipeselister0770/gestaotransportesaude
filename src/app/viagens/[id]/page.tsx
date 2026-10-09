@@ -344,7 +344,7 @@ export default function TripDetailPage() {
               <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
               <div>
                 <strong className="block font-semibold">Conferência necessária: quilometragem da viagem</strong>
-                <p className="mt-1">Esta viagem está concluída, mas a quilometragem inicial ou final está ausente ou inconsistente. Confira os registros antes de considerar a operação regularizada.</p>
+                <p className="mt-1">{trip.initial_mileage === null && trip.final_mileage === null ? "As quilometragens inicial e final não foram registradas." : trip.initial_mileage === null ? "A quilometragem inicial não foi registrada." : trip.final_mileage === null ? "A quilometragem final não foi registrada." : "A quilometragem final é menor que a inicial."} Confira os registros antes de considerar a operação regularizada.</p>
               </div>
             </div>
           </div>
