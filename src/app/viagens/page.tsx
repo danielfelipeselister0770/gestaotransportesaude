@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 
 type RequestRow = {
   id: string;
+  patient_id: string;
   date: string;
   time: string;
   origin: string;
@@ -134,6 +135,11 @@ export default function TripsPage() {
       return;
     }
 
+    if (selectedRequests.some((request) => !request.patient_id)) {
+      setMessage('Há uma solicitação sem paciente vinculado. Corrija o cadastro antes de agendar.');
+      return;
+    }
+
     const form = new FormData(event.currentTarget);
     const date = String(form.get('date') ?? '');
     const departureTime = String(form.get('departure_time') ?? '');
@@ -239,7 +245,7 @@ export default function TripsPage() {
 
     const passengerRows = selectedRequests.map((request) => ({
       trip_id: trip.id,
-      patient_id: (request as RequestRow & { patient_id: string }).patient_id,
+      patient_id: request.patient_id,
       request_id: request.id,
       municipality_id: driverData.municipality_id,
       companion: request.needs_companion,
