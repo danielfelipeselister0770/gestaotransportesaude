@@ -114,7 +114,7 @@ export default function TripsPage() {
     [requests, selectedIds],
   );
 
-  const selectedPassengerCount = selectedRequests.length;
+  const selectedPassengerCount = selectedRequests.reduce((total, request) => total + 1 + (request.needs_companion ? 1 : 0), 0);
   const selectedDate = selectedRequests[0]?.date ?? '';
 
   function toggleRequest(id: string) {
