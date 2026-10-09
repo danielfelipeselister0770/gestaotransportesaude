@@ -175,9 +175,9 @@ export default function TripDetailPage() {
         .not('request_id', 'is', null);
 
       if (passengersError) {
+        await loadData();
         setMessage(`Viagem concluída, mas não foi possível localizar as solicitações vinculadas: ${passengersError.message}`);
         setSaving(false);
-        await loadData();
         return;
       }
 
