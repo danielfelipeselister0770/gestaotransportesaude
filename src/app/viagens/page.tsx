@@ -224,6 +224,27 @@ export default function TripsPage() {
       return;
     }
 
+    const { data: currentRequests, error: requestsCheckError } = await supabase
+      .from('transport_requests')
+      .select('id,patient_id,date,status,needs_companion')
+      .in('id', selectedIds);
+
+    if (requestsCheckError || !currentRequests) {
+      setMessage(requestsCheckError ? `Não foi possível conferir as solicitações: ${requestsCheckError.message}` : 'Não foi possível confirmar as solicitações. Tente novamente.');
+      setSaving(false);
+      return;
+    }
+
+    const currentById = new Map(currentRequests.map((request) => [request.id, request]));
+    if (currentById.size !== selectedRequests.length || selectedRequests.some((request) => {
+      const current = currentById.get(request.id);
+      return !current || current.status !== 'APPROVED' || current.patient_id !== request.patient_id || current.date !== date || current.needs_companion !== request.needs_companion;
+    })) {
+      setMessage('Uma ou mais solicitações foram alteradas ou já agendadas. Atualize a agenda antes de tentar novamente.');
+      setSaving(false);
+      return;
+    }
+
     const { data: trip, error: tripError } = await supabase.from('trips').insert({
       date,
       departure_time: departureTime,
