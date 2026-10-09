@@ -279,6 +279,7 @@ export default function TripDetailPage() {
       setMessage('Passageiro não encontrado nesta viagem. Recarregue os dados.');
       return;
     }
+    if (currentPassenger.boarding_status === boarding_status) return;
     updatingPassengerRef.current = true;
     setUpdatingPassengerId(id);
     try {
