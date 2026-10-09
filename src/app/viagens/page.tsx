@@ -385,9 +385,14 @@ export default function TripsPage() {
 
       const reason = window.prompt('Informe o motivo do cancelamento da viagem:')?.trim();
       if (!reason) return;
-      const { error } = await supabase.from('trips').update({ status, cancellation_reason: reason, cancelled_at: new Date().toISOString() }).eq('id', id);
-      if (error) {
-        setMessage(`Não foi possível cancelar a viagem: ${error.message}`);
+      const { data: cancelledTrip, error } = await supabase.from('trips')
+        .update({ status, cancellation_reason: reason, cancelled_at: new Date().toISOString() })
+        .eq('id', id)
+        .eq('status', currentTrip.status)
+        .select('id')
+        .maybeSingle();
+      if (error || !cancelledTrip) {
+        setMessage(error ? `Não foi possível cancelar a viagem: ${error.message}` : 'A situação da viagem mudou. Atualize a agenda antes de tentar novamente.');
         return;
       }
 
