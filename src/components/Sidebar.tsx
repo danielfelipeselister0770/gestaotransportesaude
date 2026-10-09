@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Ambulance, Building2, CalendarDays, ClipboardList, FileBarChart, Fuel, Gauge, LayoutDashboard, Settings, Stethoscope, TriangleAlert, UserRound, UsersRound, Wrench } from 'lucide-react';
+import { Activity, Ambulance, Building2, CalendarDays, ClipboardList, FileBarChart, Fuel, LayoutDashboard, Settings, Stethoscope, TriangleAlert, UserRound, UsersRound, Wrench } from 'lucide-react';
 
 const nav = [
   ['Dashboard', '/', LayoutDashboard],
@@ -28,9 +28,8 @@ export default function Sidebar() {
   return (
     <aside className="app-sidebar fixed inset-y-0 left-0 z-40 hidden w-72 flex-col md:flex">
       <div className="border-b border-white/10 px-6 py-6">
-        <Link href="/" aria-label="Transporte Saúde — página inicial" className="flex items-center gap-3 rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
-          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-white/10 shadow-inner"><Gauge size={23}/></span>
-          <span><span className="block text-[11px] font-semibold uppercase tracking-[.2em] text-emerald-300">Gestão Municipal</span><span className="mt-0.5 block text-lg font-bold text-white">Transporte Saúde</span></span>
+        <Link href="/" aria-label="Transporte Saúde — página inicial" className="flex w-full items-center rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
+          <img src="/vitarota-logo.svg" alt="VitaRota — Transporte da Saúde. Mais acesso. Mais cuidado. Vidas em movimento." className="block h-auto w-full max-w-[240px] object-contain" />
         </Link>
       </div>
       <nav aria-label="Navegação principal" className="flex-1 space-y-1 overflow-y-auto px-3 py-5 text-sm">
