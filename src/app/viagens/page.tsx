@@ -154,6 +154,11 @@ export default function TripsPage() {
     const origin = String(form.get('origin') ?? '').trim();
     const destination = String(form.get('destination') ?? '').trim();
 
+    if (!date || !departureTime || !origin || !destination) {
+      setMessage('Preencha a data, o horário de saída, a origem e o destino da viagem.');
+      return;
+    }
+
     if (selectedRequests.some((request) => request.date !== date)) {
       setMessage('As solicitações selecionadas precisam ser da mesma data da viagem.');
       return;
