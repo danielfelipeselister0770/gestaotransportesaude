@@ -277,8 +277,9 @@ export default function TripDetailPage() {
     updatingPassengerRef.current = true;
     setUpdatingPassengerId(id);
     try {
-      const { error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id);
+      const { data, error } = await supabase.from('trip_passengers').update({ boarding_status, boarded_at: boarding_status === 'BOARDED' ? new Date().toISOString() : null }).eq('id', id).eq('trip_id', tripId).select('id').maybeSingle();
       if (error) setMessage(`Não foi possível atualizar o passageiro: ${error.message}`);
+      else if (!data) setMessage('O embarque não foi atualizado. Recarregue a viagem e confira os dados antes de tentar novamente.');
       else setPassengers((current) => current.map((item) => item.id === id ? { ...item, boarding_status } : item));
     } catch {
       setMessage('Não foi possível atualizar o passageiro. Verifique a conexão e tente novamente.');
