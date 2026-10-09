@@ -479,7 +479,7 @@ export default function TripDetailPage() {
               <SelectField name="occurrence_type" label="Tipo" value={occurrenceType} onChange={setOccurrenceType}>
                 <option value="ACIDENTE">Acidente</option><option value="AVARIA">Avaria</option><option value="ATRASO">Atraso</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option>
               </SelectField>
-              <label className="block"><span className="mb-1.5 block text-sm font-medium">Descrição</span><textarea value={occurrenceDescription} onChange={(e) => setOccurrenceDescription(e.target.value)} rows={4} maxLength={1000} minLength={1} required className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>
+              <label className="block"><span className="mb-1.5 block text-sm font-medium">Descrição</span><textarea value={occurrenceDescription} onChange={(e) => setOccurrenceDescription(e.target.value)} rows={4} maxLength={1000} minLength={1} required placeholder="Descreva a ocorrência (até 1.000 caracteres)" className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/></label>
               <button disabled={saving} className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">Registrar ocorrência</button>
             </form>
           </section>
