@@ -340,6 +340,11 @@ export default function TripsPage() {
     }
 
     if (status === 'IN_PROGRESS') {
+      if (currentTrip.status !== 'SCHEDULED') {
+        setMessage('Somente uma viagem agendada pode ser iniciada. Atualize a agenda.');
+        return;
+      }
+
       const { data: vehicle } = await supabase.from('vehicles')
         .select('id,current_mileage,status')
         .eq('id', currentTrip.vehicle_id)
