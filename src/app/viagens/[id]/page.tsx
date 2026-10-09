@@ -332,6 +332,10 @@ export default function TripDetailPage() {
 
   async function updatePassenger(id: string, boarding_status: Passenger['boarding_status']) {
     if (!trip || saving) return;
+    if (passengersLoadError) {
+      setMessage('Não é possível atualizar o embarque enquanto a lista de passageiros estiver indisponível. Recarregue a viagem.');
+      return;
+    }
     if (trip?.status === 'COMPLETED' || trip?.status === 'CANCELLED') {
       setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
       return;
