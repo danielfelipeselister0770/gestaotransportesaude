@@ -160,6 +160,12 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED' && passengers.some((passenger) => passenger.boarding_status === 'EXPECTED')) {
+      setMessage('Antes de concluir a viagem, registre Embarcou ou Não compareceu para todos os passageiros ainda aguardando embarque.');
+      setSaving(false);
+      return;
+    }
+
     const { data: updatedTrip, error } = await supabase.from('trips').update({
       initial_mileage: initial,
       final_mileage: final,
