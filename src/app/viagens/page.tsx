@@ -333,7 +333,7 @@ export default function TripsPage() {
         .eq('id', trip.id);
       setMessage(rollbackError
         ? `Falha ao adicionar passageiros na viagem ${trip.id}: ${passengersError.message}. Também não foi possível cancelar a viagem criada: ${rollbackError.message}. Verifique a viagem antes de tentar novamente.`
-        : `Não foi possível adicionar os passageiros: ${passengersError.message}. A viagem foi cancelada automaticamente.`);
+        : `Não foi possível adicionar os passageiros na viagem ${trip.id}: ${passengersError.message}. A viagem foi cancelada automaticamente.`);
       if (rollbackError) {
         setSelectedIds([]);
         setShowForm(false);
