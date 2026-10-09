@@ -29,7 +29,7 @@ export default function Sidebar() {
     <aside className="app-sidebar fixed inset-y-0 left-0 z-40 hidden w-72 flex-col md:flex">
       <div className="border-b border-white/10 px-3 py-4">
         <Link href="/" aria-label="VitaRota — página inicial" className="flex w-full items-center rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300">
-          <img src="/vitarota-sidebar-claro.svg" alt="VitaRota — Transporte da Saúde. Mais acesso. Mais cuidado. Vidas em movimento." className="block h-auto w-full object-contain" />
+          <img src="/Logo%20VitaRota%20com%20%C3%8Dcone%20de%20Rota%20M%C3%A9dica.png" alt="VitaRota — Transporte da Saúde. Mais acesso. Mais cuidado. Vidas em movimento." className="block h-auto w-full object-contain" />
         </Link>
       </div>
       <nav aria-label="Navegação principal" className="flex-1 space-y-1 overflow-y-auto px-3 py-5 text-sm">
