@@ -255,7 +255,7 @@ export default function TripsPage() {
 
   const filteredTrips = useMemo(() => trips.filter((trip) => {
     const q = tripSearch.trim().toLowerCase();
-    const hit = !q || trip.origin.toLowerCase().includes(q) || trip.destination.toLowerCase().includes(q) || (trip.driver?.name ?? '').toLowerCase().includes(q) || (trip.vehicle?.plate ?? '').toLowerCase().includes(q);
+    const hit = !q || trip.id.toLowerCase().includes(q) || trip.origin.toLowerCase().includes(q) || trip.destination.toLowerCase().includes(q) || (trip.driver?.name ?? '').toLowerCase().includes(q) || (trip.vehicle?.plate ?? '').toLowerCase().includes(q);
     return hit && (tripStatusFilter === 'ALL' || trip.status === tripStatusFilter);
   }), [trips, tripSearch, tripStatusFilter]);
 
@@ -429,7 +429,7 @@ export default function TripsPage() {
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b px-5 py-4 md:flex-row md:items-center md:justify-between">
               <h2 className="font-semibold">Viagens cadastradas</h2>
-              <div className="flex flex-col gap-2 sm:flex-row"><div className="flex items-center gap-2 rounded-lg border px-3"><Search size={16}/><input type="search" aria-label="Buscar viagens por destino, motorista ou placa" value={tripSearch} onChange={e=>setTripSearch(e.target.value)} placeholder="Destino, motorista ou placa..." className="py-2 text-sm outline-none"/></div><select aria-label="Filtrar viagens por status" value={tripStatusFilter} onChange={e=>setTripStatusFilter(e.target.value as 'ALL'|TripRow['status'])} className="rounded-lg border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os status</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
+              <div className="flex flex-col gap-2 sm:flex-row"><div className="flex items-center gap-2 rounded-lg border px-3"><Search size={16}/><input type="search" aria-label="Buscar viagens por identificação, destino, motorista ou placa" value={tripSearch} onChange={e=>setTripSearch(e.target.value)} placeholder="ID, destino, motorista ou placa..." className="py-2 text-sm outline-none"/></div><select aria-label="Filtrar viagens por status" value={tripStatusFilter} onChange={e=>setTripStatusFilter(e.target.value as 'ALL'|TripRow['status'])} className="rounded-lg border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os status</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
             </div>
             {filteredTrips.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma viagem cadastrada.</div> :
               <div className="divide-y">
