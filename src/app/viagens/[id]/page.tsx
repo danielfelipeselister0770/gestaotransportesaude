@@ -112,6 +112,10 @@ export default function TripDetailPage() {
 
   async function saveMileage(status?: Trip['status']) {
     if (!trip || saving || updatingPassengerRef.current) return;
+    if (observation.trim().length > 2000) {
+      setMessage('As observações da viagem devem ter no máximo 2.000 caracteres.');
+      return;
+    }
     setSaving(true);
     setMessage('');
 
