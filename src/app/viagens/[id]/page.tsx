@@ -47,6 +47,7 @@ export default function TripDetailPage() {
 
   const [trip, setTrip] = useState<Trip | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [passengersLoadError, setPassengersLoadError] = useState(false);
   const [initialMileage, setInitialMileage] = useState('');
   const [finalMileage, setFinalMileage] = useState('');
   const [observation, setObservation] = useState('');
@@ -60,6 +61,7 @@ export default function TripDetailPage() {
 
   async function loadData() {
     setLoading(true);
+    setPassengersLoadError(false);
     const [tripResult, passengersResult, historyResult] = await Promise.all([
       supabase.from('trips')
         .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
@@ -84,7 +86,11 @@ export default function TripDetailPage() {
       setObservation(normalized.observations ?? '');
     }
 
-    if (passengersResult.error) setMessage(`Erro ao carregar passageiros: ${passengersResult.error.message}`);
+    if (passengersResult.error) {
+      setPassengersLoadError(true);
+      setPassengers([]);
+      setMessage(`Erro ao carregar passageiros: ${passengersResult.error.message}`);
+    }
     else {
       const normalized = (passengersResult.data ?? []).map((row) => ({
         ...row,
@@ -412,7 +418,7 @@ export default function TripDetailPage() {
               <Summary label="KM inicial" value={trip.initial_mileage !== null ? String(trip.initial_mileage) : '—'}/>
               <Summary label="KM final" value={trip.final_mileage !== null ? String(trip.final_mileage) : '—'}/>
               <Summary label="KM percorridos" value={trip.initial_mileage !== null && trip.final_mileage !== null && trip.final_mileage >= trip.initial_mileage ? String(trip.final_mileage - trip.initial_mileage) : '—'}/>
-              {trip.status === 'COMPLETED' && <Summary label="Conferência básica" value={(() => { const issues = Number(passengers.some(p => p.boarding_status === 'EXPECTED')) + Number(trip.initial_mileage === null || trip.final_mileage === null || trip.final_mileage < trip.initial_mileage); return issues > 0 ? `${issues} ${issues === 1 ? "verificação pendente" : "verificações pendentes"}` : 'Sem alertas nestes critérios'; })()}/>}
+              {trip.status === 'COMPLETED' && <Summary label="Conferência básica" value={(() => { const issues = Number(passengers.some(p => p.boarding_status === 'EXPECTED')) + Number(trip.initial_mileage === null || trip.final_mileage === null || trip.final_mileage < trip.initial_mileage); return passengersLoadError ? 'Conferência incompleta: passageiros indisponíveis' : issues > 0 ? `${issues} ${issues === 1 ? "verificação pendente" : "verificações pendentes"}` : 'Sem alertas nestes critérios'; })()}/>}
             </div>
           </section>
         </div>
