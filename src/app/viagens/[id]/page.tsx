@@ -512,7 +512,7 @@ export default function TripDetailPage() {
             <div className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2 sm:gap-4 sm:p-5">
               <Summary label="Passageiros" value={passengersLoadError ? "Indisponível" : String(passengers.length)}/>
               <Summary label="Embarcados" value={passengersLoadError ? "Indisponível" : String(passengers.filter(p => p.boarding_status === 'BOARDED').length)}/>
-              <Summary label="Não compareceram" value={String(passengers.filter(p => p.boarding_status === 'NO_SHOW').length)}/>
+              <Summary label="Não compareceram" value={passengersLoadError ? "Indisponível" : String(passengers.filter(p => p.boarding_status === 'NO_SHOW').length)}/>
               <Summary label="Aguardando embarque" value={String(passengers.filter(p => p.boarding_status === 'EXPECTED').length)}/>
               <Summary label="Cancelados" value={String(passengers.filter(p => p.boarding_status === 'CANCELLED').length)}/>
               <Summary label="KM inicial" value={trip.initial_mileage !== null ? String(trip.initial_mileage) : '—'}/>
