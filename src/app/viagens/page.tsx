@@ -246,6 +246,18 @@ export default function TripsPage() {
       return;
     }
 
+    const { data: currentVehicle, error: vehicleCheckError } = await supabase
+      .from('vehicles')
+      .select('id,status,capacity')
+      .eq('id', vehicleId)
+      .maybeSingle();
+
+    if (vehicleCheckError || !currentVehicle || currentVehicle.status !== 'AVAILABLE' || currentVehicle.capacity < selectedPassengerCount) {
+      setMessage(vehicleCheckError ? `Não foi possível conferir o veículo: ${vehicleCheckError.message}` : 'O veículo não está mais disponível ou não possui capacidade suficiente. Atualize a agenda.');
+      setSaving(false);
+      return;
+    }
+
     const { data: trip, error: tripError } = await supabase.from('trips').insert({
       date,
       departure_time: departureTime,
@@ -497,7 +509,7 @@ export default function TripsPage() {
                       <div className="mt-1 flex flex-wrap gap-3 text-xs text-slate-500">
                         <span>{trip.driver?.name ?? 'Motorista não informado'}</span>
                         <span>{trip.vehicle?.plate ?? 'Veículo não informado'}</span>
-                        <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count} passageiro(s)</span>
+                        <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count === null ? 'Contagem indisponível' : `${trip.passenger_count} passageiro(s)`}</span>
                       </div>
                     </Link>
                     <div className="flex gap-2">
