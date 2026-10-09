@@ -378,6 +378,11 @@ export default function TripsPage() {
         return;
       }
     } else if (status === 'CANCELLED') {
+      if (currentTrip.status !== 'SCHEDULED' && currentTrip.status !== 'IN_PROGRESS') {
+        setMessage('Esta viagem não pode mais ser cancelada. Atualize a agenda.');
+        return;
+      }
+
       const reason = window.prompt('Informe o motivo do cancelamento da viagem:')?.trim();
       if (!reason) return;
       const { error } = await supabase.from('trips').update({ status, cancellation_reason: reason, cancelled_at: new Date().toISOString() }).eq('id', id);
