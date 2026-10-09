@@ -239,9 +239,9 @@ export default function TripDetailPage() {
       }
 
       if (!updatedVehicle || Number(updatedVehicle.current_mileage) !== final) {
+        await loadData();
         setMessage('A viagem foi salva, mas o KM do veículo não foi atualizado. Verifique as permissões do cadastro de veículos.');
         setSaving(false);
-        await loadData();
         return;
       }
 
