@@ -412,7 +412,7 @@ export default function TripDetailPage() {
               <Summary label="KM inicial" value={trip.initial_mileage !== null ? String(trip.initial_mileage) : '—'}/>
               <Summary label="KM final" value={trip.final_mileage !== null ? String(trip.final_mileage) : '—'}/>
               <Summary label="KM percorridos" value={trip.initial_mileage !== null && trip.final_mileage !== null && trip.final_mileage >= trip.initial_mileage ? String(trip.final_mileage - trip.initial_mileage) : '—'}/>
-              {trip.status === 'COMPLETED' && <Summary label="Conferência" value={passengers.some(p => p.boarding_status === 'EXPECTED') || trip.initial_mileage === null || trip.final_mileage === null || trip.final_mileage < trip.initial_mileage ? 'Verificar pendências' : 'Sem alertas detectados'}/>}
+              {trip.status === 'COMPLETED' && <Summary label="Conferência básica" value={(() => { const issues = Number(passengers.some(p => p.boarding_status === 'EXPECTED')) + Number(trip.initial_mileage === null || trip.final_mileage === null || trip.final_mileage < trip.initial_mileage); return issues > 0 ? `${issues} verificação(ões) pendente(s)` : 'Sem alertas nestes critérios'; })()}/>}
             </div>
           </section>
         </div>
