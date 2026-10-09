@@ -282,12 +282,14 @@ export default function TripsPage() {
       return;
     }
 
-    const { error: requestsError } = await supabase.from('transport_requests')
+    const { data: updatedRequests, error: requestsError } = await supabase.from('transport_requests')
       .update({ status: 'SCHEDULED' })
-      .in('id', selectedIds);
+      .in('id', selectedIds)
+      .eq('status', 'APPROVED')
+      .select('id');
 
-    if (requestsError) {
-      setMessage(`A viagem foi criada, mas as solicitações não foram atualizadas: ${requestsError.message}`);
+    if (requestsError || (updatedRequests?.length ?? 0) !== selectedIds.length) {
+      setMessage(requestsError ? `A viagem foi criada, mas as solicitações não foram atualizadas: ${requestsError.message}` : 'A viagem foi criada, mas nem todas as solicitações foram atualizadas. Confira os vínculos antes de continuar.');
     } else {
       setMessage('Viagem criada e solicitações agendadas com sucesso.');
     }
