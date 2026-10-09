@@ -431,6 +431,11 @@ export default function TripsPage() {
               <h2 className="font-semibold">Viagens cadastradas</h2>
               <div className="flex flex-col gap-2 sm:flex-row"><div className="flex items-center gap-2 rounded-lg border px-3"><Search size={16}/><input type="search" aria-label="Buscar viagens por identificação, destino, motorista ou placa" value={tripSearch} onChange={e=>setTripSearch(e.target.value)} placeholder="ID, destino, motorista ou placa..." className="py-2 text-sm outline-none"/></div><select aria-label="Filtrar viagens por status" value={tripStatusFilter} onChange={e=>setTripStatusFilter(e.target.value as 'ALL'|TripRow['status'])} className="rounded-lg border bg-white px-3 py-2 text-sm"><option value="ALL">Todos os status</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
             </div>
+            {/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(tripSearch.trim()) && (
+              <div className="border-b border-teal-100 bg-teal-50 px-5 py-3 text-sm text-teal-900">
+                Procurando uma viagem pelo ID? <Link href={`/viagens/${tripSearch.trim()}`} className="font-semibold underline underline-offset-2 hover:text-teal-700">Abrir viagem diretamente</Link>, mesmo que não esteja entre as 100 mais recentes.
+              </div>
+            )}
             {filteredTrips.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma viagem cadastrada.</div> :
               <div className="divide-y">
                 {filteredTrips.map((trip) => (
