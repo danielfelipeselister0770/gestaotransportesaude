@@ -166,6 +166,19 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED') {
+      const { data: currentPassengers, error: currentPassengersError } = await supabase
+        .from('trip_passengers')
+        .select('id,boarding_status')
+        .eq('trip_id', trip.id);
+
+      if (currentPassengersError || !currentPassengers) {
+        setMessage(currentPassengersError ? `Não foi possível conferir os passageiros antes da conclusão: ${currentPassengersError.message}` : 'Não foi possível confirmar a lista de passageiros. Tente novamente.');
+        setSaving(false);
+        return;
+      }
+    }
+
     const { data: updatedTrip, error } = await supabase.from('trips').update({
       initial_mileage: initial,
       final_mileage: final,
