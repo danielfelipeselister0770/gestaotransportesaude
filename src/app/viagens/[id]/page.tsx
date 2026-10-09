@@ -353,7 +353,7 @@ export default function TripDetailPage() {
         <div className="grid gap-5 lg:grid-cols-3">
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between border-b px-5 py-4">
-              <div><h2 className="font-semibold">Passageiros</h2><p className="text-xs text-slate-500">{passengers.length} passageiro(s) nesta viagem</p></div>
+              <div><h2 className="font-semibold">Passageiros</h2><p className="text-xs text-slate-500">{passengers.length} {passengers.length === 1 ? "passageiro" : "passageiros"} nesta viagem</p></div>
               <UserRound size={20} className="text-slate-400"/>
             </div>
             <div className="divide-y">
