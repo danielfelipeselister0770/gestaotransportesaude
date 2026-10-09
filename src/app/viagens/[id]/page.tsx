@@ -202,16 +202,16 @@ export default function TripDetailPage() {
     }
 
     if (trip.initial_mileage === null && initial !== null && trip.vehicle?.id) {
-      const { error: mileageError } = await supabase.from('mileage_records').insert({
+      const { data: initialRecord, error: mileageError } = await supabase.from('mileage_records').insert({
         vehicle_id: trip.vehicle.id,
         trip_id: trip.id,
         date: new Date().toISOString(),
         mileage: initial,
         source: 'TRIP',
         observations: 'Quilometragem inicial da viagem',
-      });
-      if (mileageError) {
-        setMessage(`Viagem salva, mas não foi possível registrar o KM inicial: ${mileageError.message}`);
+      }).select('id').maybeSingle();
+      if (mileageError || !initialRecord) {
+        setMessage(mileageError ? `Viagem salva, mas não foi possível registrar o KM inicial: ${mileageError.message}` : 'Viagem salva, mas o registro de KM inicial não foi confirmado. Avise a gestão para conferir os dados.');
         setSaving(false);
         return;
       }
