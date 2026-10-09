@@ -154,6 +154,12 @@ export default function TripDetailPage() {
       return;
     }
 
+    if (status === 'COMPLETED' && !trip.vehicle?.id) {
+      setMessage('Não é possível concluir uma viagem sem veículo vinculado. Confira o cadastro antes de finalizar.');
+      setSaving(false);
+      return;
+    }
+
     if (status === 'COMPLETED' && passengersLoadError) {
       setMessage('Não é possível concluir a viagem sem conferir os passageiros. Recarregue a página e tente novamente.');
       setSaving(false);
