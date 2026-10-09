@@ -475,7 +475,7 @@ export default function TripDetailPage() {
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center gap-2 border-b px-5 py-4"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
-            <form onSubmit={addOccurrence} className="space-y-4 p-4 sm:p-5">
+            <form onSubmit={addOccurrence} aria-busy={saving || updatingPassengerId !== null} className="space-y-4 p-4 sm:p-5">
               <SelectField name="occurrence_type" label="Tipo" value={occurrenceType} onChange={setOccurrenceType}>
                 <option value="ACIDENTE">Acidente</option><option value="AVARIA">Avaria</option><option value="ATRASO">Atraso</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option>
               </SelectField>
