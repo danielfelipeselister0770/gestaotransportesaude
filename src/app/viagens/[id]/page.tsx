@@ -347,6 +347,7 @@ export default function TripDetailPage() {
       return;
     }
     if (currentPassenger.boarding_status === boarding_status) return;
+    setMessage('');
     updatingPassengerRef.current = true;
     setUpdatingPassengerId(id);
     try {
