@@ -328,13 +328,17 @@ export default function TripsPage() {
     const { error: passengersError } = await supabase.from('trip_passengers').insert(passengerRows);
 
     if (passengersError) {
-      const { error: rollbackError } = await supabase.from('trips')
+      const { data: cancelledTrip, error: rollbackError } = await supabase.from('trips')
         .update({ status: 'CANCELLED' })
-        .eq('id', trip.id);
-      setMessage(rollbackError
-        ? `Falha ao adicionar passageiros na viagem ${trip.id}: ${passengersError.message}. Também não foi possível cancelar a viagem criada: ${rollbackError.message}. Verifique a viagem antes de tentar novamente.`
-        : `Não foi possível adicionar os passageiros na viagem ${trip.id}: ${passengersError.message}. A viagem foi cancelada automaticamente.`);
-      if (rollbackError) {
+        .eq('id', trip.id)
+        .eq('status', 'SCHEDULED')
+        .select('id')
+        .maybeSingle();
+      const cancellationFailed = Boolean(rollbackError || !cancelledTrip);
+      setMessage(cancellationFailed
+        ? `Falha ao adicionar passageiros na viagem ${trip.id}: ${passengersError.message}. Não foi possível confirmar o cancelamento automático${rollbackError ? `: ${rollbackError.message}` : ''}. Confira a viagem antes de continuar.`
+        : `Não foi possível adicionar os passageiros na viagem ${trip.id}: ${passengersError.message}. O cancelamento automático foi confirmado.`);
+      if (cancellationFailed) {
         setSelectedIds([]);
         setShowForm(false);
         await loadData();
