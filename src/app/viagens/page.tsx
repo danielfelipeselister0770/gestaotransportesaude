@@ -435,7 +435,7 @@ export default function TripsPage() {
 
       const initialMileage = currentTrip.initial_mileage ?? vehicle.current_mileage;
       if (typeof initialMileage !== 'number' || !Number.isFinite(initialMileage) || initialMileage < 0) {
-        setMessage('Não foi possível iniciar a viagem: a quilometragem inicial do veículo é inválida. Confira o cadastro antes de continuar.');
+        setMessage(`Não foi possível iniciar a viagem ${id}: a quilometragem inicial do veículo é inválida. Confira o cadastro antes de continuar.`);
         return;
       }
 
