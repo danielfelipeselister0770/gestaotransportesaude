@@ -468,7 +468,7 @@ export default function TripsPage() {
       }
     } else if (status === 'CANCELLED') {
       if (currentTrip.status !== 'SCHEDULED' && currentTrip.status !== 'IN_PROGRESS') {
-        setMessage('Esta viagem não pode mais ser cancelada. Atualize a agenda.');
+        setMessage(`A viagem ${id} não pode mais ser cancelada. Atualize a agenda.`);
         return;
       }
 
