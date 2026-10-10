@@ -408,6 +408,11 @@ export default function TripsPage() {
         return;
       }
 
+      if (!currentTrip.vehicle_id) {
+        setMessage(`Não foi possível iniciar a viagem ${id}: nenhum veículo está vinculado a ela. Confira o agendamento.`);
+        return;
+      }
+
       const { data: vehicle, error: vehicleLoadError } = await supabase.from('vehicles')
         .select('id,current_mileage,status')
         .eq('id', currentTrip.vehicle_id)
