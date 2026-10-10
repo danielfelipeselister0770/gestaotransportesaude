@@ -242,6 +242,7 @@ export default function TripDetailPage() {
           .from('transport_requests')
           .update({ status: 'COMPLETED' })
           .in('id', requestIds)
+          .eq('status', 'SCHEDULED')
           .select('id');
 
         if (requestsError || (updatedRequests?.length ?? 0) !== requestIds.length) {
