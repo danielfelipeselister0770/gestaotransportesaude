@@ -345,8 +345,8 @@ export default function TripDetailPage() {
       setMessage('Não é possível atualizar o embarque enquanto a lista de passageiros estiver indisponível. Recarregue a viagem.');
       return;
     }
-    if (trip?.status === 'COMPLETED' || trip?.status === 'CANCELLED') {
-      setMessage('A viagem encerrada não permite alterar o status dos passageiros.');
+    if (trip.status !== 'IN_PROGRESS') {
+      setMessage('O embarque dos passageiros só pode ser registrado quando a viagem estiver em andamento.');
       return;
     }
     if (updatingPassengerRef.current) return;
