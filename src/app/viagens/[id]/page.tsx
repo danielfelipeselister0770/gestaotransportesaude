@@ -197,6 +197,12 @@ export default function TripDetailPage() {
         return;
       }
 
+      if (currentPassengers.length === 0) {
+        setMessage('Não é possível concluir uma viagem sem passageiros vinculados. Confira o agendamento antes de continuar.');
+        setSaving(false);
+        return;
+      }
+
       const knownStatuses = new Map(passengers.map((passenger) => [passenger.id, passenger.boarding_status]));
       const passengerListChanged = currentPassengers.length !== passengers.length || currentPassengers.some((passenger) => knownStatuses.get(passenger.id) !== passenger.boarding_status);
       if (passengerListChanged || currentPassengers.some((passenger) => passenger.boarding_status === 'EXPECTED')) {
