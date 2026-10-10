@@ -472,8 +472,13 @@ export default function TripsPage() {
         return;
       }
 
-      const reason = window.prompt(`Informe o motivo do cancelamento da viagem ${id}:`)?.trim();
-      if (!reason) return;
+      const reasonInput = window.prompt(`Informe o motivo do cancelamento da viagem ${id}:`);
+      if (reasonInput === null) return;
+      const reason = reasonInput.trim();
+      if (!reason) {
+        setMessage(`Não foi possível cancelar a viagem ${id}: informe um motivo para o cancelamento.`);
+        return;
+      }
       const { data: cancelledTrip, error } = await supabase.from('trips')
         .update({ status, cancellation_reason: reason, cancelled_at: new Date().toISOString() })
         .eq('id', id)
