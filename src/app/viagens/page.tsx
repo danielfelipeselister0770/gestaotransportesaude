@@ -353,7 +353,8 @@ export default function TripsPage() {
       .eq('status', 'APPROVED')
       .select('id');
 
-    if (requestsError || (updatedRequests?.length ?? 0) !== selectedIds.length) {
+    const updatedRequestIds = new Set((updatedRequests ?? []).map((request) => request.id));
+    if (requestsError || updatedRequestIds.size !== selectedIds.length || selectedIds.some((id) => !updatedRequestIds.has(id))) {
       setSelectedIds([]);
       setShowForm(false);
       await loadData();
