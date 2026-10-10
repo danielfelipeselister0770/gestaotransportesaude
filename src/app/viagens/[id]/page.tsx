@@ -198,7 +198,7 @@ export default function TripDetailPage() {
       }
 
       if (currentPassengers.length === 0) {
-        setMessage('Não é possível concluir uma viagem sem passageiros vinculados. Confira o agendamento antes de continuar.');
+        setMessage(`Não é possível concluir a viagem ${trip.id} sem passageiros vinculados. Confira o agendamento antes de continuar.`);
         setSaving(false);
         return;
       }
