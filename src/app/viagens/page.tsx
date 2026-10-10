@@ -442,7 +442,7 @@ export default function TripsPage() {
 
       if (vehicleError || !updatedVehicle) {
         await loadData();
-        setMessage(vehicleError ? `Viagem iniciada, mas não foi possível atualizar o veículo: ${vehicleError.message}` : 'Viagem iniciada, mas o veículo deixou de estar disponível. Confira a situação antes de continuar.');
+        setMessage(vehicleError ? `Viagem ${id} iniciada, mas não foi possível atualizar o veículo: ${vehicleError.message}` : `Viagem ${id} iniciada, mas o veículo deixou de estar disponível. Confira a situação antes de continuar.`);
         return;
       }
     } else if (status === 'CANCELLED') {
