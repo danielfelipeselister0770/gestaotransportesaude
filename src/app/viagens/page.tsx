@@ -523,7 +523,7 @@ export default function TripsPage() {
               <div className="mb-5 flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-bold tracking-tight text-slate-950">Montar nova viagem</h2>
-                  <p className="mt-1 text-xs text-slate-500">{selectedPassengerCount} passageiro(s) selecionado(s)</p>
+                  <p className="mt-1 text-xs text-slate-500">{selectedPassengerCount} ocupante(s) selecionado(s), incluindo acompanhantes</p>
                 </div>
                 <button type="button" onClick={() => setShowForm(false)} aria-label="Fechar formulário de nova viagem" className="shrink-0 rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={18}/></button>
               </div>
