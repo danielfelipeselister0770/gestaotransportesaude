@@ -248,7 +248,7 @@ export default function TripsPage() {
 
     const { data: currentRequests, error: requestsCheckError } = await supabase
       .from('transport_requests')
-      .select('id,patient_id,date,time,origin,destination,status,needs_companion')
+      .select('id,patient_id,date,time,origin,destination,purpose,status,needs_companion')
       .in('id', selectedIds);
 
     if (requestsCheckError || !currentRequests) {
@@ -260,7 +260,7 @@ export default function TripsPage() {
     const currentById = new Map(currentRequests.map((request) => [request.id, request]));
     if (currentById.size !== selectedRequests.length || selectedRequests.some((request) => {
       const current = currentById.get(request.id);
-      return !current || current.status !== 'APPROVED' || current.patient_id !== request.patient_id || current.date !== date || current.time !== request.time || current.origin !== request.origin || current.destination !== request.destination || current.needs_companion !== request.needs_companion;
+      return !current || current.status !== 'APPROVED' || current.patient_id !== request.patient_id || current.date !== date || current.time !== request.time || current.origin !== request.origin || current.destination !== request.destination || current.purpose !== request.purpose || current.needs_companion !== request.needs_companion;
     })) {
       setMessage('Uma ou mais solicitações foram alteradas ou já agendadas. Atualize a agenda antes de tentar novamente.');
       setSaving(false);
