@@ -464,30 +464,32 @@ export default function TripsPage() {
         return;
       }
 
-      const { data: activeTrip, error: activeTripError } = await supabase.from('trips')
-        .select('id')
-        .eq('vehicle_id', currentTrip.vehicle_id)
-        .in('status', ['SCHEDULED', 'IN_PROGRESS'])
-        .neq('id', id)
-        .limit(1);
-
-      if (activeTripError || !activeTrip) {
-        await loadData();
-        setMessage(activeTripError ? `Viagem cancelada, mas não foi possível conferir outras viagens do veículo: ${activeTripError.message}` : 'Viagem cancelada, mas não foi possível confirmar a disponibilidade do veículo.');
-        return;
-      }
-
-      if (currentTrip.status === 'IN_PROGRESS' && activeTrip.length === 0 && currentTrip.vehicle_id) {
-        const { data: releasedVehicle, error: releaseError } = await supabase.from('vehicles')
-          .update({ status: 'AVAILABLE' })
-          .eq('id', currentTrip.vehicle_id)
-          .eq('status', 'IN_USE')
+      if (currentTrip.status === 'IN_PROGRESS' && currentTrip.vehicle_id) {
+        const { data: activeTrip, error: activeTripError } = await supabase.from('trips')
           .select('id')
-          .maybeSingle();
-        if (releaseError || !releasedVehicle) {
+          .eq('vehicle_id', currentTrip.vehicle_id)
+          .in('status', ['SCHEDULED', 'IN_PROGRESS'])
+          .neq('id', id)
+          .limit(1);
+  
+        if (activeTripError || !activeTrip) {
           await loadData();
-          setMessage(releaseError ? `Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}` : 'Viagem cancelada, mas o veículo não estava mais em uso. Confira a disponibilidade dele.');
+          setMessage(activeTripError ? `Viagem cancelada, mas não foi possível conferir outras viagens do veículo: ${activeTripError.message}` : 'Viagem cancelada, mas não foi possível confirmar a disponibilidade do veículo.');
           return;
+        }
+  
+        if (activeTrip.length === 0) {
+          const { data: releasedVehicle, error: releaseError } = await supabase.from('vehicles')
+            .update({ status: 'AVAILABLE' })
+            .eq('id', currentTrip.vehicle_id)
+            .eq('status', 'IN_USE')
+            .select('id')
+            .maybeSingle();
+          if (releaseError || !releasedVehicle) {
+            await loadData();
+            setMessage(releaseError ? `Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}` : 'Viagem cancelada, mas o veículo não estava mais em uso. Confira a disponibilidade dele.');
+            return;
+          }
         }
       }
     } else {
