@@ -362,7 +362,7 @@ export default function TripsPage() {
       return;
     }
 
-    setMessage('Viagem criada e solicitações agendadas com sucesso.');
+    setMessage(`Viagem ${trip.id} criada e solicitações agendadas com sucesso.`);
     setSelectedIds([]);
     setShowForm(false);
     await loadData();
