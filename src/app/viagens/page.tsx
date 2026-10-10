@@ -96,12 +96,12 @@ export default function TripsPage() {
       if (!tripsResult.error && normalizedTrips.length) {
         const tripIds = normalizedTrips.map((trip) => trip.id);
         const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id,companion').in('trip_id', tripIds);
-        if (passengerCountError && !errors.length) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError.message}`);
+        if ((passengerCountError || !passengers) && !errors.length) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError?.message ?? 'a consulta não retornou dados'}`);
         const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
           acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1 + (item.companion ? 1 : 0);
           return acc;
         }, {});
-        if (!passengerCountError) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
+        if (!passengerCountError && passengers) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
       }
 
       if (!requestsResult.error) {
