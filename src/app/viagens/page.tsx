@@ -497,6 +497,7 @@ export default function TripsPage() {
       return;
     }
 
+    setMessage(status === 'IN_PROGRESS' ? `Viagem ${id} iniciada com sucesso.` : `Viagem ${id} cancelada com sucesso.`);
     await loadData();
   }
 
