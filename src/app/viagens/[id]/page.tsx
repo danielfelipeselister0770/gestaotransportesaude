@@ -226,9 +226,9 @@ export default function TripDetailPage() {
         .eq('trip_id', trip.id)
         .not('request_id', 'is', null);
 
-      if (passengersError) {
+      if (passengersError || !linkedPassengers) {
         await loadData();
-        setMessage(`Viagem concluída, mas não foi possível localizar as solicitações vinculadas: ${passengersError.message}`);
+        setMessage(passengersError ? `Viagem concluída, mas não foi possível localizar as solicitações vinculadas: ${passengersError.message}` : 'Viagem concluída, mas não foi possível confirmar a consulta das solicitações vinculadas. Avise a gestão para conferir os registros.');
         setSaving(false);
         return;
       }
