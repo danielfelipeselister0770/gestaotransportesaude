@@ -205,7 +205,7 @@ export default function TripDetailPage() {
 
       const knownStatuses = new Map(passengers.map((passenger) => [passenger.id, passenger.boarding_status]));
       const passengerListChanged = currentPassengers.length !== passengers.length || currentPassengers.some((passenger) => knownStatuses.get(passenger.id) !== passenger.boarding_status);
-      if (passengerListChanged || currentPassengers.some((passenger) => passenger.boarding_status === 'EXPECTED')) {
+      if (passengerListChanged || currentPassengers.some((passenger) => !['BOARDED', 'NO_SHOW'].includes(passenger.boarding_status))) {
         setMessage('A lista ou a situação dos passageiros mudou desde a última consulta. Recarregue a viagem, confira os embarques e tente novamente.');
         setSaving(false);
         return;
