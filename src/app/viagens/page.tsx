@@ -481,7 +481,7 @@ export default function TripsPage() {
         .select('id')
         .maybeSingle();
       if (error || !cancelledTrip) {
-        setMessage(error ? `Não foi possível cancelar a viagem: ${error.message}` : 'A situação da viagem mudou. Atualize a agenda antes de tentar novamente.');
+        setMessage(error ? `Não foi possível cancelar a viagem ${id}: ${error.message}` : `A situação da viagem ${id} mudou. Atualize a agenda antes de tentar novamente.`);
         return;
       }
 
