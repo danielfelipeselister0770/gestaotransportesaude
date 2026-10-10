@@ -186,8 +186,13 @@ export default function TripsPage() {
       return;
     }
 
+    if (!Number.isInteger(vehicle.capacity) || vehicle.capacity < 1) {
+      setMessage('O veículo selecionado está com a capacidade inválida. Corrija o cadastro antes de agendar.');
+      return;
+    }
+
     if (selectedPassengerCount > vehicle.capacity) {
-      setMessage(`O veículo selecionado comporta ${vehicle.capacity} passageiro(s), mas foram selecionados ${selectedPassengerCount}.`);
+      setMessage(`O veículo selecionado comporta ${vehicle.capacity} ocupante(s), mas foram selecionados ${selectedPassengerCount}.`);
       return;
     }
 
