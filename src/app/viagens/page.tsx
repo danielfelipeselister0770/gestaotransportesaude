@@ -354,11 +354,11 @@ export default function TripsPage() {
       .select('id');
 
     if (requestsError || (updatedRequests?.length ?? 0) !== selectedIds.length) {
-      setMessage(requestsError ? `A viagem ${trip.id} foi criada, mas as solicitações não foram atualizadas: ${requestsError.message}. Confira os vínculos antes de tentar novamente.` : `A viagem ${trip.id} foi criada, mas nem todas as solicitações foram atualizadas. Confira os vínculos antes de continuar.`);
       setSelectedIds([]);
       setShowForm(false);
-      setSaving(false);
       await loadData();
+      setMessage(requestsError ? `A viagem ${trip.id} foi criada, mas as solicitações não foram atualizadas: ${requestsError.message}. Confira os vínculos antes de tentar novamente.` : `A viagem ${trip.id} foi criada, mas nem todas as solicitações foram atualizadas. Confira os vínculos antes de continuar.`);
+      setSaving(false);
       return;
     }
 
