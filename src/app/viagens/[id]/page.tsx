@@ -248,7 +248,7 @@ export default function TripDetailPage() {
         const updatedRequestIds = new Set((updatedRequests ?? []).map((request) => request.id));
         if (requestsError || updatedRequestIds.size !== requestIds.length || requestIds.some((id) => !updatedRequestIds.has(id))) {
           await loadData();
-          setMessage(requestsError ? `Viagem concluída, mas não foi possível atualizar as solicitações para Concluída: ${requestsError.message}` : 'Viagem concluída, mas nem todas as solicitações vinculadas foram atualizadas. Avise a gestão para conferir os registros.');
+          setMessage(requestsError ? `Viagem concluída, mas não foi possível atualizar as solicitações para Concluída: ${requestsError.message}` : `Viagem concluída, mas somente ${updatedRequestIds.size} de ${requestIds.length} solicitações vinculadas tiveram a atualização confirmada. Avise a gestão para conferir os registros.`);
           setSaving(false);
           return;
         }
