@@ -423,9 +423,15 @@ export default function TripsPage() {
         return;
       }
 
+      const initialMileage = currentTrip.initial_mileage ?? vehicle.current_mileage;
+      if (typeof initialMileage !== 'number' || !Number.isFinite(initialMileage) || initialMileage < 0) {
+        setMessage('Não foi possível iniciar a viagem: a quilometragem inicial do veículo é inválida. Confira o cadastro antes de continuar.');
+        return;
+      }
+
       const { data: startedTrip, error } = await supabase.from('trips').update({
         status,
-        initial_mileage: currentTrip.initial_mileage ?? vehicle.current_mileage,
+        initial_mileage: initialMileage,
       }).eq('id', id).eq('status', 'SCHEDULED').select('id').maybeSingle();
 
       if (error || !startedTrip) {
