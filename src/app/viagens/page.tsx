@@ -296,7 +296,7 @@ export default function TripsPage() {
       .eq('id', vehicleId)
       .maybeSingle();
 
-    if (vehicleCheckError || !currentVehicle || currentVehicle.status !== 'AVAILABLE' || currentVehicle.capacity < selectedPassengerCount) {
+    if (vehicleCheckError || !currentVehicle || currentVehicle.status !== 'AVAILABLE' || !Number.isInteger(currentVehicle.capacity) || currentVehicle.capacity < 1 || currentVehicle.capacity < selectedPassengerCount) {
       setMessage(vehicleCheckError ? `Não foi possível conferir o veículo: ${vehicleCheckError.message}` : 'O veículo não está mais disponível ou não possui capacidade suficiente. Atualize a agenda.');
       setSaving(false);
       return;
