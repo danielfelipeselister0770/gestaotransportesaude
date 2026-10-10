@@ -450,7 +450,7 @@ export default function TripsPage() {
       }).eq('id', id).eq('status', 'SCHEDULED').select('id').maybeSingle();
 
       if (error || !startedTrip) {
-        setMessage(error ? `Não foi possível iniciar a viagem: ${error.message}` : 'A viagem foi alterada por outro usuário. Atualize a agenda antes de tentar novamente.');
+        setMessage(error ? `Não foi possível iniciar a viagem ${id}: ${error.message}` : `A viagem ${id} foi alterada por outro usuário. Atualize a agenda antes de tentar novamente.`);
         return;
       }
 
