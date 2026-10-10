@@ -297,7 +297,7 @@ export default function TripsPage() {
       .maybeSingle();
 
     if (vehicleCheckError || !currentVehicle || currentVehicle.status !== 'AVAILABLE' || !Number.isInteger(currentVehicle.capacity) || currentVehicle.capacity < 1 || currentVehicle.capacity < selectedPassengerCount) {
-      setMessage(vehicleCheckError ? `Não foi possível conferir o veículo: ${vehicleCheckError.message}` : 'O veículo não está mais disponível ou não possui capacidade suficiente. Atualize a agenda.');
+      setMessage(vehicleCheckError ? `Não foi possível conferir o veículo: ${vehicleCheckError.message}` : currentVehicle && (!Number.isInteger(currentVehicle.capacity) || currentVehicle.capacity < 1) ? 'A capacidade cadastrada do veículo é inválida. Corrija o cadastro antes de agendar.' : 'O veículo não está mais disponível ou não possui capacidade suficiente. Atualize a agenda.');
       setSaving(false);
       return;
     }
