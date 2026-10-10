@@ -472,8 +472,8 @@ export default function TripsPage() {
         .limit(1);
 
       if (activeTripError || !activeTrip) {
-        setMessage(activeTripError ? `Viagem cancelada, mas não foi possível conferir outras viagens do veículo: ${activeTripError.message}` : 'Viagem cancelada, mas não foi possível confirmar a disponibilidade do veículo.');
         await loadData();
+        setMessage(activeTripError ? `Viagem cancelada, mas não foi possível conferir outras viagens do veículo: ${activeTripError.message}` : 'Viagem cancelada, mas não foi possível confirmar a disponibilidade do veículo.');
         return;
       }
 
@@ -485,8 +485,8 @@ export default function TripsPage() {
           .select('id')
           .maybeSingle();
         if (releaseError || !releasedVehicle) {
-          setMessage(releaseError ? `Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}` : 'Viagem cancelada, mas o veículo não estava mais em uso. Confira a disponibilidade dele.');
           await loadData();
+          setMessage(releaseError ? `Viagem cancelada, mas não foi possível liberar o veículo: ${releaseError.message}` : 'Viagem cancelada, mas o veículo não estava mais em uso. Confira a disponibilidade dele.');
           return;
         }
       }
