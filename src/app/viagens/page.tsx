@@ -335,14 +335,14 @@ export default function TripsPage() {
         .select('id')
         .maybeSingle();
       const cancellationFailed = Boolean(rollbackError || !cancelledTrip);
-      setMessage(cancellationFailed
-        ? `Falha ao adicionar passageiros na viagem ${trip.id}: ${passengersError.message}. Não foi possível confirmar o cancelamento automático${rollbackError ? `: ${rollbackError.message}` : ''}. Confira a viagem antes de continuar.`
-        : `Não foi possível adicionar os passageiros na viagem ${trip.id}: ${passengersError.message}. O cancelamento automático foi confirmado.`);
       if (cancellationFailed) {
         setSelectedIds([]);
         setShowForm(false);
         await loadData();
       }
+      setMessage(cancellationFailed
+        ? `Falha ao adicionar passageiros na viagem ${trip.id}: ${passengersError.message}. Não foi possível confirmar o cancelamento automático${rollbackError ? `: ${rollbackError.message}` : ''}. Confira a viagem antes de continuar.`
+        : `Não foi possível adicionar os passageiros na viagem ${trip.id}: ${passengersError.message}. O cancelamento automático foi confirmado.`);
       setSaving(false);
       return;
     }
