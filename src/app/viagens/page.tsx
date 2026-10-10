@@ -358,7 +358,7 @@ export default function TripsPage() {
       setSelectedIds([]);
       setShowForm(false);
       await loadData();
-      setMessage(requestsError ? `A viagem ${trip.id} foi criada, mas não foi possível confirmar a atualização de todas as solicitações: ${requestsError.message}. Algumas podem ter sido agendadas. Confira os vínculos antes de tentar novamente.` : `A viagem ${trip.id} foi criada, mas nem todas as solicitações foram atualizadas. Confira os vínculos antes de continuar.`);
+      setMessage(requestsError ? `A viagem ${trip.id} foi criada, mas não foi possível confirmar a atualização de todas as solicitações: ${requestsError.message}. Algumas podem ter sido agendadas. Confira os vínculos antes de tentar novamente.` : `A viagem ${trip.id} foi criada, mas apenas ${updatedRequestIds.size} de ${selectedIds.length} solicitações tiveram atualização confirmada. Confira os vínculos antes de continuar.`);
       setSaving(false);
       return;
     }
