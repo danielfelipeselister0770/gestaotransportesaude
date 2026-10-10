@@ -179,8 +179,8 @@ export default function TripDetailPage() {
       return;
     }
 
-    if (status === 'COMPLETED' && passengers.some((passenger) => passenger.boarding_status === 'EXPECTED')) {
-      setMessage('Antes de concluir a viagem, registre Embarcou ou Não compareceu para todos os passageiros ainda aguardando embarque.');
+    if (status === 'COMPLETED' && passengers.some((passenger) => !['BOARDED', 'NO_SHOW'].includes(passenger.boarding_status))) {
+      setMessage('Antes de concluir a viagem, registre Embarcou ou Não compareceu para todos os passageiros.');
       setSaving(false);
       return;
     }
