@@ -434,6 +434,11 @@ export default function TripsPage() {
         return;
       }
 
+      if (typeof vehicle.current_mileage === 'number' && Number.isFinite(vehicle.current_mileage) && initialMileage < vehicle.current_mileage) {
+        setMessage(`Não foi possível iniciar a viagem ${id}: a quilometragem inicial é menor que a quilometragem atual do veículo. Confira o registro antes de continuar.`);
+        return;
+      }
+
       const { data: startedTrip, error } = await supabase.from('trips').update({
         status,
         initial_mileage: initialMileage,
