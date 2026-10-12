@@ -253,7 +253,7 @@ export default function TripsPage() {
 
     const { data: currentRequests, error: requestsCheckError } = await supabase
       .from('transport_requests')
-      .select('id,patient_id,date,time,origin,destination,purpose,status,needs_companion')
+      .select('id,municipality_id,patient_id,date,time,origin,destination,purpose,status,needs_companion')
       .in('id', selectedIds);
 
     if (requestsCheckError || !currentRequests) {
@@ -268,6 +268,12 @@ export default function TripsPage() {
       return !current || current.status !== 'APPROVED' || current.patient_id !== request.patient_id || current.date !== date || current.time !== request.time || current.origin !== request.origin || current.destination !== request.destination || current.purpose !== request.purpose || current.needs_companion !== request.needs_companion;
     })) {
       setMessage('Uma ou mais solicitações foram alteradas ou já agendadas. Atualize a agenda antes de tentar novamente.');
+      setSaving(false);
+      return;
+    }
+
+    if (currentRequests.some((request) => request.municipality_id !== driverData.municipality_id)) {
+      setMessage('A prefeitura do motorista é diferente da prefeitura de uma ou mais solicitações. Confira os vínculos antes de criar a viagem.');
       setSaving(false);
       return;
     }
@@ -334,7 +340,7 @@ export default function TripsPage() {
 
     if (passengersError) {
       const { data: cancelledTrip, error: rollbackError } = await supabase.from('trips')
-        .update({ status: 'CANCELLED' })
+        .update({ status: 'CANCELLED', cancellation_reason: 'Cancelamento automático: falha ao vincular passageiros na criação da viagem.', cancelled_at: new Date().toISOString() })
         .eq('id', trip.id)
         .eq('status', 'SCHEDULED')
         .select('id')
