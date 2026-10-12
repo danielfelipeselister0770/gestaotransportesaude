@@ -5,7 +5,7 @@ import { AlertTriangle, BadgeCheck, Copy, Eye, EyeOff, IdCard, KeyRound, Message
 import { createClient } from '@/lib/supabase/client';
 
 type Driver = {
-  id: string; name: string; cpf: string | null; phone: string | null; cnh: string | null;
+  id: string; municipality_id: string | null; name: string; cpf: string | null; phone: string | null; cnh: string | null;
   cnh_category: string | null; cnh_expiration: string | null; active: boolean;
   observations: string | null; profile_id: string | null;
 };
@@ -20,6 +20,8 @@ type AccessData = {
 export default function DriversPage() {
   const supabase = createClient();
   const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [municipalities,setMunicipalities]=useState<{id:string;name:string}[]>([]);
+  const [isAdmin,setIsAdmin]=useState(false);
   const [search, setSearch] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Driver | null>(null);
@@ -36,14 +38,14 @@ export default function DriversPage() {
   async function loadData() {
     setLoading(true);
     const { data, error } = await supabase.from('drivers')
-      .select('id,name,cpf,phone,cnh,cnh_category,cnh_expiration,active,observations,profile_id')
+      .select('id,municipality_id,name,cpf,phone,cnh,cnh_category,cnh_expiration,active,observations,profile_id')
       .order('name');
     if (error) setMessage('Erro ao carregar motoristas: ' + error.message);
     else setDrivers((data ?? []) as Driver[]);
     setLoading(false);
   }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); supabase.auth.getUser().then(async ({data:{user}})=>{if(!user)return;const {data}=await supabase.from('profiles').select('role').eq('id',user.id).maybeSingle();if(data?.role==='ADMIN'){setIsAdmin(true);const {data:rows}=await supabase.from('municipalities').select('id,name').eq('active',true).order('name');setMunicipalities(rows??[]);}}); }, []);
 
   function openNew() { setEditing(null); setShowForm(true); setMessage(''); }
   function openEdit(d: Driver) { setEditing(d); setShowForm(true); setMessage(''); }
@@ -52,7 +54,10 @@ export default function DriversPage() {
     event.preventDefault();
     setSaving(true); setMessage('');
     const form = new FormData(event.currentTarget);
+    const selectedMunicipality=String(form.get('municipality_id')??'');
+    if(isAdmin&&!municipalities.some(m=>m.id===selectedMunicipality)){setMessage('Selecione uma prefeitura válida.');setSaving(false);return;}
     const payload = {
+      ...(isAdmin?{municipality_id:selectedMunicipality}:{}),
       name: String(form.get('name') ?? '').trim(),
       cpf: String(form.get('cpf') ?? '').trim() || null,
       phone: String(form.get('phone') ?? '').trim() || null,
@@ -166,6 +171,7 @@ export default function DriversPage() {
 
       {showForm && <form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">{editing ? 'Editar motorista' : 'Novo motorista'}</h2><button type="button" onClick={() => setShowForm(false)}><X size={20}/></button></div>
+        {isAdmin && <label className="mb-4 block text-sm">Prefeitura responsável<select name="municipality_id" defaultValue={editing?.municipality_id??''} required className="mt-1 block w-full rounded-lg border border-slate-300 bg-white p-2"><option value="">Selecione a prefeitura</option>{municipalities.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm sm:col-span-2">Nome completo<input name="name" required defaultValue={editing?.name ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label>
           <label className="text-sm">CPF<input name="cpf" defaultValue={editing?.cpf ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label>
