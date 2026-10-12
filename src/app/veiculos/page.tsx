@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 
 type VehicleStatus = 'AVAILABLE' | 'IN_USE' | 'MAINTENANCE' | 'INACTIVE';
 type Vehicle = {
-  id: string; plate: string; brand: string | null; model: string | null; year: number | null;
+  id: string; municipality_id: string | null; plate: string; brand: string | null; model: string | null; year: number | null;
   capacity: number; current_mileage: number; status: VehicleStatus; observations: string | null; wheelchair_accessible:boolean; renavam:string|null; insurance_expiry:string|null; licensing_expiry:string|null;
 };
 
@@ -21,6 +21,8 @@ const statusClasses: Record<VehicleStatus,string> = {
 export default function VehiclesPage() {
   const supabase = createClient();
   const [vehicles,setVehicles]=useState<Vehicle[]>([]);
+  const [municipalities,setMunicipalities]=useState<{id:string;name:string}[]>([]);
+  const [isAdmin,setIsAdmin]=useState(false);
   const [search,setSearch]=useState('');
   const [statusFilter,setStatusFilter]=useState<'ALL'|VehicleStatus>('ALL');
   const [showForm,setShowForm]=useState(false);
@@ -31,12 +33,12 @@ export default function VehiclesPage() {
 
   async function loadData() {
     setLoading(true);
-    const {data,error}=await supabase.from('vehicles').select('id,plate,brand,model,year,capacity,current_mileage,status,observations,wheelchair_accessible,renavam,insurance_expiry,licensing_expiry').order('plate');
+    const {data,error}=await supabase.from('vehicles').select('id,municipality_id,plate,brand,model,year,capacity,current_mileage,status,observations,wheelchair_accessible,renavam,insurance_expiry,licensing_expiry').order('plate');
     if(error) setMessage(`Erro ao carregar veículos: ${error.message}`);
     else setVehicles((data??[]) as Vehicle[]);
     setLoading(false);
   }
-  useEffect(()=>{loadData();},[]);
+  useEffect(()=>{loadData();supabase.auth.getUser().then(async ({data:{user}})=>{if(!user)return;const {data}=await supabase.from('profiles').select('role').eq('id',user.id).maybeSingle();if(data?.role==='ADMIN'){setIsAdmin(true);const {data:rows}=await supabase.from('municipalities').select('id,name').eq('active',true).order('name');setMunicipalities(rows??[]);}});},[]);
 
   function openNew(){setEditing(null);setShowForm(true);setMessage('');}
   function openEdit(v:Vehicle){setEditing(v);setShowForm(true);setMessage('');}
@@ -44,7 +46,10 @@ export default function VehiclesPage() {
   async function save(event:FormEvent<HTMLFormElement>) {
     event.preventDefault(); setSaving(true); setMessage('');
     const form=new FormData(event.currentTarget);
+    const selectedMunicipality=String(form.get('municipality_id')??'');
+    if(isAdmin&&!municipalities.some(m=>m.id===selectedMunicipality)){setMessage('Selecione uma prefeitura válida.');setSaving(false);return;}
     const payload={
+      ...(isAdmin?{municipality_id:selectedMunicipality}:{}),
       plate:String(form.get('plate')??'').trim().toUpperCase(),
       brand:String(form.get('brand')??'').trim()||null,
       model:String(form.get('model')??'').trim()||null,
@@ -84,6 +89,7 @@ export default function VehiclesPage() {
         <div className="mb-5 flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row"><div className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100"><Search size={18} className="text-slate-400"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por placa, marca ou modelo" className="w-full outline-none text-sm"/></div><select value={statusFilter} onChange={e=>setStatusFilter(e.target.value as 'ALL'|VehicleStatus)} className="rounded-xl border bg-white px-3 py-2 text-sm"><option value="ALL">Todas as situações</option>{Object.entries(statusLabels).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></div>
         {showForm&&<form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold">{editing?'Editar veículo':'Novo veículo'}</h2><button type="button" onClick={()=>setShowForm(false)}><X size={20}/></button></div>
+          {isAdmin && <label className="mb-4 block text-sm">Prefeitura responsável<select name="municipality_id" defaultValue={editing?.municipality_id??''} required className="mt-1 block w-full rounded-lg border border-slate-300 bg-white p-2"><option value="">Selecione a prefeitura</option>{municipalities.map(m=><option key={m.id} value={m.id}>{m.name}</option>)}</select></label>}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <label className="text-sm">Placa<input name="plate" required defaultValue={editing?.plate??''} className="mt-1 w-full rounded-lg border px-3 py-2 uppercase"/></label>
             <label className="text-sm">Marca<input name="brand" defaultValue={editing?.brand??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label>
