@@ -13,7 +13,7 @@ type RequestRow = {
  denial_reason:string|null; denied_at:string|null; denied_by:string|null;
  patient:{name:string;cpf:string|null}|null; health_unit:{name:string}|null;
 };
-type Patient={id:string;name:string;cpf:string|null};
+type Patient={id:string;name:string;cpf:string|null;municipality_id:string|null};
 type HealthUnit={id:string;name:string;city:string|null};
 type HistoryRow={id:string;action:string;old_status:RequestStatus|null;new_status:RequestStatus|null;note:string|null;changed_at:string};
 
@@ -32,7 +32,7 @@ export default function RequestsPage(){
   setLoading(true);
   const [a,b,c]=await Promise.all([
    supabase.from('transport_requests').select(requestFields).order('date',{ascending:true}).order('time',{ascending:true}),
-   supabase.from('patients').select('id,name,cpf').eq('active',true).order('name'),
+   supabase.from('patients').select('id,name,cpf,municipality_id').eq('active',true).order('name'),
    supabase.from('health_units').select('id,name,city').eq('active',true).order('name')
   ]);
   if(a.error)setMessage('Erro ao carregar solicitações: '+a.error.message); else setRequests((a.data??[]).map(normalize) as unknown as RequestRow[]);
@@ -49,6 +49,9 @@ export default function RequestsPage(){
   const fd=new FormData(e.currentTarget), patientId=String(fd.get('patient_id')??''), healthUnitId=String(fd.get('health_unit_id')??'')||null;
   const payload={patient_id:patientId,date:String(fd.get('date')??''),time:String(fd.get('time')??'')||null,origin:String(fd.get('origin')??'').trim(),destination:String(fd.get('destination')??'').trim(),health_unit_id:healthUnitId,purpose:String(fd.get('purpose')??'').trim()||null,financing_distance_km:fd.get('financing_distance_km')?Number(fd.get('financing_distance_km')):null,needs_companion:fd.get('needs_companion')==='on',observations:String(fd.get('observations')??'').trim()||null};
   if(!payload.patient_id||!payload.date||!payload.origin||!payload.destination){setMessage('Preencha paciente, data, origem e destino.');setSaving(false);return;}
+  const selectedPatient=patients.find(p=>p.id===patientId);
+  if(!selectedPatient?.municipality_id){setMessage('Paciente sem prefeitura vinculada. Confira o cadastro do paciente.');setSaving(false);return;}
+  if(editing && editing.municipality_id!==selectedPatient.municipality_id){setMessage('A solicitação e o paciente devem pertencer à mesma prefeitura.');setSaving(false);return;}
   try{
    if(editing){
     if(!['REQUESTED','APPROVED'].includes(editing.status)){setMessage('Esta solicitação não pode mais ser editada.');return;}
@@ -57,7 +60,7 @@ export default function RequestsPage(){
     const row=normalize(data) as unknown as RequestRow; setRequests(v=>v.map(x=>x.id===row.id?row:x)); setEditing(null);setShowForm(false);setMessage('Solicitação atualizada.');
    }else{
     const {data:user}=await supabase.auth.getUser(); if(!user.user){setMessage('Sessão expirada.');return;}
-    const {data,error}=await supabase.from('transport_requests').insert({...payload,requested_by:user.user.id,status:'REQUESTED'}).select(requestFields).single();
+    const {data,error}=await supabase.from('transport_requests').insert({...payload,municipality_id:selectedPatient.municipality_id,requested_by:user.user.id,status:'REQUESTED'}).select(requestFields).single();
     if(error){setMessage('Não foi possível criar: '+error.message);return;}
     setRequests(v=>[...v,normalize(data) as unknown as RequestRow].sort(sortRequests));setShowForm(false);setMessage('Solicitação criada com sucesso.');
    }
