@@ -103,6 +103,7 @@ export default function PatientsPage() {
   const supabase = createClient();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
   const [municipalityFilter, setMunicipalityFilter] = useState('ALL');
@@ -146,6 +147,11 @@ export default function PatientsPage() {
   useEffect(() => {
     loadPatients();
     loadMunicipalities();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      setIsAdmin(data?.role === 'ADMIN');
+    });
   }, []);
 
   async function loadHistory(patient: Patient) {
@@ -193,6 +199,13 @@ export default function PatientsPage() {
     const cep = digits(form.get('cep'));
     const ibge = digits(form.get('residence_municipality_ibge'));
     const name = String(form.get('name') ?? '').trim();
+    const selectedMunicipalityId = String(form.get('municipality_id') ?? '').trim();
+
+    if (isAdmin && (!selectedMunicipalityId || !municipalities.some((municipality) => municipality.id === selectedMunicipalityId))) {
+      setFormError('Selecione uma prefeitura válida para vincular o paciente.');
+      setSaving(false);
+      return;
+    }
 
     if (!name) {
       setFormError('Informe o nome completo do paciente.');
@@ -225,6 +238,7 @@ export default function PatientsPage() {
     }
 
     const patientData = {
+      ...(isAdmin ? { municipality_id: selectedMunicipalityId } : {}),
       name,
       cpf: cpf || null,
       birth_date: String(form.get('birth_date') ?? '') || null,
@@ -445,6 +459,8 @@ export default function PatientsPage() {
           {showForm && (
             <PatientForm
               patient={editingPatient}
+              municipalities={municipalities}
+              isAdmin={isAdmin}
               saving={saving}
               error={formError}
               onSubmit={savePatient}
@@ -520,12 +536,16 @@ export default function PatientsPage() {
 
 function PatientForm({
   patient,
+  municipalities,
+  isAdmin,
   saving,
   error,
   onSubmit,
   onCancel,
 }: {
   patient: Patient | null;
+  municipalities: Municipality[];
+  isAdmin: boolean;
   saving: boolean;
   error: string;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
@@ -547,6 +567,12 @@ function PatientForm({
       </div>
 
       {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>}
+
+      {isAdmin && (
+        <div className="mb-4">
+          <SelectField name="municipality_id" label="Prefeitura responsável pelo paciente" defaultValue={value('municipality_id')} options={[["", "Selecione a prefeitura"], ...municipalities.map((m) => [m.id, m.name] as [string, string])]} />
+        </div>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Field name="name" label="Nome completo" defaultValue={value('name')} required />
