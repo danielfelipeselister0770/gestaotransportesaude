@@ -48,7 +48,7 @@ export async function updateSession(request: NextRequest) {
     : { data: null };
 
   const role = profile?.role as 'ADMIN' | 'GESTOR' | 'OPERADOR' | 'MOTORISTA' | undefined;
-  const isPasswordChange = pathname === '/auth/trocar-senha';
+  const isPasswordChange = pathname === '/auth/trocar-senha' || pathname === '/api/auth/trocar-senha';
 
   if (profile?.active === false) {
     const url = request.nextUrl.clone();
