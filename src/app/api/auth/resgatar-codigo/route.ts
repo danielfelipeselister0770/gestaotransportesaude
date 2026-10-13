@@ -26,8 +26,8 @@ export async function POST(request: Request) {
   if (!recovery) return NextResponse.json({ error: 'Código inválido, expirado ou já utilizado.' }, { status: 400 });
 
   const { data: target } = await admin.from('profiles')
-    .select('active,municipality_id,must_change_password').eq('id', recovery.target_user_id).maybeSingle();
-  if (!target?.active || target.municipality_id !== recovery.municipality_id) {
+    .select('active,municipality_id,must_change_password,role').eq('id', recovery.target_user_id).maybeSingle();
+  if (!target?.active || target.role === 'ADMIN' || target.municipality_id !== recovery.municipality_id) {
     return NextResponse.json({ error: 'Acesso não autorizado. Solicite um novo código.' }, { status: 403 });
   }
   const { error: passwordError } = await admin.auth.admin.updateUserById(recovery.target_user_id, { password });
