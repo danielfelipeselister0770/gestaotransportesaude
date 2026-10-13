@@ -332,6 +332,7 @@ export default function ConfiguracoesPage() {
           <div className="mb-6">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[.16em] text-teal-700"><ShieldCheck size={16} /> Administração / Acessos</div><h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Configurações</h1>
             <p className="text-sm text-slate-500">Perfil, permissões e usuários do sistema.</p>
+            {canCreateUsers && <Link href="/recuperacao-usuarios" className="mt-3 mr-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm hover:bg-teal-50"><ShieldCheck size={16} /> Recuperar acesso de usuários</Link>}
             {(isAdmin || currentProfile?.role === 'GESTOR') && <Link href="/configuracoes/historico" className="mt-3 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-teal-700 shadow-sm hover:bg-teal-50"><History size={16} /> Histórico administrativo</Link>}
           </div>
 
