@@ -30,7 +30,10 @@ export async function POST(request: Request) {
   if (authError) return NextResponse.json({ error: 'Não foi possível alterar a senha: ' + authError.message }, { status: 400 });
 
   const { error: profileError } = await admin.from('profiles').update({ must_change_password: false }).eq('id', userId);
-  if (profileError) return NextResponse.json({ error: 'Senha alterada, mas o acesso ainda não foi liberado. Tente novamente ou procure o administrador.' }, { status: 500 });
+  if (profileError) {
+    console.error('Falha ao concluir troca obrigatória de senha no perfil:', { code: profileError.code, message: profileError.message, details: profileError.details, hint: profileError.hint });
+    return NextResponse.json({ error: 'Senha alterada, mas o acesso ainda não foi liberado.', errorCode: profileError.code ?? 'PROFILE_UPDATE_FAILED' }, { status: 500 });
+  }
 
   await admin.from('user_admin_history').insert({
     target_user_id: userId,
