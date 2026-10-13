@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   if (!currentProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
 
   const body = await request.json().catch(() => null) as {
-    action?: 'create' | 'delete' | 'update' | 'reset_password';
+    action?: 'create' | 'delete' | 'update' | 'reset_password' | 'change_email';
     userId?: string;
     municipalityId?: string;
     name?: string;
@@ -108,6 +108,37 @@ export async function POST(request: Request) {
     if (profileError) return NextResponse.json({ error: 'Senha redefinida, mas não foi possível exigir a troca no próximo acesso.' }, { status: 500 });
     await recordHistory(userId, null, 'RESET_PASSWORD');
     return NextResponse.json({ ok: true, message: 'Senha temporária definida. O usuário deverá trocá-la no próximo acesso.' });
+  }
+
+  if (action === 'change_email') {
+    const userId = body?.userId?.trim();
+    const email = body?.email?.trim().toLowerCase();
+    if (!userId || !email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+      return NextResponse.json({ error: 'Informe um e-mail válido.' }, { status: 400 });
+    }
+    if (userId === currentProfile.id) {
+      return NextResponse.json({ error: 'Não é permitido alterar seu próprio e-mail por esta tela.' }, { status: 403 });
+    }
+    const { data: target } = await admin.from('profiles')
+      .select('id,role,municipality_id,active').eq('id', userId).maybeSingle();
+    if (!target) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+    if (target.role === 'ADMIN' || (currentProfile.role === 'GESTOR' &&
+        (!currentProfile.municipality_id || target.municipality_id !== currentProfile.municipality_id ||
+         !['GESTOR', 'OPERADOR', 'MOTORISTA'].includes(target.role)))) {
+      return NextResponse.json({ error: 'Sem permissão para alterar o e-mail deste usuário.' }, { status: 403 });
+    }
+    const { data: authUser, error: lookupError } = await admin.auth.admin.getUserById(userId);
+    if (lookupError || !authUser.user) return NextResponse.json({ error: 'Conta de acesso não encontrada.' }, { status: 404 });
+    const previousEmail = authUser.user.email?.toLowerCase() ?? '';
+    if (previousEmail === email) return NextResponse.json({ ok: true, message: 'O e-mail já está atualizado.' });
+    const { error: updateError } = await admin.auth.admin.updateUserById(userId, { email, email_confirm: true });
+    if (updateError) return NextResponse.json({ error: 'Não foi possível alterar o e-mail. Verifique se já está em uso.' }, { status: 400 });
+    await recordHistory(userId, target.municipality_id, 'EMAIL_CHANGED', {
+      previous_email: previousEmail, new_email: email,
+    });
+    return NextResponse.json({ ok: true, message: 'E-mail de acesso atualizado com sucesso.' }, {
+      headers: { 'Cache-Control': 'no-store' },
+    });
   }
 
   if (action === 'update') {
