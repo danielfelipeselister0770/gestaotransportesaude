@@ -86,14 +86,26 @@ export default function ExternalServicesPage(){
   {error&&<p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</p>}
   {message&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
   {loading?<p>Carregando...</p>:user&&<>
-   <section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Iniciar expediente</h2><form onSubmit={start} className="grid gap-3 sm:grid-cols-3">
+   <section className="rounded-2xl border border-teal-200 bg-teal-50/50 p-4 sm:p-5">
+    <h2 className="mb-4 text-lg font-bold text-slate-900">Meu expediente</h2>
+    <div className="space-y-4">
+     <section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Iniciar expediente</h2><form onSubmit={start} className="grid gap-3 sm:grid-cols-3">
     {role!=='MOTORISTA'&&<label className="text-sm">Motorista<select name="driver" required className={input}><option value="">Selecione</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
     <label className="text-sm">Veículo<select name="vehicle" required className={input}><option value="">Selecione</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
     <label className="text-sm">KM inicial<input name="km" type="number" min="0" step="0.1" required className={input}/></label>
     <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">Iniciar</button>
    </form></section>
+     {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
+    <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
+    <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
+    <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
+   </form></section>}
+     {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Encerrar expediente</h2><p className="mb-3 text-sm text-slate-600">KM inicial: {active.initial_mileage}. Não é necessário finalizar os serviços individualmente.</p><form onSubmit={finish} className="flex flex-wrap items-end gap-3"><label className="text-sm">KM final<input name="km" type="number" step="0.1" min={active.initial_mileage} required className={input}/></label><button disabled={busy} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-50">Encerrar expediente</button></form></section>}
+
+    </div>
+   </section>
    <section className="rounded-2xl border bg-white p-5">
-    <h2 className="mb-3 font-semibold">Expedientes e serviços realizados</h2>
+    <h2 className="mb-3 font-semibold">Histórico de expedientes e serviços</h2>
     <div className="mb-4 grid gap-3 sm:grid-cols-2">
      <label className="text-sm">Motorista<select value={filterDriver} onChange={e=>setFilterDriver(e.target.value)} className={input}><option value="">Todos os motoristas</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
      <label className="text-sm">Veículo<select value={filterVehicle} onChange={e=>setFilterVehicle(e.target.value)} className={input}><option value="">Todos os veículos</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
@@ -133,12 +145,7 @@ export default function ExternalServicesPage(){
     </div>
     {totalPages>1&&<nav aria-label="Páginas de expedientes" className="mt-4 flex flex-wrap items-center justify-center gap-2"><button type="button" disabled={currentPage===1} onClick={()=>setPage(currentPage-1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Anterior</button>{Array.from({length:totalPages},(_,i)=><button key={i} type="button" aria-current={currentPage===i+1?'page':undefined} onClick={()=>setPage(i+1)} className={currentPage===i+1?'rounded-lg bg-teal-700 px-3 py-2 text-sm text-white':'rounded-lg border px-3 py-2 text-sm'}>{i+1}</button>)}<button type="button" disabled={currentPage===totalPages} onClick={()=>setPage(currentPage+1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Próxima</button></nav>}
    </section>
-   {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
-    <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
-    <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
-    <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
-   </form></section>}
-   {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Encerrar expediente</h2><p className="mb-3 text-sm text-slate-600">KM inicial: {active.initial_mileage}. Não é necessário finalizar os serviços individualmente.</p><form onSubmit={finish} className="flex flex-wrap items-end gap-3"><label className="text-sm">KM final<input name="km" type="number" step="0.1" min={active.initial_mileage} required className={input}/></label><button disabled={busy} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-50">Encerrar expediente</button></form></section>}
+
   </>}
  </main>;
 }
