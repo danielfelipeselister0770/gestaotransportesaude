@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Ambulance, Building2, CalendarDays, ClipboardList, FileBarChart, Fuel, LayoutDashboard, LogOut, Settings, Stethoscope, TriangleAlert, UserRound, UsersRound, Wrench } from 'lucide-react';
+import { Activity, Ambulance, Building2, CalendarDays, ClipboardList, BriefcaseBusiness, FileBarChart, Fuel, LayoutDashboard, LogOut, Settings, Stethoscope, TriangleAlert, UserRound, UsersRound, Wrench } from 'lucide-react';
 
 const nav = [
   ['Dashboard', '/', LayoutDashboard],
   ['Pacientes', '/pacientes', UsersRound],
   ['Solicitações', '/solicitacoes', ClipboardList],
   ['Agenda / Viagens', '/viagens', CalendarDays],
+  ['Serviços externos', '/servicos-externos', BriefcaseBusiness],
   ['Veículos', '/veiculos', Ambulance],
   ['Motoristas', '/motoristas', UserRound],
   ['Estabelecimentos', '/estabelecimentos', Building2],
