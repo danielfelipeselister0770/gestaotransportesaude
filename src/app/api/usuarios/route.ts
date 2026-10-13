@@ -52,7 +52,7 @@ export async function POST(request: Request) {
   if (!currentProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
 
   const body = await request.json().catch(() => null) as {
-    action?: 'create' | 'delete' | 'update' | 'reset_password' | 'change_email';
+    action?: 'create' | 'delete' | 'update' | 'reset_password' | 'change_email' | 'update_contact';
     userId?: string;
     municipalityId?: string;
     name?: string;
@@ -149,6 +149,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, message: 'E-mail de acesso atualizado com sucesso.' }, {
       headers: { 'Cache-Control': 'no-store' },
     });
+  }
+
+  if (action === 'update_contact') {
+    const userId = body?.userId?.trim();
+    if (!userId) return NextResponse.json({ error: 'Usuário obrigatório.' }, { status: 400 });
+    const { data: target } = await admin.from('profiles')
+      .select('id,role,municipality_id').eq('id', userId).maybeSingle();
+    if (!target || target.role === 'ADMIN') return NextResponse.json({ error: 'Usuário não autorizado.' }, { status: 403 });
+    if (currentProfile.role === 'GESTOR' &&
+        (!currentProfile.municipality_id || target.municipality_id !== currentProfile.municipality_id)) {
+      return NextResponse.json({ error: 'O gestor só pode editar usuários da própria prefeitura.' }, { status: 403 });
+    }
+    const nextName = body?.name?.trim();
+    if (!nextName || nextName.length > 200) return NextResponse.json({ error: 'Informe um nome válido.' }, { status: 400 });
+    const { error } = await admin.from('profiles').update({
+      name: nextName, cpf: body?.cpf?.trim() || null, phone: body?.phone?.trim() || null,
+    }).eq('id', userId);
+    if (error) return NextResponse.json({ error: 'Não foi possível atualizar os dados: ' + error.message }, { status: 400 });
+    await recordHistory(userId, target.municipality_id, 'UPDATE_CONTACT', { role: target.role });
+    return NextResponse.json({ ok: true, message: 'Dados do usuário atualizados.' });
   }
 
   if (action === 'update') {
