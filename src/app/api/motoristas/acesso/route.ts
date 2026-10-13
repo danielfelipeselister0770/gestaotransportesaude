@@ -53,6 +53,21 @@ export async function POST(request: Request) {
     const { error: updateError } = await admin.auth.admin.updateUserById(driver.profile_id, { password, email_confirm: true });
     if (updateError) return NextResponse.json({ error: 'Não foi possível definir a senha definitiva: ' + updateError.message }, { status: 400 });
 
+    // A senha definitiva já foi criada: libere a troca obrigatória antes de
+    // consumir o link, evitando o ciclo /motorista -> /auth/trocar-senha.
+    const { data: completed, error: completionError } = await admin.rpc(
+      'complete_initial_password_change', { p_user_id: driver.profile_id },
+    );
+    if (completionError || !completed) {
+      console.error('Falha ao concluir primeiro acesso do motorista', {
+        code: completionError?.code, message: completionError?.message,
+      });
+      return NextResponse.json({
+        error: 'A senha foi criada, mas não foi possível liberar o acesso. Procure o gestor.',
+        errorCode: completionError?.code ?? 'PROFILE_UPDATE_FAILED',
+      }, { status: 500 });
+    }
+
     const { error: tokenError } = await admin.from('drivers').update({ access_token_used_at: new Date().toISOString() }).eq('id', driver.id);
     if (tokenError) return NextResponse.json({ error: 'Senha criada, mas não foi possível concluir a ativação: ' + tokenError.message }, { status: 500 });
 
