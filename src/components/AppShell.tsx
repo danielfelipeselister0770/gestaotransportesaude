@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, Siren, X } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
-const mobileLinks = [["Dashboard", "/"], ["Pacientes", "/pacientes"], ["Solicitações", "/solicitacoes"], ["Agenda / Viagens", "/viagens"], ["Veículos", "/veiculos"], ["Motoristas", "/motoristas"], ["Estabelecimentos", "/estabelecimentos"], ["Profissionais SUS", "/profissionais"], ["Abastecimentos", "/abastecimentos"], ["Manutenções", "/manutencoes"], ["Ocorrências", "/ocorrencias"], ["Produção SUS", "/producao"], ["Relatórios", "/relatorios"], ["Configurações", "/configuracoes"]] as const;
+const mobileLinks = [["Dashboard", "/"], ["Pacientes", "/pacientes"], ["Solicitações", "/solicitacoes"], ["Agenda / Viagens", "/viagens"], ["Serviços externos", "/servicos-externos"], ["Veículos", "/veiculos"], ["Motoristas", "/motoristas"], ["Estabelecimentos", "/estabelecimentos"], ["Profissionais SUS", "/profissionais"], ["Abastecimentos", "/abastecimentos"], ["Manutenções", "/manutencoes"], ["Ocorrências", "/ocorrencias"], ["Produção SUS", "/producao"], ["Relatórios", "/relatorios"], ["Configurações", "/configuracoes"]] as const;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
