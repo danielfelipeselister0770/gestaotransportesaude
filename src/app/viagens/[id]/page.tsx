@@ -121,6 +121,45 @@ export default function TripDetailPage() {
 
   useEffect(() => { setIdCopied(false); if (tripId) loadData(); }, [tripId]);
 
+  // Atualiza apenas os dados operacionais: nunca substitui campos em edição.
+  useEffect(() => {
+    if (!tripId) return;
+    let active = true;
+    let busy = false;
+    const refreshBoarding = async () => {
+      if (busy || document.visibilityState !== 'visible' || updatingPassengerRef.current) return;
+      busy = true;
+      try {
+        const [passengerResult, tripResult] = await Promise.all([
+          supabase.from('trip_passengers')
+            .select('id,patient_id,request_id,companion,boarding_status,boarding_reason,boarding_recorded_at,observations,patient:patients(name)')
+            .eq('trip_id', tripId).order('created_at'),
+          supabase.from('trips').select('status').eq('id', tripId).maybeSingle(),
+        ]);
+        if (!active) return;
+        if (!passengerResult.error && passengerResult.data) {
+          const updated = passengerResult.data.map((row) => ({
+            ...row,
+            patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
+          })) as Passenger[];
+          setPassengers(updated);
+          setPassengersLoadError(false);
+        }
+        if (!tripResult.error && tripResult.data) {
+          setTrip((current) => current ? { ...current, status: tripResult.data.status as Trip['status'] } : current);
+        }
+      } catch {
+        // Falhas temporárias não apagam os últimos dados exibidos.
+      } finally {
+        busy = false;
+      }
+    };
+    const interval = window.setInterval(() => { void refreshBoarding(); }, 15000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [tripId]);
+
+
+
   async function saveMileage(status?: Trip['status']) {
     if (!trip || saving || updatingPassengerRef.current) return;
     if (observation.trim().length > 2000) {
