@@ -98,16 +98,26 @@ export async function POST(request: Request) {
   if (action === 'reset_password') {
     const userId = body?.userId?.trim();
     const password = body?.password ?? '';
-    if (!userId || password.length < 8) return NextResponse.json({ error: 'Usuário e senha temporária de no mínimo 8 caracteres são obrigatórios.' }, { status: 400 });
-    if (currentProfile.role !== 'ADMIN') return NextResponse.json({ error: 'Apenas o administrador pode redefinir senhas.' }, { status: 403 });
-    const { data: target } = await admin.from('profiles').select('id').eq('id', userId).maybeSingle();
-    if (!target) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+    if (!userId || password.length < 8 || password.length > 128) {
+      return NextResponse.json({ error: 'Usuário e senha temporária de 8 a 128 caracteres são obrigatórios.' }, { status: 400 });
+    }
+    if (userId === currentProfile.id) return NextResponse.json({ error: 'Não é permitido redefinir sua própria senha por esta tela.' }, { status: 403 });
+    const { data: target } = await admin.from('profiles').select('id,role,municipality_id,active').eq('id', userId).maybeSingle();
+    if (!target || !target.active) return NextResponse.json({ error: 'Usuário não encontrado ou inativo.' }, { status: 404 });
+    if (target.role === 'ADMIN' || (currentProfile.role === 'GESTOR' &&
+        (!currentProfile.municipality_id || target.municipality_id !== currentProfile.municipality_id ||
+         !['GESTOR','OPERADOR','MOTORISTA'].includes(target.role)))) {
+      return NextResponse.json({ error: 'Sem permissão para redefinir a senha deste usuário.' }, { status: 403 });
+    }
+    // Primeiro garante a troca obrigatória; se falhar, a senha antiga permanece intacta.
+    const { data: flagged, error: flagError } = await admin.rpc('require_password_change_after_admin_reset', { p_user_id: userId });
+    if (flagError || !flagged) {
+      return NextResponse.json({ error: 'Não foi possível preparar a troca obrigatória. Senha não alterada.' }, { status: 500 });
+    }
     const { error: authError } = await admin.auth.admin.updateUserById(userId, { password });
     if (authError) return NextResponse.json({ error: 'Não foi possível redefinir a senha: ' + authError.message }, { status: 400 });
-    const { error: profileError } = await admin.from('profiles').update({ must_change_password: true }).eq('id', userId);
-    if (profileError) return NextResponse.json({ error: 'Senha redefinida, mas não foi possível exigir a troca no próximo acesso.' }, { status: 500 });
-    await recordHistory(userId, null, 'RESET_PASSWORD');
-    return NextResponse.json({ ok: true, message: 'Senha temporária definida. O usuário deverá trocá-la no próximo acesso.' });
+    await recordHistory(userId, target.municipality_id, 'RESET_PASSWORD', { role: target.role });
+    return NextResponse.json({ ok: true, message: 'Senha provisória definida. O usuário deverá trocá-la no próximo acesso.' });
   }
 
   if (action === 'change_email') {
