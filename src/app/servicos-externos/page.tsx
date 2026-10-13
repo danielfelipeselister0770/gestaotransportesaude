@@ -1,5 +1,5 @@
 'use client';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,6 +15,7 @@ export default function ExternalServicesPage(){
  const [shifts,setShifts]=useState<Shift[]>([]);const [services,setServices]=useState<Service[]>([]);
  const [selected,setSelected]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');const [message,setMessage]=useState('');
+ const [filterDriver,setFilterDriver]=useState('');const [filterVehicle,setFilterVehicle]=useState('');const [dateFrom,setDateFrom]=useState('');const [dateTo,setDateTo]=useState('');const [page,setPage]=useState(1);
  async function reload(m:string,driver:string,r:string){
   const [a,b,c,d]=await Promise.all([
    db.from('driver_work_shifts').select('id,driver_id,vehicle_id,started_at,ended_at,initial_mileage,final_mileage').eq('municipality_id',m).order('started_at',{ascending:false}).limit(100),
@@ -64,6 +65,15 @@ export default function ExternalServicesPage(){
   void act(()=>db.from('driver_work_shifts').update({final_mileage:km,ended_at:new Date().toISOString()}).eq('id',shift.id).is('ended_at',null),'Expediente encerrado.');
  }
  const active=shifts.find(s=>s.id===selected&&!s.ended_at);
+ const filteredShifts=useMemo(()=>shifts.filter(s=>{
+  const day=s.started_at.slice(0,10);
+  return (!filterDriver||s.driver_id===filterDriver)&&(!filterVehicle||s.vehicle_id===filterVehicle)&&(!dateFrom||day>=dateFrom)&&(!dateTo||day<=dateTo);
+ }),[shifts,filterDriver,filterVehicle,dateFrom,dateTo]);
+ const totalPages=Math.max(1,Math.ceil(filteredShifts.length/10));
+ const currentPage=Math.min(page,totalPages);
+ const visibleShifts=filteredShifts.slice((currentPage-1)*10,currentPage*10);
+ const totalKm=filteredShifts.reduce((sum,s)=>sum+(s.final_mileage===null?0:Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage))),0);
+ useEffect(()=>setPage(1),[filterDriver,filterVehicle,dateFrom,dateTo]);
  const input='mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm';
  return <main className="mx-auto max-w-4xl space-y-5 p-4 pb-16 sm:p-8">
   <Link href={role==='MOTORISTA'?'/motorista':'/viagens'} className="text-sm font-medium text-teal-700">← Voltar</Link>
@@ -79,8 +89,15 @@ export default function ExternalServicesPage(){
    </form></section>
    <section className="rounded-2xl border bg-white p-5">
     <h2 className="mb-3 font-semibold">Expedientes e serviços realizados</h2>
+    <div className="mb-4 grid gap-3 sm:grid-cols-2">
+     <label className="text-sm">Motorista<select value={filterDriver} onChange={e=>setFilterDriver(e.target.value)} className={input}><option value="">Todos os motoristas</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
+     <label className="text-sm">Veículo<select value={filterVehicle} onChange={e=>setFilterVehicle(e.target.value)} className={input}><option value="">Todos os veículos</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
+     <label className="text-sm">Data inicial<input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className={input}/></label>
+     <label className="text-sm">Data final<input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className={input}/></label>
+    </div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><span>{filteredShifts.length} expedientes encontrados</span><strong>Total percorrido: {totalKm.toLocaleString('pt-BR',{maximumFractionDigits:1})} km</strong></div>
     <div className="space-y-3">
-     {shifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente.</p>:shifts.map(s=>{
+     {filteredShifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente encontrado para os filtros selecionados.</p>:visibleShifts.map(s=>{
       const expanded=selected===s.id;
       const shiftServices=services.filter(item=>item.shift_id===s.id);
       return <div key={s.id} className={`rounded-xl border text-sm ${expanded?'border-teal-600 bg-teal-50':'border-slate-200 bg-white'}`}>
@@ -109,6 +126,7 @@ export default function ExternalServicesPage(){
       </div>;
      })}
     </div>
+    {totalPages>1&&<nav aria-label="Páginas de expedientes" className="mt-4 flex flex-wrap items-center justify-center gap-2"><button type="button" disabled={currentPage===1} onClick={()=>setPage(currentPage-1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Anterior</button>{Array.from({length:totalPages},(_,i)=><button key={i} type="button" aria-current={currentPage===i+1?'page':undefined} onClick={()=>setPage(i+1)} className={currentPage===i+1?'rounded-lg bg-teal-700 px-3 py-2 text-sm text-white':'rounded-lg border px-3 py-2 text-sm'}>{i+1}</button>)}<button type="button" disabled={currentPage===totalPages} onClick={()=>setPage(currentPage+1)} className="rounded-lg border px-3 py-2 text-sm disabled:opacity-40">Próxima</button></nav>}
    </section>
    {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
     <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
