@@ -99,6 +99,9 @@ export async function POST(request: Request) {
     expires_at: expiresAt,
   });
   if (insertError) {
+    if (insertError.code === 'P0001') {
+      return NextResponse.json({ error: 'Limite de solicitações atingido. Aguarde antes de gerar outro código.' }, { status: 429 });
+    }
     console.error('Falha ao criar código de recuperação:', insertError.code);
     return NextResponse.json({ error: 'Não foi possível gerar o código.' }, { status: 500 });
   }
