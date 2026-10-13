@@ -77,15 +77,44 @@ export default function ExternalServicesPage(){
     <label className="text-sm">KM inicial<input name="km" type="number" min="0" step="0.1" required className={input}/></label>
     <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">Iniciar</button>
    </form></section>
-   <section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Expedientes</h2><div className="space-y-2">
-    {shifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente.</p>:shifts.map(s=><button key={s.id} type="button" onClick={()=>setSelected(s.id)} className={`w-full rounded-xl border p-3 text-left text-sm ${selected===s.id?'border-teal-600 bg-teal-50':'border-slate-200'}`}><span className="flex flex-wrap items-center justify-between gap-2"><strong>{drivers.find(d=>d.id===s.driver_id)?.name??'Motorista'} · {vehicles.find(v=>v.id===s.vehicle_id)?.plate??'Veículo'}</strong><span className={s.ended_at?'rounded-full bg-slate-200 px-2 py-1 text-xs text-slate-700':'rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800'}>{s.ended_at?'Encerrado':'Em andamento'}</span></span><span className="mt-2 grid gap-1 text-slate-700 sm:grid-cols-2"><span>Entrada: {new Date(s.started_at).toLocaleString('pt-BR')}</span><span>Saída: {s.ended_at?new Date(s.ended_at).toLocaleString('pt-BR'):'—'}</span><span>KM inicial: {Number(s.initial_mileage).toLocaleString('pt-BR')}</span><span>KM final: {s.final_mileage!==null?Number(s.final_mileage).toLocaleString('pt-BR'):'—'}</span><span className="font-semibold sm:col-span-2">Distância percorrida: {s.final_mileage!==null?(Number(s.final_mileage)-Number(s.initial_mileage)).toLocaleString('pt-BR')+' km':'Aguardando encerramento'}</span></span></button>)}
-   </div></section>
+   <section className="rounded-2xl border bg-white p-5">
+    <h2 className="mb-3 font-semibold">Expedientes e serviços realizados</h2>
+    <div className="space-y-3">
+     {shifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente.</p>:shifts.map(s=>{
+      const expanded=selected===s.id;
+      const shiftServices=services.filter(item=>item.shift_id===s.id);
+      return <div key={s.id} className={`rounded-xl border text-sm ${expanded?'border-teal-600 bg-teal-50':'border-slate-200 bg-white'}`}>
+       <button type="button" aria-expanded={expanded} onClick={()=>setSelected(expanded?'':s.id)} className="w-full p-3 text-left">
+        <span className="flex flex-wrap items-center justify-between gap-2">
+         <strong>{drivers.find(d=>d.id===s.driver_id)?.name??'Motorista'} · {vehicles.find(v=>v.id===s.vehicle_id)?.plate??'Veículo'}</strong>
+         <span className="flex items-center gap-2"><span className={s.ended_at?'rounded-full bg-slate-200 px-2 py-1 text-xs text-slate-700':'rounded-full bg-emerald-100 px-2 py-1 text-xs text-emerald-800'}>{s.ended_at?'Encerrado':'Em andamento'}</span><span aria-hidden="true">{expanded?'▲':'▼'}</span></span>
+        </span>
+        <span className="mt-2 grid gap-1 text-slate-700 sm:grid-cols-2">
+         <span>Entrada: {new Date(s.started_at).toLocaleString('pt-BR')}</span>
+         <span>Saída: {s.ended_at?new Date(s.ended_at).toLocaleString('pt-BR'):'—'}</span>
+         <span>KM inicial: {Number(s.initial_mileage).toLocaleString('pt-BR')}</span>
+         <span>KM final: {s.final_mileage!==null?Number(s.final_mileage).toLocaleString('pt-BR'):'—'}</span>
+         <span className="font-semibold sm:col-span-2">Distância percorrida: {s.final_mileage!==null?(Number(s.final_mileage)-Number(s.initial_mileage)).toLocaleString('pt-BR')+' km':'Aguardando encerramento'}</span>
+        </span>
+        <span className="mt-2 block text-xs text-slate-600">{shiftServices.length} {shiftServices.length===1?'serviço registrado':'serviços registrados'} · {expanded?'Recolher detalhes':'Ver serviços'}</span>
+       </button>
+       {expanded&&<div className="space-y-2 border-t border-teal-200 p-3">
+        <h3 className="font-semibold">Serviços deste expediente</h3>
+        {shiftServices.length===0?<p className="text-slate-500">Nenhum serviço registrado neste expediente.</p>:shiftServices.map(item=><div key={item.id} className="rounded-lg bg-white p-3">
+         <strong>{labels[item.service_type]??item.service_type}</strong>
+         <p>{item.description}</p>
+         <p className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
+        </div>)}
+       </div>}
+      </div>;
+     })}
+    </div>
+   </section>
    {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
     <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
     <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
     <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
    </form></section>}
-   {selected&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Serviços registrados</h2><div className="space-y-2">{services.filter(s=>s.shift_id===selected).map(s=><div key={s.id} className="rounded-xl bg-slate-50 p-3 text-sm"><strong>{labels[s.service_type]??s.service_type}</strong><p>{s.description}</p><p className="text-xs text-slate-500">{new Date(s.created_at).toLocaleString('pt-BR')}</p></div>)}{!services.some(s=>s.shift_id===selected)&&<p className="text-sm text-slate-500">Nenhum serviço registrado.</p>}</div></section>}
    {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Encerrar expediente</h2><p className="mb-3 text-sm text-slate-600">KM inicial: {active.initial_mileage}. Não é necessário finalizar os serviços individualmente.</p><form onSubmit={finish} className="flex flex-wrap items-end gap-3"><label className="text-sm">KM final<input name="km" type="number" step="0.1" min={active.initial_mileage} required className={input}/></label><button disabled={busy} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-50">Encerrar expediente</button></form></section>}
   </>}
  </main>;
