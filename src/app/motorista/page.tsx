@@ -20,6 +20,8 @@ type Trip = {
 type Passenger = {
   id: string;
   boarding_status: string;
+  boarding_reason?: string | null;
+  boarding_recorded_at?: string | null;
   companion: boolean;
   patient: { name: string } | null;
   observations?: string | null;
@@ -39,6 +41,7 @@ export default function DriverPortalPage() {
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const selectedTripRef = useRef<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [noShowReason, setNoShowReason] = useState<Record<string,string>>({});
   const [passengersLoading, setPassengersLoading] = useState(false);
   const [passengersError, setPassengersError] = useState(false);
   const passengerRequestId = useRef(0);
@@ -209,7 +212,7 @@ export default function DriverPortalPage() {
     try {
       const { data, error } = await supabase
         .from('trip_passengers')
-        .select('id,boarding_status,companion,observations,patient:patients(name)')
+        .select('id,boarding_status,boarding_reason,boarding_recorded_at,companion,observations,patient:patients(name)')
         .eq('trip_id', tripId);
 
       if (requestId !== passengerRequestId.current || (parentRequestId !== undefined && parentRequestId !== tripsRequestId.current)) return;
@@ -240,6 +243,8 @@ export default function DriverPortalPage() {
   }
 
   async function updatePassenger(passenger: Passenger, boardingStatus: 'BOARDED'|'NO_SHOW') {
+    const reason = noShowReason[passenger.id]?.trim();
+    if (boardingStatus === 'NO_SHOW' && !reason) { setMessage('Informe o motivo do não embarque antes de salvar.'); return; }
     if (actionInProgressRef.current) return;
     if (loading || passengersLoading || passengersError) { setMessage('Aguarde a atualização da programação e dos passageiros antes de registrar embarques.'); return; }
     if (syncWarning) { setMessage('Sincronize a programação antes de registrar embarques.'); return; }
@@ -252,13 +257,13 @@ export default function DriverPortalPage() {
       const response = await fetch('/api/motorista/viagem/passageiro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tripId: selectedTripData.id, passengerId: passenger.id, boardingStatus }),
+        body: JSON.stringify({ tripId: selectedTripData.id, passengerId: passenger.id, boardingStatus, reason: boardingStatus === 'NO_SHOW' ? reason : undefined }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
         setMessage(result.error ?? 'Não foi possível atualizar o passageiro.');
       } else {
-        setPassengers(current => current.map(p => p.id === passenger.id ? { ...p, boarding_status: boardingStatus } : p));
+        setPassengers(current => current.map(p => p.id === passenger.id ? { ...p, boarding_status: boardingStatus, boarding_reason: boardingStatus === 'NO_SHOW' ? reason : null, boarding_recorded_at: new Date().toISOString() } : p));
         setMessageTone('success');
         setMessage('Situação de embarque atualizada com sucesso.');
       }
@@ -636,7 +641,17 @@ export default function DriverPortalPage() {
                       <div className="font-medium">{passenger.patient?.name ?? 'Paciente não informado'}</div>
                       <div className="text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
                     </div>
-                    <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" aria-pressed={passenger.boarding_status==='BOARDED'} disabled={actionLoading!==null||loading||passengersLoading||passengersError||syncWarning||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Embarcou'}</button><button type="button" disabled={actionLoading!==null||loading||passengersLoading||passengersError||syncWarning||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} aria-pressed={passenger.boarding_status==='NO_SHOW'} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><X size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Faltou'}</button></div>
+                    <div className="flex flex-col gap-2 sm:items-end">
+                      <div className="text-xs text-slate-500">{passenger.boarding_status === 'BOARDED' ? 'Embarcou' : passenger.boarding_status === 'NO_SHOW' ? 'Não embarcou' : 'Pendente'}{passenger.boarding_recorded_at ? ' • ' + new Date(passenger.boarding_recorded_at).toLocaleString('pt-BR') : ''}</div>
+                      {passenger.boarding_status === 'NO_SHOW' && passenger.boarding_reason && <div className="max-w-xs text-xs text-orange-700">Motivo: {passenger.boarding_reason}</div>}
+                      <select aria-label={`Motivo de não embarque de ${passenger.patient?.name ?? 'passageiro'}`} value={noShowReason[passenger.id] ?? ''} onChange={e => setNoShowReason(s => ({ ...s, [passenger.id]: e.target.value }))} disabled={actionLoading!==null || selectedTripData?.status!=='IN_PROGRESS'} className="w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:w-64">
+                        <option value="">Motivo do não embarque...</option>
+                        <option value="Não compareceu">Não compareceu</option>
+                        <option value="Desistência">Desistência</option>
+                        <option value="Cancelamento informado">Cancelamento informado</option>
+                        <option value="Outro motivo informado à gestão">Outro motivo informado à gestão</option>
+                      </select>
+                    <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" aria-pressed={passenger.boarding_status==='BOARDED'} disabled={actionLoading!==null||loading||passengersLoading||passengersError||syncWarning||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Embarcou'}</button><button type="button" disabled={actionLoading!==null||loading||passengersLoading||passengersError||syncWarning||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} aria-pressed={passenger.boarding_status==='NO_SHOW'} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><X size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Não embarcou'}</button></div></div>
                   </div>
                 ))}
               </div>
