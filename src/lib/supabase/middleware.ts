@@ -30,6 +30,7 @@ export async function updateSession(request: NextRequest) {
     pathname === '/login' ||
     pathname === '/auth/callback' ||
     pathname === '/auth/recuperar-senha' ||
+    pathname === '/api/auth/resgatar-codigo' ||
     pathname === '/motorista/primeiro-acesso' ||
     pathname === '/api/motoristas/acesso';
 
