@@ -108,6 +108,7 @@ export default function RecuperarSenhaPage() {
         <button disabled={busy} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white disabled:opacity-50">{busy ? 'Enviando...' : 'Enviar link de recuperação'}</button>
       </form>)}
       {message && <p role="status" className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">{message}</p>}
+      {!recovery && <a href="/auth/codigo-recuperacao" className="mt-5 block text-sm font-medium text-blue-700 hover:underline">Recebi um código de recuperação</a>}
       <a href="/login" className="mt-5 inline-block text-sm text-blue-700 hover:underline">Voltar ao login</a>
     </div>
   </main>;
