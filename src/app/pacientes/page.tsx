@@ -105,6 +105,7 @@ export default function PatientsPage() {
   const [municipalities, setMunicipalities] = useState<Municipality[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'INACTIVE'>('ACTIVE');
   const [municipalityFilter, setMunicipalityFilter] = useState('ALL');
   const [needsFilter, setNeedsFilter] = useState<'ALL' | 'YES' | 'NO'>('ALL');
@@ -396,8 +397,13 @@ export default function PatientsPage() {
         (companionFilter === 'NO' && !patient.needs_companion);
 
       return matchesSearch && matchesStatus && matchesMunicipality && matchesNeeds && matchesCompanion;
-    });
+    }).sort((a,b) => a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' }) || a.id.localeCompare(b.id));
   }, [patients, search, statusFilter, municipalityFilter, needsFilter, companionFilter]);
+
+  useEffect(() => setPage(1), [search, statusFilter, municipalityFilter, needsFilter, companionFilter]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / 10));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * 10, currentPage * 10);
 
   const indicators = useMemo(() => ({
     total: patients.length,
@@ -483,7 +489,7 @@ export default function PatientsPage() {
             ) : filtered.length === 0 ? (
               <div className="p-8 text-center text-sm text-slate-500">Nenhum paciente encontrado com os filtros atuais.</div>
             ) : (
-              filtered.map((patient) => (
+              paginated.map((patient) => (
                 <div key={patient.id} className="grid gap-3 border-b border-slate-100 px-5 py-4 transition last:border-0 hover:bg-slate-50/70 lg:grid-cols-[2fr_1fr_1fr_1fr_180px] lg:items-center lg:gap-4">
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -516,6 +522,7 @@ export default function PatientsPage() {
               ))
             )}
           </div>
+          {filtered.length > 10 && <nav aria-label="Paginação de pacientes" className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm"><span className="text-slate-500">Página {currentPage} de {totalPages} · {Math.min((currentPage-1)*10+1,filtered.length)}–{Math.min(currentPage*10,filtered.length)} de {filtered.length}</span><div className="flex flex-wrap gap-2"><button type="button" disabled={currentPage===1} onClick={()=>setPage(currentPage-1)} className="rounded-lg border px-3 py-2 disabled:opacity-40">Anterior</button>{Array.from({length:totalPages},(_,i)=>i+1).map(n=><button type="button" key={n} onClick={()=>setPage(n)} aria-current={n===currentPage?'page':undefined} className={`rounded-lg border px-3 py-2 ${n===currentPage?'bg-teal-700 text-white':'bg-white'}`}>{n}</button>)}<button type="button" disabled={currentPage===totalPages} onClick={()=>setPage(currentPage+1)} className="rounded-lg border px-3 py-2 disabled:opacity-40">Próxima</button></div></nav>}
         </div>
       </section>
 
