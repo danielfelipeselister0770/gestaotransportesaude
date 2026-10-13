@@ -210,10 +210,10 @@ export default function DriverPortalPage() {
     if (switchingTrip) setFinishMileage('');
 
     try {
-      const { data, error } = await supabase
-        .from('trip_passengers')
-        .select('id,boarding_status,boarding_reason,boarding_recorded_at,companion,observations,patient:patients(name)')
-        .eq('trip_id', tripId);
+      const response = await fetch(`/api/motorista/viagem/passageiros?tripId=${encodeURIComponent(tripId)}`, { cache: 'no-store' });
+      const payload = await response.json();
+      const data = payload.passengers as Passenger[] | undefined;
+      const error = response.ok ? null : { message: payload.error ?? 'Erro ao consultar passageiros.' };
 
       if (requestId !== passengerRequestId.current || (parentRequestId !== undefined && parentRequestId !== tripsRequestId.current)) return;
       if (error) {
@@ -223,10 +223,13 @@ export default function DriverPortalPage() {
         return;
       }
 
-      setPassengers((data ?? []).map((row) => ({
-        ...row,
-        patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
-      })) as Passenger[]);
+      if ((data ?? []).some(p => !p.patient?.name)) {
+        setPassengersError(true);
+        setMessageTone('warning');
+        setMessage('Há passageiros sem identificação. Solicite à gestão a correção do vínculo antes de registrar embarques.');
+        return;
+      }
+      setPassengers(data ?? []);
       if (recoveringPassengers && !preserveMessage) {
         setMessageTone('success');
         setMessage('Lista de passageiros atualizada com sucesso. Você já pode continuar as operações.');
