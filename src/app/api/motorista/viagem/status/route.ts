@@ -151,15 +151,9 @@ export async function POST(request: Request) {
   if ((boardingRows ?? []).some(row => !['BOARDED', 'NO_SHOW'].includes(row.boarding_status))) {
     return NextResponse.json({ error: 'Registre Embarcou ou Não embarcou para todos os passageiros antes de finalizar.' }, { status: 409 });
   }
-  const linkedRequestIds = [...new Set((boardingRows ?? []).map(row => row.request_id).filter(Boolean))];
-  if (linkedRequestIds.length) {
-    const { data: linkedRequests, error: requestsError } = await admin.from('transport_requests')
-      .select('id,status,municipality_id').in('id', linkedRequestIds);
-    if (requestsError || !linkedRequests || linkedRequests.length !== linkedRequestIds.length ||
-        linkedRequests.some(row => row.municipality_id !== driver.municipality_id || row.status !== 'SCHEDULED')) {
-      return NextResponse.json({ error: 'Há solicitações que não podem ser concluídas. Avise a gestão antes de finalizar a viagem.' }, { status: 409 });
-    }
-  }
+  // A solicitação pode já ter sido sincronizada durante o embarque.
+  // A função transacional valida o status final esperado para cada solicitação,
+  // sob bloqueio no banco, evitando rejeitar uma ausência já registrada.
 
   const { data: result, error: finishError } = await admin.rpc('finish_driver_trip_atomic', {
     p_trip_id: trip.id,
