@@ -75,8 +75,8 @@ export default function ExternalServicesPage(){
   }catch{setError('Não foi possível concluir a operação. Confira os expedientes antes de tentar novamente.');}
   finally{setBusy(false);}
  }
- function add(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();const form=e.currentTarget;const f=new FormData(form);const shift=shifts.find(s=>s.id===selected&&!s.ended_at);
+ function add(e:FormEvent<HTMLFormElement>,shiftId:string){
+  e.preventDefault();const form=e.currentTarget;const f=new FormData(form);const shift=shifts.find(s=>s.id===shiftId&&!s.ended_at);
   const description=String(f.get('description')??'').trim();if(!shift||!description){setError('Selecione um expediente aberto e informe o serviço.');return;}
   void act(()=>db.from('driver_external_services').insert({shift_id:shift.id,municipality_id:municipality,service_type:String(f.get('type')),description,created_by:user}), 'Serviço registrado.');
   form.reset();
@@ -87,8 +87,6 @@ export default function ExternalServicesPage(){
   if(!Number.isFinite(km)||km<Number(shift.initial_mileage)||km<Number(vehicle?.current_mileage??0)){setError('KM final inválido ou menor que o já registrado.');return;}
   void act(()=>db.from('driver_work_shifts').update({final_mileage:km,ended_at:new Date().toISOString()}).eq('id',shift.id).is('ended_at',null),'Expediente encerrado.');
  }
- const active=shifts.find(s=>s.id===selected&&!s.ended_at);
- const openShifts=shifts.filter(s=>!s.ended_at);
  const totalPages=Math.max(1,Math.ceil(totalCount/10));
  const currentPage=page;
  const visibleShifts=shifts;
@@ -133,13 +131,6 @@ export default function ExternalServicesPage(){
        <button disabled={busy} className="rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white disabled:opacity-50">Iniciar expediente</button>
       </form>
      </section>
-     {openShifts.length>0&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
-    {role!=='MOTORISTA'&&<label className="block text-sm">Expediente em andamento<select value={active?.id??''} onChange={e=>setSelected(e.target.value)} required className={input}><option value="">Selecione o expediente</option>{openShifts.map(s=><option key={s.id} value={s.id}>{drivers.find(d=>d.id===s.driver_id)?.name??'Motorista'} · {vehicles.find(v=>v.id===s.vehicle_id)?.plate??'Veículo'} · {new Date(s.started_at).toLocaleString('pt-BR')}</option>)}</select></label>}
-    {role==='MOTORISTA'&&active&&<p className="text-xs text-slate-600">Serviço vinculado ao expediente iniciado em {new Date(active.started_at).toLocaleString('pt-BR')}.</p>}
-    <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
-    <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
-    <button disabled={busy||!active} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
-   </form></section>}
 
 
     </div>
@@ -180,6 +171,12 @@ export default function ExternalServicesPage(){
          <p className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
         </div>)}
        </div>}
+       {!s.ended_at&&expanded&&<form onSubmit={e=>add(e,s.id)} className="space-y-3 border-t border-teal-200 bg-white p-3">
+        <h3 className="font-semibold text-slate-900">Adicionar serviço a este expediente</h3>
+        <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
+        <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
+        <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
+       </form>}
        {!s.ended_at&&expanded&&<form onSubmit={e=>finish(e,s.id)} className="space-y-3 border-t border-teal-200 bg-white p-3">
         <h3 className="font-semibold text-slate-900">Encerrar este expediente</h3>
         <p className="text-xs text-slate-600">KM inicial: {Number(s.initial_mileage).toLocaleString('pt-BR')}. O encerramento não exige finalizar cada serviço.</p>
