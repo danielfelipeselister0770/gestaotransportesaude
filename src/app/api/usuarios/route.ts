@@ -112,7 +112,16 @@ export async function POST(request: Request) {
     // Primeiro garante a troca obrigatória; se falhar, a senha antiga permanece intacta.
     const { data: flagged, error: flagError } = await admin.rpc('require_password_change_after_admin_reset', { p_user_id: userId });
     if (flagError || !flagged) {
-      return NextResponse.json({ error: 'Não foi possível preparar a troca obrigatória. Senha não alterada.' }, { status: 500 });
+      console.error('Falha ao exigir troca de senha provisória', {
+        code: flagError?.code ?? null,
+        message: flagError?.message ?? null,
+        details: flagError?.details ?? null,
+        flagged,
+      });
+      return NextResponse.json({
+        error: 'Não foi possível preparar a troca obrigatória. Senha não alterada.',
+        errorCode: flagError?.code ?? (flagged === false ? 'PROFILE_NOT_FLAGGED' : 'RPC_ERROR'),
+      }, { status: 500 });
     }
     const { error: authError } = await admin.auth.admin.updateUserById(userId, { password });
     if (authError) return NextResponse.json({ error: 'Não foi possível redefinir a senha: ' + authError.message }, { status: 400 });
