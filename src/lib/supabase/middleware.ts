@@ -69,7 +69,9 @@ export async function updateSession(request: NextRequest) {
   const isDriverApi = pathname.startsWith('/api/motorista/');
 
   if (role === 'MOTORISTA') {
-    if (isDriverArea || isDriverApi) {
+    // Permitir a troca obrigatória para evitar redirecionamento circular
+    // quando o perfil ainda estiver com must_change_password=true.
+    if (isDriverArea || isDriverApi || isPasswordChange) {
       return response;
     }
 
