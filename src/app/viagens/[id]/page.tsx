@@ -12,6 +12,8 @@ type Passenger = {
   request_id: string | null;
   companion: boolean;
   boarding_status: 'EXPECTED' | 'BOARDED' | 'NO_SHOW' | 'CANCELLED';
+  boarding_reason: string | null;
+  boarding_recorded_at: string | null;
   observations: string | null;
   patient: { name: string } | null;
 };
@@ -74,7 +76,7 @@ export default function TripDetailPage() {
         .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
         .eq('id', tripId).single(),
       supabase.from('trip_passengers')
-        .select('id,patient_id,request_id,companion,boarding_status,observations,patient:patients(name)')
+        .select('id,patient_id,request_id,companion,boarding_status,boarding_reason,boarding_recorded_at,observations,patient:patients(name)')
         .eq('trip_id', tripId).order('created_at'),
       supabase.from('trip_history').select('id,action,old_status,new_status,note,changed_at').eq('trip_id',tripId).order('changed_at',{ascending:false}),
     ]);
@@ -489,6 +491,11 @@ export default function TripDetailPage() {
                   <div>
                     <div className="font-medium">{passenger.patient?.name ?? 'Paciente não encontrado'}</div>
                     <div className="mt-1 text-xs text-slate-500">{passenger.companion ? 'Com acompanhante' : 'Sem acompanhante'}</div>
+                    <div className="mt-2 text-xs font-medium text-slate-700">
+                      {passenger.boarding_status === 'BOARDED' ? '✓ Embarcou' : passenger.boarding_status === 'NO_SHOW' ? '✕ Não embarcou' : passenger.boarding_status === 'CANCELLED' ? 'Cancelado' : 'Aguardando embarque'}
+                      {passenger.boarding_recorded_at && ' · ' + new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(passenger.boarding_recorded_at))}
+                    </div>
+                    {passenger.boarding_status === 'NO_SHOW' && <div className="mt-1 text-xs text-amber-800">Motivo: {passenger.boarding_reason || 'Não informado'}</div>}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                     <button type="button" disabled={saving || updatingPassengerId !== null || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
