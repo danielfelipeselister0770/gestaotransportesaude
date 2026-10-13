@@ -161,105 +161,21 @@ export async function POST(request: Request) {
     }
   }
 
-  const { data: completedTrip, error: updateTripError } = await admin
-    .from('trips')
-    .update({ status: 'COMPLETED', final_mileage: finalMileage, completed_at: new Date().toISOString() })
-    .eq('id', trip.id)
-    .eq('status', 'IN_PROGRESS')
-    .select('id')
-    .maybeSingle();
-
-  if (updateTripError) {
-    return NextResponse.json({ error: updateTripError.message }, { status: 400 });
-  }
-  if (!completedTrip) {
-    return NextResponse.json({ error: 'Esta viagem já foi finalizada ou alterada. Atualize a programação antes de tentar novamente.' }, { status: 409 });
-  }
-
-  const { data: vehicle, error: vehicleReadError } = await admin
-    .from('vehicles')
-    .select('id,current_mileage')
-    .eq('id', trip.vehicle_id)
-    .maybeSingle();
-
-  if (vehicleReadError || !vehicle) {
-    return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas não foi possível localizar o veículo.' }, { status: 500 });
-  }
-
-  const { data: updatedVehicle, error: vehicleError } = await admin
-    .from('vehicles')
-    .update({ current_mileage: finalMileage, status: 'AVAILABLE' })
-    .eq('id', vehicle.id)
-    .eq('status', 'IN_USE')
-    .select('id')
-    .maybeSingle();
-
-  if (vehicleError || !updatedVehicle) {
-    return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: vehicleError
-      ? `Viagem concluída, mas não foi possível atualizar o veículo: ${vehicleError.message}`
-      : 'Viagem concluída, mas o veículo não estava em uso. Avise a gestão para conferir a situação antes de continuar.' }, { status: vehicleError ? 500 : 409 });
-  }
-
-  const { data: existingMileage, error: mileageReadError } = await admin
-    .from('mileage_records')
-    .select('id')
-    .eq('trip_id', trip.id)
-    .eq('source', 'TRIP')
-    .maybeSingle();
-
-  if (mileageReadError) {
-    return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas não foi possível conferir o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
-  }
-
-  let mileageWriteError;
-  if (existingMileage) {
-    const { error } = await admin
-      .from('mileage_records')
-      .update({ mileage: finalMileage, date: new Date().toISOString(), observations: 'Quilometragem final registrada pelo motorista.' })
-      .eq('id', existingMileage.id);
-    mileageWriteError = error;
-  } else {
-    const { error } = await admin.from('mileage_records').insert({
-      vehicle_id: trip.vehicle_id,
-      trip_id: trip.id,
-      mileage: finalMileage,
-      source: 'TRIP',
-      observations: 'Quilometragem final registrada pelo motorista.',
-      created_by: userId,
-      municipality_id: driver.municipality_id,
+  const { data: result, error: finishError } = await admin.rpc('finish_driver_trip_atomic', {
+    p_trip_id: trip.id,
+    p_driver_user_id: userId,
+    p_final_mileage: finalMileage,
+  });
+  if (finishError || !result) {
+    console.error('Falha na finalização transacional da viagem', {
+      tripId: trip.id,
+      code: finishError?.code ?? null,
+      message: finishError?.message ?? null,
     });
-    mileageWriteError = error;
+    return NextResponse.json({
+      error: 'Não foi possível concluir a viagem. Nenhuma alteração da finalização foi confirmada. Atualize a programação e, se persistir, avise a gestão.',
+      errorCode: finishError?.code ?? 'FINISH_FAILED',
+    }, { status: 409 });
   }
-
-  if (mileageWriteError) {
-    return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas falhou o registro de quilometragem. Avise a gestão; não finalize novamente.' }, { status: 500 });
-  }
-
-  const { error: passengerUpdateError } = await admin.from('trip_passengers').update({ boarding_status: 'NO_SHOW' }).eq('trip_id', trip.id).eq('boarding_status', 'EXPECTED');
-  if (passengerUpdateError) {
-    return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas falhou a atualização dos passageiros. Avise a gestão; não finalize novamente.' }, { status: 500 });
-  }
-
-  const { data: passengers, error: passengersReadError } = await admin
-    .from('trip_passengers')
-    .select('request_id,boarding_status')
-    .eq('trip_id', trip.id)
-    .not('request_id', 'is', null);
-
-  if (passengersReadError) {
-    return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas falhou a consulta dos passageiros vinculados às solicitações. Avise a gestão; não finalize novamente.' }, { status: 500 });
-  }
-
-  const completedIds = [...new Set((passengers ?? []).filter(row => row.boarding_status === 'BOARDED').map(row => row.request_id).filter(Boolean))];
-  const noShowIds = [...new Set((passengers ?? []).filter(row => row.boarding_status !== 'BOARDED').map(row => row.request_id).filter(Boolean))];
-  if (completedIds.length > 0) {
-    const { error } = await admin.from('transport_requests').update({ status: 'COMPLETED' }).in('id', completedIds);
-    if (error) return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas falhou a atualização das solicitações atendidas. Avise a gestão; não finalize novamente.' }, { status: 500 });
-  }
-  if (noShowIds.length > 0) {
-    const { error } = await admin.from('transport_requests').update({ status: 'NO_SHOW' }).in('id', noShowIds);
-    if (error) return NextResponse.json({ completedWithPending: true, tripId: trip.id, error: 'Viagem concluída, mas falhou a atualização das solicitações de não comparecimento. Avise a gestão; não finalize novamente.' }, { status: 500 });
-  }
-
-  return NextResponse.json({ ok: true, status: 'COMPLETED', finalMileage, distance: finalMileage - initialMileage });
+  return NextResponse.json(result);
 }
