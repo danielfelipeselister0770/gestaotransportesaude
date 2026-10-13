@@ -52,13 +52,28 @@ export default function ExternalServicesPage(){
   catch{setError('Não foi possível concluir a operação. Tente novamente.');}
   finally{setBusy(false);}
  }
- function start(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();const f=new FormData(e.currentTarget);
-  const driver=role==='MOTORISTA'?ownDriver:String(f.get('driver'));const vehicle=String(f.get('vehicle'));const km=Number(f.get('km'));
-  if(!driver||!vehicle||!Number.isFinite(km)||km<0){setError('Preencha motorista, veículo e KM inicial.');return;}
+ async function start(e:FormEvent<HTMLFormElement>){
+  e.preventDefault();if(busy)return;
+  const f=new FormData(e.currentTarget);
+  const driver=role==='MOTORISTA'?ownDriver:String(f.get('driver')??'');
+  const vehicle=String(f.get('vehicle')??'');
+  const km=Number(f.get('km'));
+  const type=String(f.get('type')??'');
+  const description=String(f.get('description')??'').trim();
+  if(!driver||!vehicle||!Number.isFinite(km)||km<0||!labels[type]||!description){setError('Preencha motorista, veículo, KM inicial, tipo e descrição do serviço.');return;}
   const v=vehicles.find(x=>x.id===vehicle);
   if(v?.current_mileage!=null&&km<Number(v.current_mileage)){setError('KM inicial menor que o registrado no veículo.');return;}
-  void act(()=>db.from('driver_work_shifts').insert({municipality_id:municipality,driver_id:driver,vehicle_id:vehicle,initial_mileage:km,created_by:user}), 'Expediente iniciado.');
+  setBusy(true);setError('');setMessage('');
+  try{
+   const {data:shift,error:shiftError}=await db.from('driver_work_shifts').insert({municipality_id:municipality,driver_id:driver,vehicle_id:vehicle,initial_mileage:km,created_by:user}).select('id').single();
+   if(shiftError||!shift){setError(shiftError?.message??'Não foi possível iniciar o expediente.');return;}
+   const {error:serviceError}=await db.from('driver_external_services').insert({shift_id:shift.id,municipality_id:municipality,service_type:type,description,created_by:user});
+   if(serviceError){
+    setError('Expediente iniciado, mas o primeiro serviço não foi registrado: '+serviceError.message+' Registre o serviço no expediente aberto antes de prosseguir.');
+   }else{setMessage('Expediente iniciado e primeiro serviço registrado.');}
+   setSelected(shift.id);await reload(municipality,ownDriver,role);
+  }catch{setError('Não foi possível concluir a operação. Confira os expedientes antes de tentar novamente.');}
+  finally{setBusy(false);}
  }
  function add(e:FormEvent<HTMLFormElement>){
   e.preventDefault();const form=e.currentTarget;const f=new FormData(form);const shift=shifts.find(s=>s.id===selected&&!s.ended_at);
@@ -105,12 +120,19 @@ export default function ExternalServicesPage(){
    <section className="rounded-2xl border border-teal-200 bg-teal-50/50 p-4 sm:p-5">
     <h2 className="mb-4 text-lg font-bold text-slate-900">{role==='MOTORISTA'?'Meu expediente':'Gestão de expedientes'}</h2>
     <div className="space-y-4">
-     <section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Iniciar expediente</h2><form onSubmit={start} className="grid gap-3 sm:grid-cols-3">
-    {role!=='MOTORISTA'&&<label className="text-sm">Motorista<select name="driver" required className={input}><option value="">Selecione</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
-    <label className="text-sm">Veículo<select name="vehicle" required className={input}><option value="">Selecione</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
-    <label className="text-sm">KM inicial<input name="km" type="number" min="0" step="0.1" required className={input}/></label>
-    <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">Iniciar</button>
-   </form></section>
+     <section className="rounded-2xl border bg-white p-5">
+      <h3 className="mb-3 font-semibold">Iniciar expediente e registrar primeiro serviço</h3>
+      <form onSubmit={start} className="space-y-3">
+       <div className="grid gap-3 sm:grid-cols-2">
+        {role!=='MOTORISTA'&&<label className="text-sm">Motorista<select name="driver" required className={input}><option value="">Selecione</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
+        <label className="text-sm">Veículo<select name="vehicle" required className={input}><option value="">Selecione</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
+        <label className="text-sm">KM inicial<input name="km" type="number" min="0" step="0.1" required className={input}/></label>
+        <label className="text-sm">Tipo de serviço<select name="type" required className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
+       </div>
+       <label className="block text-sm">Descrição do primeiro serviço<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
+       <button disabled={busy} className="rounded-xl bg-teal-700 px-5 py-3 font-semibold text-white disabled:opacity-50">Iniciar expediente</button>
+      </form>
+     </section>
      {openShifts.length>0&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
     {role!=='MOTORISTA'&&<label className="block text-sm">Expediente em andamento<select value={active?.id??''} onChange={e=>setSelected(e.target.value)} required className={input}><option value="">Selecione o expediente</option>{openShifts.map(s=><option key={s.id} value={s.id}>{drivers.find(d=>d.id===s.driver_id)?.name??'Motorista'} · {vehicles.find(v=>v.id===s.vehicle_id)?.plate??'Veículo'} · {new Date(s.started_at).toLocaleString('pt-BR')}</option>)}</select></label>}
     {role==='MOTORISTA'&&active&&<p className="text-xs text-slate-600">Serviço vinculado ao expediente iniciado em {new Date(active.started_at).toLocaleString('pt-BR')}.</p>}
