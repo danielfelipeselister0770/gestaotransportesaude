@@ -73,6 +73,7 @@ export default function ExternalServicesPage(){
   void act(()=>db.from('driver_work_shifts').update({final_mileage:km,ended_at:new Date().toISOString()}).eq('id',shift.id).is('ended_at',null),'Expediente encerrado.');
  }
  const active=shifts.find(s=>s.id===selected&&!s.ended_at);
+ const openShifts=shifts.filter(s=>!s.ended_at);
  const totalPages=Math.max(1,Math.ceil(totalCount/10));
  const currentPage=page;
  const visibleShifts=shifts;
@@ -87,7 +88,7 @@ export default function ExternalServicesPage(){
   {message&&<p role="status" className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800">{message}</p>}
   {loading?<p>Carregando...</p>:user&&<>
    <section className="rounded-2xl border border-teal-200 bg-teal-50/50 p-4 sm:p-5">
-    <h2 className="mb-4 text-lg font-bold text-slate-900">Meu expediente</h2>
+    <h2 className="mb-4 text-lg font-bold text-slate-900">{role==='MOTORISTA'?'Meu expediente':'Gestão de expedientes'}</h2>
     <div className="space-y-4">
      <section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Iniciar expediente</h2><form onSubmit={start} className="grid gap-3 sm:grid-cols-3">
     {role!=='MOTORISTA'&&<label className="text-sm">Motorista<select name="driver" required className={input}><option value="">Selecione</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>}
@@ -95,17 +96,19 @@ export default function ExternalServicesPage(){
     <label className="text-sm">KM inicial<input name="km" type="number" min="0" step="0.1" required className={input}/></label>
     <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">Iniciar</button>
    </form></section>
-     {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
+     {openShifts.length>0&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Registrar serviço</h2><form onSubmit={add} className="space-y-3">
+    {role!=='MOTORISTA'&&<label className="block text-sm">Expediente em andamento<select value={active?.id??''} onChange={e=>setSelected(e.target.value)} required className={input}><option value="">Selecione o expediente</option>{openShifts.map(s=><option key={s.id} value={s.id}>{drivers.find(d=>d.id===s.driver_id)?.name??'Motorista'} · {vehicles.find(v=>v.id===s.vehicle_id)?.plate??'Veículo'} · {new Date(s.started_at).toLocaleString('pt-BR')}</option>)}</select></label>}
+    {role==='MOTORISTA'&&active&&<p className="text-xs text-slate-600">Serviço vinculado ao expediente iniciado em {new Date(active.started_at).toLocaleString('pt-BR')}.</p>}
     <label className="block text-sm">Tipo<select name="type" className={input}>{Object.entries(labels).map(([key,value])=><option key={key} value={key}>{value}</option>)}</select></label>
     <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
-    <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
+    <button disabled={busy||!active} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
    </form></section>}
 
 
     </div>
    </section>
    <section className="rounded-2xl border bg-white p-5">
-    <h2 className="mb-3 font-semibold">Histórico de expedientes e serviços</h2>
+    <h2 className="mb-3 font-semibold">Consultar expedientes e serviços</h2><p className="mb-4 text-sm text-slate-600">Filtre o histórico, confira os serviços e encerre um expediente em andamento diretamente no cartão correspondente.</p>
     <div className="mb-4 grid gap-3 sm:grid-cols-2">
      <label className="text-sm">Motorista<select value={filterDriver} onChange={e=>setFilterDriver(e.target.value)} className={input}><option value="">Todos os motoristas</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
      <label className="text-sm">Veículo<select value={filterVehicle} onChange={e=>setFilterVehicle(e.target.value)} className={input}><option value="">Todos os veículos</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
