@@ -40,7 +40,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [menuOpen]);
   useEffect(() => { setMenuOpen(false); }, [pathname]);
-  const isPublic = pathname === '/login' || pathname.startsWith('/auth/') || pathname.startsWith('/motorista/');
+  const isPublic = pathname === '/login' || pathname.startsWith('/auth/') || pathname === '/motorista' || pathname.startsWith('/motorista/');
   if (isPublic) return <>{children}</>;
 
   return (
