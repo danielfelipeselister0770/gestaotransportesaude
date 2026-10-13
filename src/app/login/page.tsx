@@ -70,6 +70,10 @@ export default function LoginPage() {
             <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">{errorMessage}</div>
           )}
 
+          <div className="text-right">
+            <a href="/auth/recuperar-senha" className="text-sm font-medium text-blue-700 hover:underline">Esqueci minha senha</a>
+          </div>
+
           <button type="submit" disabled={loading}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60">
             <LogIn size={18} />
