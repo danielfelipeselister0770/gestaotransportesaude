@@ -1,5 +1,5 @@
 'use client';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
@@ -15,17 +15,25 @@ export default function ExternalServicesPage(){
  const [shifts,setShifts]=useState<Shift[]>([]);const [services,setServices]=useState<Service[]>([]);
  const [selected,setSelected]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');const [message,setMessage]=useState('');
- const [filterDriver,setFilterDriver]=useState('');const [filterVehicle,setFilterVehicle]=useState('');const [dateFrom,setDateFrom]=useState('');const [dateTo,setDateTo]=useState('');const [page,setPage]=useState(1);
+ const [filterDriver,setFilterDriver]=useState('');const [filterVehicle,setFilterVehicle]=useState('');const [dateFrom,setDateFrom]=useState('');const [dateTo,setDateTo]=useState('');const [page,setPage]=useState(1);const [totalCount,setTotalCount]=useState(0);
  async function reload(m:string,driver:string,r:string){
-  const [a,b,c,d]=await Promise.all([
-   db.from('driver_work_shifts').select('id,driver_id,vehicle_id,started_at,ended_at,initial_mileage,final_mileage').eq('municipality_id',m).order('started_at',{ascending:false}).limit(100),
-   db.from('driver_external_services').select('id,shift_id,service_type,description,created_at').eq('municipality_id',m).order('created_at',{ascending:false}).limit(300),
+  let query=db.from('driver_work_shifts').select('id,driver_id,vehicle_id,started_at,ended_at,initial_mileage,final_mileage',{count:'exact'}).eq('municipality_id',m);
+  if(r==='MOTORISTA')query=query.eq('driver_id',driver);
+  else if(filterDriver)query=query.eq('driver_id',filterDriver);
+  if(filterVehicle)query=query.eq('vehicle_id',filterVehicle);
+  if(dateFrom)query=query.gte('started_at',new Date(dateFrom+'T00:00:00-03:00').toISOString());
+  if(dateTo)query=query.lt('started_at',new Date(new Date(dateTo+'T00:00:00-03:00').getTime()+86400000).toISOString());
+  const [a,c,d]=await Promise.all([
+   query.order('started_at',{ascending:false}).range((page-1)*10,page*10-1),
    db.from('drivers').select('id,name').eq('municipality_id',m).eq('active',true).order('name'),
    db.from('vehicles').select('id,plate,current_mileage').eq('municipality_id',m).order('plate')
   ]);
-  const failure=a.error||b.error||c.error||d.error;if(failure){setError(failure.message);return;}
-  const visible=(a.data??[]).filter(x=>r!=='MOTORISTA'||x.driver_id===driver) as Shift[];
-  setShifts(visible);setServices((b.data??[]).filter(x=>visible.some(s=>s.id===x.shift_id)) as Service[]);
+  const failure=a.error||c.error||d.error;if(failure){setError(failure.message);return;}
+  const visible=(a.data??[]) as Shift[];
+  const ids=visible.map(s=>s.id);
+  const b=ids.length?await db.from('driver_external_services').select('id,shift_id,service_type,description,created_at').in('shift_id',ids).order('created_at',{ascending:false}):null;
+  if(b?.error){setError(b.error.message);return;}
+  setTotalCount(a.count??0);setShifts(visible);setServices((b?.data??[]) as Service[]);
   setDrivers((c.data??[]).filter(x=>r!=='MOTORISTA'||x.id===driver));setVehicles(d.data??[]);
   setSelected(previous=>visible.some(s=>s.id===previous)?previous:(visible.find(s=>!s.ended_at)?.id??visible[0]?.id??''));
  }
@@ -65,15 +73,12 @@ export default function ExternalServicesPage(){
   void act(()=>db.from('driver_work_shifts').update({final_mileage:km,ended_at:new Date().toISOString()}).eq('id',shift.id).is('ended_at',null),'Expediente encerrado.');
  }
  const active=shifts.find(s=>s.id===selected&&!s.ended_at);
- const filteredShifts=useMemo(()=>shifts.filter(s=>{
-  const day=s.started_at.slice(0,10);
-  return (!filterDriver||s.driver_id===filterDriver)&&(!filterVehicle||s.vehicle_id===filterVehicle)&&(!dateFrom||day>=dateFrom)&&(!dateTo||day<=dateTo);
- }),[shifts,filterDriver,filterVehicle,dateFrom,dateTo]);
- const totalPages=Math.max(1,Math.ceil(filteredShifts.length/10));
- const currentPage=Math.min(page,totalPages);
- const visibleShifts=filteredShifts.slice((currentPage-1)*10,currentPage*10);
- const totalKm=filteredShifts.reduce((sum,s)=>sum+(s.final_mileage===null?0:Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage))),0);
+ const totalPages=Math.max(1,Math.ceil(totalCount/10));
+ const currentPage=page;
+ const visibleShifts=shifts;
+ const pageKm=shifts.reduce((sum,s)=>sum+(s.final_mileage===null?0:Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage))),0);
  useEffect(()=>setPage(1),[filterDriver,filterVehicle,dateFrom,dateTo]);
+ useEffect(()=>{if(municipality)void reload(municipality,ownDriver,role);},[municipality,ownDriver,role,filterDriver,filterVehicle,dateFrom,dateTo,page]);
  const input='mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm';
  return <main className="mx-auto max-w-4xl space-y-5 p-4 pb-16 sm:p-8">
   <Link href={role==='MOTORISTA'?'/motorista':'/viagens'} className="text-sm font-medium text-teal-700">← Voltar</Link>
@@ -95,9 +100,9 @@ export default function ExternalServicesPage(){
      <label className="text-sm">Data inicial<input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className={input}/></label>
      <label className="text-sm">Data final<input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className={input}/></label>
     </div>
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><span>{filteredShifts.length} expedientes encontrados</span><strong>Total percorrido: {totalKm.toLocaleString('pt-BR',{maximumFractionDigits:1})} km</strong></div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><span>{totalCount} expedientes encontrados</span><strong>KM nesta página: {pageKm.toLocaleString('pt-BR',{maximumFractionDigits:1})} km</strong></div>
     <div className="space-y-3">
-     {filteredShifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente encontrado para os filtros selecionados.</p>:visibleShifts.map(s=>{
+     {visibleShifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente encontrado para os filtros selecionados.</p>:visibleShifts.map(s=>{
       const expanded=selected===s.id;
       const shiftServices=services.filter(item=>item.shift_id===s.id);
       return <div key={s.id} className={`rounded-xl border text-sm ${expanded?'border-teal-600 bg-teal-50':'border-slate-200 bg-white'}`}>
