@@ -38,7 +38,7 @@ export default function CodigoRecuperacaoPage() {
       setCode('');
       setPassword('');
       setConfirm('');
-      setMessage('Senha atualizada. Volte ao login e entre com sua nova senha.');
+      setMessage(result.message || 'Senha atualizada. Volte ao login e entre com sua nova senha.');
     } catch {
       setMessage('Falha de conexão. Tente novamente.');
     } finally {
