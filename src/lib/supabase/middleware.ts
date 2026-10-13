@@ -29,6 +29,7 @@ export async function updateSession(request: NextRequest) {
   const publicAuthPath =
     pathname === '/login' ||
     pathname === '/auth/callback' ||
+    pathname === '/auth/recuperar-senha' ||
     pathname === '/motorista/primeiro-acesso' ||
     pathname === '/api/motoristas/acesso';
 
