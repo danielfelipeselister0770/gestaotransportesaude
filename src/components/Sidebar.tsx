@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, Ambulance, Building2, CalendarDays, ClipboardList, FileBarChart, Fuel, LayoutDashboard, Settings, Stethoscope, TriangleAlert, UserRound, UsersRound, Wrench } from 'lucide-react';
+import { Activity, Ambulance, Building2, CalendarDays, ClipboardList, FileBarChart, Fuel, LayoutDashboard, LogOut, Settings, Stethoscope, TriangleAlert, UserRound, UsersRound, Wrench } from 'lucide-react';
 
 const nav = [
   ['Dashboard', '/', LayoutDashboard],
@@ -40,7 +40,13 @@ export default function Sidebar() {
           </Link>;
         })}
       </nav>
-      <div className="border-t border-white/10 px-5 py-4 text-xs text-slate-400"><div className="font-medium text-slate-300">Sistema municipal</div><div className="mt-1">Operação • SUS • Frota</div></div>
+      <div className="shrink-0 border-t border-white/10 px-3 py-3">
+        <form action="/auth/signout" method="post">
+          <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-slate-200 transition hover:bg-white/10 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-300" title="Sair da VitaRota">
+            <LogOut size={18} strokeWidth={1.9} /><span>Sair da conta</span>
+          </button>
+        </form>
+      </div>
     </aside>
   );
 }
