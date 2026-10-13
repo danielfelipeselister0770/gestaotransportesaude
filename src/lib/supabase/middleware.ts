@@ -71,7 +71,7 @@ export async function updateSession(request: NextRequest) {
   if (role === 'MOTORISTA') {
     // Permitir a troca obrigatória para evitar redirecionamento circular
     // quando o perfil ainda estiver com must_change_password=true.
-    if (isDriverArea || isDriverApi || isPasswordChange) {
+    if (isDriverArea || isDriverApi || isPasswordChange || pathname === '/servicos-externos') {
       return response;
     }
 
