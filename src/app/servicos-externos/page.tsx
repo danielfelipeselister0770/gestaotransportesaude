@@ -66,8 +66,8 @@ export default function ExternalServicesPage(){
   void act(()=>db.from('driver_external_services').insert({shift_id:shift.id,municipality_id:municipality,service_type:String(f.get('type')),description,created_by:user}), 'Serviço registrado.');
   form.reset();
  }
- function finish(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();const shift=shifts.find(s=>s.id===selected&&!s.ended_at);if(!shift)return;
+ function finish(e:FormEvent<HTMLFormElement>,shiftId:string){
+  e.preventDefault();const shift=shifts.find(s=>s.id===shiftId&&!s.ended_at);if(!shift)return;
   const km=Number(new FormData(e.currentTarget).get('km'));const vehicle=vehicles.find(v=>v.id===shift.vehicle_id);
   if(!Number.isFinite(km)||km<Number(shift.initial_mileage)||km<Number(vehicle?.current_mileage??0)){setError('KM final inválido ou menor que o já registrado.');return;}
   void act(()=>db.from('driver_work_shifts').update({final_mileage:km,ended_at:new Date().toISOString()}).eq('id',shift.id).is('ended_at',null),'Expediente encerrado.');
@@ -100,7 +100,7 @@ export default function ExternalServicesPage(){
     <label className="block text-sm">Descrição rápida<input name="description" maxLength={1000} required className={input} placeholder="Ex.: UBS Centro — visitas domiciliares"/></label>
     <button disabled={busy} className="rounded-xl bg-teal-700 px-4 py-3 font-semibold text-white disabled:opacity-50">+ Registrar serviço</button>
    </form></section>}
-     {active&&<section className="rounded-2xl border bg-white p-5"><h2 className="mb-3 font-semibold">Encerrar expediente</h2><p className="mb-3 text-sm text-slate-600">KM inicial: {active.initial_mileage}. Não é necessário finalizar os serviços individualmente.</p><form onSubmit={finish} className="flex flex-wrap items-end gap-3"><label className="text-sm">KM final<input name="km" type="number" step="0.1" min={active.initial_mileage} required className={input}/></label><button disabled={busy} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-50">Encerrar expediente</button></form></section>}
+
 
     </div>
    </section>
@@ -140,6 +140,14 @@ export default function ExternalServicesPage(){
          <p className="text-xs text-slate-500">{new Date(item.created_at).toLocaleString('pt-BR')}</p>
         </div>)}
        </div>}
+       {!s.ended_at&&expanded&&<form onSubmit={e=>finish(e,s.id)} className="space-y-3 border-t border-teal-200 bg-white p-3">
+        <h3 className="font-semibold text-slate-900">Encerrar este expediente</h3>
+        <p className="text-xs text-slate-600">KM inicial: {Number(s.initial_mileage).toLocaleString('pt-BR')}. O encerramento não exige finalizar cada serviço.</p>
+        <div className="flex flex-wrap items-end gap-3">
+         <label className="text-sm">KM final<input name="km" type="number" step="0.1" min={s.initial_mileage} required className={input}/></label>
+         <button disabled={busy} className="rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white disabled:opacity-50">Encerrar expediente</button>
+        </div>
+       </form>}
       </div>;
      })}
     </div>
