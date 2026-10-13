@@ -95,7 +95,7 @@ export default function RequestsPage(){
   const q=search.toLowerCase().trim(), digits=search.replace(/\D/g,'');
   const hit=!q||(r.patient?.name??'').toLowerCase().includes(q)||(r.patient?.cpf??'').includes(digits)||r.origin.toLowerCase().includes(q)||r.destination.toLowerCase().includes(q)||(r.purpose??'').toLowerCase().includes(q);
   return hit&&(status==='ALL'||r.status===status)&&(unit==='ALL'||r.health_unit_id===unit)&&(!date||r.date===date);
- }).sort((a,b)=>b.date.localeCompare(a.date)||b.time.localeCompare(a.time)||b.created_at.localeCompare(a.created_at)||a.id.localeCompare(b.id)),[requests,search,status,unit,date]);
+ }).sort((a,b)=>b.date.localeCompare(a.date)||(b.time ?? '').localeCompare(a.time ?? '')||b.created_at.localeCompare(a.created_at)||a.id.localeCompare(b.id)),[requests,search,status,unit,date]);
  const totalPages=Math.max(1,Math.ceil(filtered.length/10));
  const currentPage=Math.min(page,totalPages);
  const paginated=filtered.slice((currentPage-1)*10,currentPage*10);
