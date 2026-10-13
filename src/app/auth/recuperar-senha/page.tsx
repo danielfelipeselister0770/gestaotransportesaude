@@ -14,13 +14,49 @@ export default function RecuperarSenhaPage() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
+    let active = true;
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
+      if (event === 'PASSWORD_RECOVERY' && active) {
         setRecovery(true);
         setMessage('');
       }
     });
-    return () => subscription.unsubscribe();
+
+    async function processRecoveryLink() {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      const tokenHash = url.searchParams.get('token_hash');
+      const hash = new URLSearchParams(url.hash.slice(1));
+      const accessToken = hash.get('access_token');
+      const refreshToken = hash.get('refresh_token');
+      const recoveryLink = Boolean(code || tokenHash || (accessToken && refreshToken) || hash.get('type') === 'recovery');
+      if (!recoveryLink) return;
+
+      let error: { message: string } | null = null;
+      if (code) {
+        ({ error } = await supabase.auth.exchangeCodeForSession(code));
+      } else if (tokenHash) {
+        ({ error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: 'recovery' }));
+      } else if (accessToken && refreshToken) {
+        ({ error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }));
+      }
+      if (!active) return;
+      if (error) {
+        setMessage('O link de recuperação expirou ou é inválido. Solicite um novo link.');
+        return;
+      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!active) return;
+      if (session) {
+        setRecovery(true);
+        setMessage('');
+        window.history.replaceState({}, '', url.pathname);
+      } else {
+        setMessage('Não foi possível validar o link. Solicite um novo link de recuperação.');
+      }
+    }
+    void processRecoveryLink();
+    return () => { active = false; subscription.unsubscribe(); };
   }, [supabase]);
 
   async function sendLink(event: FormEvent<HTMLFormElement>) {
