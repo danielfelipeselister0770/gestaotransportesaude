@@ -37,7 +37,7 @@ export default function ExternalServicesPage(){
   if(!mounted)return;setUser(u.id);setRole(p.role);setMunicipality(p.municipality_id);setOwnDriver(driver);
   await reload(p.municipality_id,driver,p.role);if(mounted)setLoading(false);
  })();return()=>{mounted=false;};},[]);
- async function act(operation:()=>Promise<{error:{message:string}|null}>,success:string){
+ async function act(operation:()=>PromiseLike<{error:{message:string}|null}>,success:string){
   if(busy)return;setBusy(true);setError('');setMessage('');
   try{const result=await operation();if(result.error)setError(result.error.message);else{setMessage(success);await reload(municipality,ownDriver,role);}}
   catch{setError('Não foi possível concluir a operação. Tente novamente.');}
