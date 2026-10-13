@@ -60,6 +60,7 @@ export default function ConfiguracoesPage() {
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState<Profile | null>(null);
   const [editingEmail, setEditingEmail] = useState('Consultando e-mail...');
+  const [originalEditingEmail, setOriginalEditingEmail] = useState('');
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [userMunicipalityId, setUserMunicipalityId] = useState('');
   const [userName, setUserName] = useState('');
@@ -268,7 +269,8 @@ export default function ConfiguracoesPage() {
     try {
       const response = await fetch('/api/usuarios?userId=' + encodeURIComponent(userId), { cache: 'no-store' });
       const result = await response.json() as { email?: string | null; error?: string };
-      setEditingEmail(current => current === 'Consultando e-mail...' ? (response.ok ? (result.email || 'E-mail não informado') : (result.error || 'Não foi possível consultar o e-mail.')) : current);
+      setEditingEmail(current => current === 'Consultando e-mail...' ? (response.ok ? (result.email || '') : '') : current);
+      if (response.ok) setOriginalEditingEmail(result.email || '');
     } catch {
       setEditingEmail(current => current === 'Consultando e-mail...' ? 'Não foi possível consultar o e-mail.' : current);
     }
@@ -278,6 +280,7 @@ export default function ConfiguracoesPage() {
     modalOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setEditing(profile);
     setEditingEmail('Consultando e-mail...');
+    setOriginalEditingEmail('');
     void loadEditingEmail(profile.id);
     setName(profile.name);
     setCpf(profile.cpf ?? '');
@@ -299,6 +302,27 @@ export default function ConfiguracoesPage() {
     if (!editing) return;
     setSaving(true);
     setMessage('');
+
+    if (editingEmail.trim().toLowerCase() !== originalEditingEmail.trim().toLowerCase()) {
+      if (!originalEditingEmail || !editingEmail.includes('@')) {
+        setMessage('Aguarde a consulta do e-mail e informe um endereço válido.');
+        setSaving(false);
+        return;
+      }
+      const confirmed = window.confirm('Alterar o e-mail de acesso deste usuário? Ele deverá utilizar o novo e-mail no próximo login.');
+      if (!confirmed) { setSaving(false); return; }
+      const emailResponse = await fetch('/api/usuarios', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'change_email', userId: editing.id, email: editingEmail.trim() }),
+      });
+      const emailResult = await emailResponse.json().catch(() => ({}));
+      if (!emailResponse.ok) {
+        setMessage(emailResult.error ?? 'Não foi possível alterar o e-mail.');
+        setSaving(false);
+        return;
+      }
+    }
 
     const response = await fetch('/api/usuarios', {
       method: 'POST',
@@ -523,7 +547,7 @@ export default function ConfiguracoesPage() {
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="text-sm sm:col-span-2">E-mail de acesso<div className="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-slate-700 break-all">{editingEmail}</div><p className="mt-1 text-xs text-slate-500">E-mail consultado no cadastro de autenticação. Somente leitura.</p></div>
+                  <label className="text-sm sm:col-span-2">E-mail de acesso<input type="email" value={editingEmail} onChange={(e) => setEditingEmail(e.target.value)} disabled={!originalEditingEmail || editing.id === currentUserId || editing.role === "ADMIN"} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-3 text-slate-700 disabled:bg-slate-50" /><span className="mt-1 block text-xs text-slate-500">ADMIN ou GESTOR autorizado pode corrigir o e-mail de outro usuário. A alteração será registrada no histórico.</span></label>
                   <label className="text-sm sm:col-span-2">Nome<input autoFocus value={name} onChange={(e) => setName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">CPF<input value={cpf} onChange={(e) => setCpf(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Telefone<input value={phone} onChange={(e) => setPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
