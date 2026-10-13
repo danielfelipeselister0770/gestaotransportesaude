@@ -5,7 +5,6 @@ import { createClient } from '@/lib/supabase/client';
 
 export default function RecuperarSenhaPage() {
   const [supabase] = useState(() => createClient());
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [recovery, setRecovery] = useState(false);
@@ -59,25 +58,6 @@ export default function RecuperarSenhaPage() {
     return () => { active = false; subscription.unsubscribe(); };
   }, [supabase]);
 
-  async function sendLink(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setBusy(true);
-    setMessage('');
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: window.location.origin + '/auth/recuperar-senha',
-    });
-    setBusy(false);
-    if (error) {
-      const limited = error.code === 'over_email_send_rate_limit' || error.status === 429;
-      setMessage(limited
-        ? 'Limite temporário de envio de e-mails atingido. Aguarde antes de solicitar outro link.'
-        : 'Não foi possível solicitar a recuperação. Tente novamente mais tarde.');
-      return;
-    }
-    setDone(true);
-    setMessage('Se o e-mail estiver cadastrado, você receberá um link para redefinir a senha. Confira também o spam.');
-  }
-
   async function savePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (password.length < 8) return setMessage('A senha precisa ter pelo menos 8 caracteres.');
@@ -98,17 +78,14 @@ export default function RecuperarSenhaPage() {
   return <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
     <div className="w-full max-w-md rounded-2xl border bg-white p-8 shadow-sm">
       <h1 className="text-2xl font-bold text-slate-900">{recovery ? 'Definir nova senha' : 'Recuperar acesso'}</h1>
-      <p className="mt-2 text-sm text-slate-600">{recovery ? 'Crie uma senha segura para sua conta.' : 'Informe seu e-mail para receber um link de recuperação.'}</p>
+      <p className="mt-2 text-sm text-slate-600">{recovery ? 'Crie uma senha segura para sua conta.' : 'Solicite um código de recuperação ao gestor autorizado da sua prefeitura. Se você for o único gestor, procure o administrador geral.'}</p>
       {!done && (recovery ? <form onSubmit={savePassword} className="mt-6 space-y-4">
         <label className="block text-sm">Nova senha<input type="password" required minLength={8} autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2.5" /></label>
         <label className="block text-sm">Confirmar senha<input type="password" required minLength={8} autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2.5" /></label>
         <button disabled={busy} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white disabled:opacity-50">{busy ? 'Salvando...' : 'Salvar nova senha'}</button>
-      </form> : <form onSubmit={sendLink} className="mt-6 space-y-4">
-        <label className="block text-sm">E-mail<input type="email" required autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} className="mt-1 w-full rounded-lg border px-3 py-2.5" /></label>
-        <button disabled={busy} className="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-white disabled:opacity-50">{busy ? 'Enviando...' : 'Enviar link de recuperação'}</button>
-      </form>)}
+      </form> : null)}
       {message && <p role="status" className="mt-4 rounded-lg bg-slate-100 p-3 text-sm text-slate-700">{message}</p>}
-      {!recovery && <a href="/auth/codigo-recuperacao" className="mt-5 block text-sm font-medium text-blue-700 hover:underline">Recebi um código de recuperação</a>}
+      {!recovery && <a href="/auth/codigo-recuperacao" className="mt-5 block rounded-lg bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-slate-800">Informar código de recuperação</a>}
       <a href="/login" className="mt-5 inline-block text-sm text-blue-700 hover:underline">Voltar ao login</a>
     </div>
   </main>;
