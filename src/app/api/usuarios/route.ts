@@ -28,6 +28,25 @@ async function getCurrentProfile() {
   return profile;
 }
 
+export async function GET(request: Request) {
+  const actor = await getCurrentProfile();
+  if (!actor) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const userId = new URL(request.url).searchParams.get('userId')?.trim();
+  if (!userId || !/^[0-9a-f-]{36}$/i.test(userId)) {
+    return NextResponse.json({ error: 'Usuário inválido.' }, { status: 400 });
+  }
+  const admin = adminClient();
+  const { data: target, error: targetError } = await admin.from('profiles')
+    .select('id,role,municipality_id').eq('id', userId).maybeSingle();
+  if (targetError || !target) return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+  if (actor.role === 'GESTOR' && (target.municipality_id !== actor.municipality_id || target.role === 'ADMIN')) {
+    return NextResponse.json({ error: 'Sem permissão para este usuário.' }, { status: 403 });
+  }
+  const { data, error } = await admin.auth.admin.getUserById(userId);
+  if (error || !data.user) return NextResponse.json({ error: 'Não foi possível consultar o e-mail.' }, { status: 502 });
+  return NextResponse.json({ email: data.user.email ?? null }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
 export async function POST(request: Request) {
   const currentProfile = await getCurrentProfile();
   if (!currentProfile) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
