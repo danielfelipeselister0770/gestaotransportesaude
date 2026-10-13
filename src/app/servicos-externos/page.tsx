@@ -80,6 +80,21 @@ export default function ExternalServicesPage(){
  const pageKm=shifts.reduce((sum,s)=>sum+(s.final_mileage===null?0:Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage))),0);
  useEffect(()=>setPage(1),[filterDriver,filterVehicle,dateFrom,dateTo]);
  useEffect(()=>{if(municipality)void reload(municipality,ownDriver,role);},[municipality,ownDriver,role,filterDriver,filterVehicle,dateFrom,dateTo,page]);
+ useEffect(()=>{
+  if(!municipality)return;
+  let activeSubscription=true;
+  let pending:ReturnType<typeof setTimeout>|null=null;
+  const refresh=()=>{if(!activeSubscription)return;if(pending)clearTimeout(pending);pending=setTimeout(()=>{if(activeSubscription)void reload(municipality,ownDriver,role);},250);};
+  const channel=db.channel('external-shifts-'+municipality)
+   .on('postgres_changes',{event:'*',schema:'public',table:'driver_work_shifts',filter:'municipality_id=eq.'+municipality},refresh)
+   .on('postgres_changes',{event:'*',schema:'public',table:'driver_external_services',filter:'municipality_id=eq.'+municipality},refresh)
+   .subscribe();
+  const onVisible=()=>{if(document.visibilityState==='visible')refresh();};
+  document.addEventListener('visibilitychange',onVisible);
+  const interval=setInterval(()=>{if(document.visibilityState==='visible')refresh();},15000);
+  return ()=>{activeSubscription=false;if(pending)clearTimeout(pending);clearInterval(interval);document.removeEventListener('visibilitychange',onVisible);void db.removeChannel(channel);};
+ },[municipality,ownDriver,role,filterDriver,filterVehicle,dateFrom,dateTo,page]);
+
  const input='mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm';
  return <main className="mx-auto max-w-4xl space-y-5 p-4 pb-16 sm:p-8">
   <Link href={role==='MOTORISTA'?'/motorista':'/viagens'} className="text-sm font-medium text-teal-700">← Voltar</Link>
