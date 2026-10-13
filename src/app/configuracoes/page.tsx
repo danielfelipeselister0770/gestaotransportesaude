@@ -59,6 +59,7 @@ export default function ConfiguracoesPage() {
   const [currentUserId, setCurrentUserId] = useState('');
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState<Profile | null>(null);
+  const [editingEmail, setEditingEmail] = useState('Consultando e-mail...');
   const [userModalOpen, setUserModalOpen] = useState(false);
   const [userMunicipalityId, setUserMunicipalityId] = useState('');
   const [userName, setUserName] = useState('');
@@ -263,9 +264,21 @@ export default function ConfiguracoesPage() {
     setSaving(false);
   }
 
+  async function loadEditingEmail(userId: string) {
+    try {
+      const response = await fetch('/api/usuarios?userId=' + encodeURIComponent(userId), { cache: 'no-store' });
+      const result = await response.json() as { email?: string | null; error?: string };
+      setEditingEmail(current => current === 'Consultando e-mail...' ? (response.ok ? (result.email || 'E-mail não informado') : (result.error || 'Não foi possível consultar o e-mail.')) : current);
+    } catch {
+      setEditingEmail(current => current === 'Consultando e-mail...' ? 'Não foi possível consultar o e-mail.' : current);
+    }
+  }
+
   function openEdit(profile: Profile) {
     modalOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setEditing(profile);
+    setEditingEmail('Consultando e-mail...');
+    void loadEditingEmail(profile.id);
     setName(profile.name);
     setCpf(profile.cpf ?? '');
     setPhone(profile.phone ?? '');
@@ -482,6 +495,7 @@ export default function ConfiguracoesPage() {
                   <button type="button" onClick={closeUserModal} aria-label="Fechar cadastro de usuário" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600"><X size={20} /></button>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="text-sm sm:col-span-2">E-mail de acesso<div className="mt-1 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-slate-700 break-all">{editingEmail}</div><p className="mt-1 text-xs text-slate-500">E-mail consultado no cadastro de autenticação. Somente leitura.</p></div>
                   <label className="text-sm sm:col-span-2">Nome<input autoFocus value={userName} onChange={(e) => setUserName(e.target.value)} required className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">CPF<input value={userCpf} onChange={(e) => setUserCpf(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
                   <label className="text-sm">Telefone<input value={userPhone} onChange={(e) => setUserPhone(e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-100" /></label>
