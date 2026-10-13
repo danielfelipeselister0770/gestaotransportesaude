@@ -68,7 +68,10 @@ export default function RecuperarSenhaPage() {
     });
     setBusy(false);
     if (error) {
-      setMessage('Não foi possível solicitar a recuperação. Tente novamente mais tarde.');
+      const limited = error.code === 'over_email_send_rate_limit' || error.status === 429;
+      setMessage(limited
+        ? 'Limite temporário de envio de e-mails atingido. Aguarde antes de solicitar outro link.'
+        : 'Não foi possível solicitar a recuperação. Tente novamente mais tarde.');
       return;
     }
     setDone(true);
