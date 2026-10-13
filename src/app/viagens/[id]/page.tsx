@@ -134,7 +134,7 @@ export default function TripDetailPage() {
           supabase.from('trip_passengers')
             .select('id,patient_id,request_id,companion,boarding_status,boarding_reason,boarding_recorded_at,observations,patient:patients(name)')
             .eq('trip_id', tripId).order('created_at'),
-          supabase.from('trips').select('status').eq('id', tripId).maybeSingle(),
+          supabase.from('trips').select('status,initial_mileage,final_mileage').eq('id', tripId).maybeSingle(),
         ]);
         if (!active) return;
         if (!passengerResult.error && passengerResult.data) {
@@ -146,8 +146,21 @@ export default function TripDetailPage() {
           setPassengersLoadError(false);
         }
         if (!tripResult.error && tripResult.data) {
-          const updatedStatus = tripResult.data.status as Trip['status'];
-          setTrip((current) => current ? { ...current, status: updatedStatus } : current);
+          const latestTrip = tripResult.data;
+          const updatedStatus = latestTrip.status as Trip['status'];
+          setTrip((current) => current ? {
+            ...current,
+            status: updatedStatus,
+            ...(updatedStatus === 'COMPLETED' ? {
+              initial_mileage: latestTrip.initial_mileage,
+              final_mileage: latestTrip.final_mileage,
+            } : {}),
+          } : current);
+          // A viagem concluída é somente leitura; sincronizar KM não apaga edições em andamento.
+          if (updatedStatus === 'COMPLETED') {
+            setInitialMileage(latestTrip.initial_mileage?.toString() ?? '');
+            setFinalMileage(latestTrip.final_mileage?.toString() ?? '');
+          }
         }
       } catch {
         // Falhas temporárias não apagam os últimos dados exibidos.
