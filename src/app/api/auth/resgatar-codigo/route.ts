@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   if (!recovery) return NextResponse.json({ error: 'Código inválido, expirado ou já utilizado.' }, { status: 400 });
 
   const { data: target } = await admin.from('profiles')
-    .select('active,municipality_id').eq('id', recovery.target_user_id).maybeSingle();
+    .select('active,municipality_id,must_change_password').eq('id', recovery.target_user_id).maybeSingle();
   if (!target?.active || target.municipality_id !== recovery.municipality_id) {
     return NextResponse.json({ error: 'Acesso não autorizado. Solicite um novo código.' }, { status: 403 });
   }
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     details: { method: 'one_time_code' },
   });
   if (historyError) console.error('Falha ao registrar auditoria de recuperação:', historyError.code);
-  return NextResponse.json({ ok: true, message: 'Senha atualizada. Entre com sua nova senha.' }, {
+  return NextResponse.json({ ok: true, message: target.must_change_password ? 'Senha recuperada. Entre com a nova senha e conclua a troca obrigatória solicitada pelo sistema.' : 'Senha atualizada. Entre com sua nova senha.' }, {
     headers: { 'Cache-Control': 'no-store' },
   });
 }
