@@ -3,6 +3,35 @@ import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createClient } from '@supabase/supabase-js';
 
+export async function GET() {
+  const server = createServerClient();
+  const { data: claimsData } = await server.auth.getClaims();
+  const actorId = claimsData?.claims?.sub as string | undefined;
+  if (!actorId) return NextResponse.json({ error: 'Não autenticado.' }, { status: 401 });
+
+  const { data: actor } = await server.from('profiles')
+    .select('id,role,municipality_id,active,must_change_password')
+    .eq('id', actorId).maybeSingle();
+  if (!actor?.active || actor.must_change_password || !['ADMIN', 'GESTOR'].includes(actor.role)) {
+    return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  }
+
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return NextResponse.json({ error: 'Serviço indisponível.' }, { status: 503 });
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  let query = admin.from('profiles').select('id,name,role,municipality_id')
+    .eq('active', true).neq('id', actorId).neq('role', 'ADMIN').order('name').limit(500);
+  if (actor.role === 'GESTOR') {
+    if (!actor.municipality_id) return NextResponse.json({ error: 'Prefeitura não vinculada.' }, { status: 403 });
+    query = query.eq('municipality_id', actor.municipality_id);
+  }
+  const { data: users, error } = await query;
+  if (error) return NextResponse.json({ error: 'Não foi possível carregar os usuários.' }, { status: 500 });
+  return NextResponse.json({ users: users ?? [] }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
 export async function POST(request: Request) {
   const server = createServerClient();
   const { data: claimsData } = await server.auth.getClaims();
