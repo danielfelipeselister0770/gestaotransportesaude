@@ -146,7 +146,8 @@ export default function TripDetailPage() {
           setPassengersLoadError(false);
         }
         if (!tripResult.error && tripResult.data) {
-          setTrip((current) => current ? { ...current, status: tripResult.data.status as Trip['status'] } : current);
+          const updatedStatus = tripResult.data.status as Trip['status'];
+          setTrip((current) => current ? { ...current, status: updatedStatus } : current);
         }
       } catch {
         // Falhas temporárias não apagam os últimos dados exibidos.
