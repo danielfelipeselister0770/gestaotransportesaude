@@ -29,6 +29,9 @@ type TripRow = {
   driver: { name: string } | null;
   vehicle: { plate: string; brand: string | null; model: string | null } | null;
   passenger_count: number | null;
+  boarded_count: number;
+  no_show_count: number;
+  pending_count: number;
 };
 
 const statusLabels = {
@@ -60,8 +63,8 @@ export default function TripsPage() {
   const [tripSearch, setTripSearch] = useState('');
   const [tripStatusFilter, setTripStatusFilter] = useState<'ALL' | TripRow['status']>('ALL');
 
-  async function loadData() {
-    setLoading(true);
+  async function loadData(silent = false) {
+    if (!silent) setLoading(true);
     try {
       setMessage((current) => current.startsWith('Erro ao carregar agenda:') || current.startsWith('Não foi possível carregar a agenda:') || current.startsWith('Não foi possível conferir a quantidade de passageiros:') ? '' : current);
       const [requestsResult, driversResult, vehiclesResult, tripsResult] = await Promise.all([
@@ -91,17 +94,26 @@ export default function TripsPage() {
         driver: Array.isArray(row.driver) ? row.driver[0] ?? null : row.driver,
         vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
         passenger_count: null,
+        boarded_count: 0,
+        no_show_count: 0,
+        pending_count: 0,
       })) as TripRow[];
 
       if (!tripsResult.error && normalizedTrips.length) {
         const tripIds = normalizedTrips.map((trip) => trip.id);
-        const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id,companion').in('trip_id', tripIds);
+        const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id,companion,boarding_status').in('trip_id', tripIds);
         if ((passengerCountError || !passengers) && !errors.length) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError?.message ?? 'a consulta não retornou dados'}`);
         const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
           acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1 + (item.companion ? 1 : 0);
           return acc;
         }, {});
-        if (!passengerCountError && passengers) normalizedTrips.forEach((trip) => { trip.passenger_count = counts[trip.id] ?? 0; });
+        if (!passengerCountError && passengers) normalizedTrips.forEach((trip) => {
+          trip.passenger_count = counts[trip.id] ?? 0;
+          const assigned = passengers.filter(p => p.trip_id === trip.id);
+          trip.boarded_count = assigned.filter(p => p.boarding_status === 'BOARDED').length;
+          trip.no_show_count = assigned.filter(p => p.boarding_status === 'NO_SHOW').length;
+          trip.pending_count = assigned.filter(p => p.boarding_status !== 'BOARDED' && p.boarding_status !== 'NO_SHOW').length;
+        });
       }
 
       if (!requestsResult.error) {
@@ -116,11 +128,15 @@ export default function TripsPage() {
     } catch (error) {
       setMessage(`Não foi possível carregar a agenda: ${error instanceof Error ? error.message : 'erro inesperado'}`);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    void loadData();
+    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void loadData(true); }, 15000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   const selectedRequests = useMemo(
     () => requests.filter((request) => selectedIds.includes(request.id)),
@@ -647,6 +663,7 @@ export default function TripsPage() {
                         <span>{trip.driver?.name ?? 'Motorista não informado'}</span>
                         <span>{trip.vehicle?.plate ?? 'Veículo não informado'}</span>
                         <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count === null ? 'Contagem indisponível' : `${trip.passenger_count} ocupante(s)`}</span>
+                        {trip.passenger_count !== null && <span className="font-medium text-teal-700">✓ {trip.boarded_count} embarcaram · {trip.no_show_count} não embarcaram · {trip.pending_count} pendentes</span>}
                       </div>
                     </Link>
                     <div className="flex gap-2">
