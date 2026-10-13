@@ -444,7 +444,7 @@ export default function ConfiguracoesPage() {
                                   <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${profile.active ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>{profile.active ? 'Ativo' : 'Inativo'}</span>
                                   <div className="flex items-center gap-2">
                                     <button onClick={() => openEdit(profile)} className="rounded-lg border border-slate-200 p-2 text-teal-700 hover:bg-teal-50" title="Editar"><Pencil size={16} /></button>
-                                    {isAdmin && profile.id !== currentUserId && <button onClick={() => resetPassword(profile)} disabled={saving} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50 disabled:opacity-50" title="Redefinir senha">Redefinir senha</button>}
+                                    {canCreateUsers && profile.role !== 'ADMIN' && profile.id !== currentUserId && (isAdmin || profile.municipality_id === currentProfile?.municipality_id) && <button onClick={() => resetPassword(profile)} disabled={saving} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium hover:bg-slate-50 disabled:opacity-50" title="Redefinir senha">Redefinir senha</button>}
                                     {profile.role !== 'ADMIN' && profile.id !== currentUserId && <button onClick={() => deleteUser(profile)} disabled={saving} className="rounded-lg border border-red-200 p-2 text-red-600 hover:bg-red-50 disabled:opacity-50" title="Excluir usuário"><Trash2 size={16} /></button>}
                                   </div>
                                 </div>
