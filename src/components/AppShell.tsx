@@ -5,12 +5,26 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Menu, Siren, X } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
+import { createClient } from '@/lib/supabase/client';
 
 const mobileLinks = [["Dashboard", "/"], ["Pacientes", "/pacientes"], ["Solicitações", "/solicitacoes"], ["Agenda / Viagens", "/viagens"], ["Serviços externos", "/servicos-externos"], ["Veículos", "/veiculos"], ["Motoristas", "/motoristas"], ["Estabelecimentos", "/estabelecimentos"], ["Profissionais SUS", "/profissionais"], ["Abastecimentos", "/abastecimentos"], ["Manutenções", "/manutencoes"], ["Ocorrências", "/ocorrencias"], ["Produção SUS", "/producao"], ["Relatórios", "/relatorios"], ["Configurações", "/configuracoes"]] as const;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [externalRole, setExternalRole] = useState<string | null>(null);
+  useEffect(() => {
+    if (pathname !== '/servicos-externos') return;
+    let cancelled = false;
+    (async () => {
+      const db = createClient();
+      const { data: { user } } = await db.auth.getUser();
+      if (!user) { if (!cancelled) setExternalRole('MOTORISTA'); return; }
+      const { data } = await db.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      if (!cancelled) setExternalRole(data?.role ?? 'MOTORISTA');
+    })();
+    return () => { cancelled = true; };
+  }, [pathname]);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileNavRef = useRef<HTMLDivElement>(null);
@@ -40,7 +54,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [menuOpen]);
   useEffect(() => { setMenuOpen(false); }, [pathname]);
-  const isPublic = pathname === '/login' || pathname.startsWith('/auth/') || pathname === '/motorista' || pathname.startsWith('/motorista/') || pathname === '/servicos-externos';
+  const isPublic = pathname === '/login' || pathname.startsWith('/auth/') || pathname === '/motorista' || pathname.startsWith('/motorista/') || (pathname === '/servicos-externos' && externalRole !== null && externalRole === 'MOTORISTA');
+  if (pathname === '/servicos-externos' && externalRole === null) return <>{children}</>;
   if (isPublic) return <>{children}</>;
 
   return (
