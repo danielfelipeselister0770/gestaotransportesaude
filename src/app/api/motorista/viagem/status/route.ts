@@ -140,6 +140,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'A quilometragem final não pode ser menor que a inicial.' }, { status: 400 });
   }
 
+  // Não concluir uma viagem com embarques ainda sem decisão.
+  const { data: boardingRows, error: boardingReadError } = await admin
+    .from('trip_passengers')
+    .select('id,boarding_status,request_id')
+    .eq('trip_id', trip.id);
+  if (boardingReadError) {
+    return NextResponse.json({ error: 'Não foi possível conferir os embarques. A viagem permanece em andamento.' }, { status: 500 });
+  }
+  if ((boardingRows ?? []).some(row => !['BOARDED', 'NO_SHOW'].includes(row.boarding_status))) {
+    return NextResponse.json({ error: 'Registre Embarcou ou Não embarcou para todos os passageiros antes de finalizar.' }, { status: 409 });
+  }
+  const linkedRequestIds = [...new Set((boardingRows ?? []).map(row => row.request_id).filter(Boolean))];
+  if (linkedRequestIds.length) {
+    const { data: linkedRequests, error: requestsError } = await admin.from('transport_requests')
+      .select('id,status,municipality_id').in('id', linkedRequestIds);
+    if (requestsError || !linkedRequests || linkedRequests.length !== linkedRequestIds.length ||
+        linkedRequests.some(row => row.municipality_id !== driver.municipality_id || row.status !== 'SCHEDULED')) {
+      return NextResponse.json({ error: 'Há solicitações que não podem ser concluídas. Avise a gestão antes de finalizar a viagem.' }, { status: 409 });
+    }
+  }
+
   const { data: completedTrip, error: updateTripError } = await admin
     .from('trips')
     .update({ status: 'COMPLETED', final_mileage: finalMileage, completed_at: new Date().toISOString() })
