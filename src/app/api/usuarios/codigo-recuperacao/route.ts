@@ -43,6 +43,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Sem permissão para este usuário.' }, { status: 403 });
   }
 
+  // Restringe a emissão para evitar abuso e múltiplos códigos ativos desnecessários.
+  const { data: recent, error: recentError } = await admin
+    .from('password_recovery_requests')
+    .select('created_at')
+    .eq('target_user_id', userId)
+    .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+    .order('created_at', { ascending: false })
+    .limit(10);
+  if (recentError) return NextResponse.json({ error: 'Não foi possível verificar o limite de solicitações.' }, { status: 503 });
+  if ((recent?.length ?? 0) >= 10) {
+    return NextResponse.json({ error: 'Limite diário de códigos atingido. Tente novamente mais tarde.' }, { status: 429 });
+  }
+  if (recent?.[0] && Date.now() - new Date(recent[0].created_at).getTime() < 60_000) {
+    return NextResponse.json({ error: 'Aguarde pelo menos um minuto antes de gerar outro código.' }, { status: 429 });
+  }
+
   const code = randomBytes(24).toString('hex');
   const tokenHash = createHash('sha256').update(code).digest('hex');
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
