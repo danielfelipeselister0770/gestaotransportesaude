@@ -13,6 +13,7 @@ export default function ExternalServicesPage(){
  const [user,setUser]=useState('');const [role,setRole]=useState('');const [municipality,setMunicipality]=useState('');const [ownDriver,setOwnDriver]=useState('');
  const [drivers,setDrivers]=useState<Driver[]>([]);const [vehicles,setVehicles]=useState<Vehicle[]>([]);
  const [shifts,setShifts]=useState<Shift[]>([]);const [services,setServices]=useState<Service[]>([]);
+ const [summary,setSummary]=useState({total_km:0,completed_shifts:0});
  const [selected,setSelected]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');const [message,setMessage]=useState('');
  const [filterDriver,setFilterDriver]=useState('');const [filterVehicle,setFilterVehicle]=useState('');const [dateFrom,setDateFrom]=useState('');const [dateTo,setDateTo]=useState('');const [page,setPage]=useState(1);const [totalCount,setTotalCount]=useState(0);
@@ -23,16 +24,23 @@ export default function ExternalServicesPage(){
   if(filterVehicle)query=query.eq('vehicle_id',filterVehicle);
   if(dateFrom)query=query.gte('started_at',new Date(dateFrom+'T00:00:00-03:00').toISOString());
   if(dateTo)query=query.lt('started_at',new Date(new Date(dateTo+'T00:00:00-03:00').getTime()+86400000).toISOString());
-  const [a,c,d]=await Promise.all([
+  const summaryDriver=r==='MOTORISTA'?driver:(filterDriver||null);
+  const [a,c,d,summaryResult]=await Promise.all([
    query.order('started_at',{ascending:false}).range((page-1)*10,page*10-1),
    db.from('drivers').select('id,name').eq('municipality_id',m).eq('active',true).order('name'),
-   db.from('vehicles').select('id,plate,current_mileage').eq('municipality_id',m).order('plate')
+   db.from('vehicles').select('id,plate,current_mileage').eq('municipality_id',m).order('plate'),
+   db.rpc('external_shift_km_summary',{
+    p_municipality_id:m,p_driver_id:summaryDriver,p_vehicle_id:filterVehicle||null,
+    p_date_from:dateFrom?new Date(dateFrom+'T00:00:00-03:00').toISOString():null,
+    p_date_to_exclusive:dateTo?new Date(new Date(dateTo+'T00:00:00-03:00').getTime()+86400000).toISOString():null
+   })
   ]);
-  const failure=a.error||c.error||d.error;if(failure){setError(failure.message);return;}
+  const failure=a.error||c.error||d.error||summaryResult.error;if(failure){setError(failure.message);return;}
   const visible=(a.data??[]) as Shift[];
   const ids=visible.map(s=>s.id);
   const b=ids.length?await db.from('driver_external_services').select('id,shift_id,service_type,description,created_at').in('shift_id',ids).order('created_at',{ascending:false}):null;
   if(b?.error){setError(b.error.message);return;}
+  setSummary({total_km:Number(summaryResult.data?.[0]?.total_km??0),completed_shifts:Number(summaryResult.data?.[0]?.completed_shifts??0)});
   setTotalCount(a.count??0);setShifts(visible);setServices((b?.data??[]) as Service[]);
   setDrivers((c.data??[]).filter(x=>r!=='MOTORISTA'||x.id===driver));setVehicles(d.data??[]);
   setSelected(previous=>visible.some(s=>s.id===previous)?previous:(visible.find(s=>!s.ended_at)?.id??visible[0]?.id??''));
@@ -107,7 +115,6 @@ export default function ExternalServicesPage(){
  const totalPages=Math.max(1,Math.ceil(totalCount/10));
  const currentPage=page;
  const visibleShifts=shifts;
- const pageKm=shifts.reduce((sum,s)=>sum+(s.final_mileage===null?0:Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage))),0);
  useEffect(()=>setPage(1),[filterDriver,filterVehicle,dateFrom,dateTo]);
  useEffect(()=>{if(municipality)void reload(municipality,ownDriver,role);},[municipality,ownDriver,role,filterDriver,filterVehicle,dateFrom,dateTo,page]);
  useEffect(()=>{
@@ -160,7 +167,7 @@ export default function ExternalServicesPage(){
      <label className="text-sm">Data inicial<input type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)} className={input}/></label>
      <label className="text-sm">Data final<input type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)} className={input}/></label>
     </div>
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><span>{totalCount} expedientes encontrados</span><strong>KM nesta página: {pageKm.toLocaleString('pt-BR',{maximumFractionDigits:1})} km</strong></div>
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-sm"><span>{totalCount} expedientes encontrados</span><strong>KM total filtrado: {summary.total_km.toLocaleString('pt-BR',{maximumFractionDigits:1})} km · {summary.completed_shifts} encerrados</strong></div>
     <div className="space-y-3">
      {visibleShifts.length===0?<p className="text-sm text-slate-500">Nenhum expediente encontrado para os filtros selecionados.</p>:visibleShifts.map(s=>{
       const expanded=selected===s.id;
