@@ -18,6 +18,8 @@ type Passenger = {
   patient: { name: string } | null;
 };
 
+type AvailableRequest = { id: string; patient_id: string; needs_companion: boolean; patient: { name: string } | null };
+
 type TripHistory = { id:string; action:string; old_status:Trip['status']|null; new_status:Trip['status']|null; note:string|null; changed_at:string };
 
 type Trip = {
@@ -62,6 +64,11 @@ export default function TripDetailPage() {
   const [message, setMessage] = useState('');
   const [history, setHistory] = useState<TripHistory[]>([]);
   const [idCopied, setIdCopied] = useState(false);
+  const [availableRequests, setAvailableRequests] = useState<AvailableRequest[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState('');
+  const [showAddPassenger, setShowAddPassenger] = useState(false);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+  const [addingPassenger, setAddingPassenger] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -116,6 +123,48 @@ export default function TripDetailPage() {
       setMessage('Não foi possível carregar a viagem. Verifique a conexão e tente novamente.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openAddPassenger() {
+    if (!trip || trip.status !== 'SCHEDULED') return;
+    setShowAddPassenger(true);
+    setLoadingRequests(true);
+    setSelectedRequest('');
+    const { data, error } = await supabase.from('transport_requests')
+      .select('id,patient_id,needs_companion,patient:patients(name)')
+      .eq('status', 'APPROVED').eq('date', trip.date).order('created_at', { ascending: false }).limit(200);
+    if (error) {
+      setMessage('Não foi possível consultar as solicitações aprovadas: ' + error.message);
+      setAvailableRequests([]);
+    } else {
+      const existing = new Set(passengers.map(p => p.patient_id));
+      setAvailableRequests((data ?? []).map(row => ({
+        ...row, patient: Array.isArray(row.patient) ? row.patient[0] ?? null : row.patient,
+      })).filter(row => !existing.has(row.patient_id)) as AvailableRequest[]);
+    }
+    setLoadingRequests(false);
+  }
+
+  async function addPassengerToTrip(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!trip || trip.status !== 'SCHEDULED' || !selectedRequest || addingPassenger) return;
+    setAddingPassenger(true);
+    setMessage('');
+    try {
+      const { error } = await supabase.rpc('add_approved_request_to_scheduled_trip', {
+        p_trip_id: trip.id, p_request_id: selectedRequest,
+      });
+      if (error) { setMessage('Não foi possível incluir o paciente: ' + error.message); return; }
+      setShowAddPassenger(false);
+      setAvailableRequests([]);
+      setSelectedRequest('');
+      await loadData();
+      setMessage('Paciente incluído com sucesso na viagem agendada.');
+    } catch {
+      setMessage('Falha de conexão ao incluir o paciente. Atualize a viagem antes de tentar novamente.');
+    } finally {
+      setAddingPassenger(false);
     }
   }
 
@@ -536,8 +585,25 @@ export default function TripDetailPage() {
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:col-span-2">
             <div className="flex items-center justify-between border-b px-5 py-4">
               <div><h2 className="font-semibold">Passageiros</h2><p className="text-xs text-slate-500">{passengers.length} {passengers.length === 1 ? "passageiro" : "passageiros"} nesta viagem</p></div>
-              <UserRound size={20} className="text-slate-400"/>
+              {trip.status === 'SCHEDULED' ? <button type="button" onClick={() => { void openAddPassenger(); }} disabled={addingPassenger} className="rounded-lg bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:opacity-50">+ Adicionar paciente</button> : <UserRound size={20} className="text-slate-400"/>}
             </div>
+            {showAddPassenger && trip.status === 'SCHEDULED' && (
+              <form onSubmit={addPassengerToTrip} className="space-y-3 border-b bg-teal-50 p-4 sm:p-5">
+                <p className="text-sm font-semibold text-slate-800">Incluir solicitação aprovada nesta viagem</p>
+                <p className="text-xs text-slate-600">Somente solicitações da mesma data. O sistema verifica município, duplicidade e lotação antes de incluir.</p>
+                {loadingRequests ? <p className="text-sm">Carregando solicitações...</p> : (
+                  <select aria-label="Solicitação aprovada" value={selectedRequest} onChange={e => setSelectedRequest(e.target.value)} required className="w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-sm">
+                    <option value="">Selecione um paciente...</option>
+                    {availableRequests.map(request => <option key={request.id} value={request.id}>{request.patient?.name ?? 'Paciente sem nome'}{request.needs_companion ? ' • com acompanhante' : ''}</option>)}
+                  </select>
+                )}
+                {!loadingRequests && availableRequests.length === 0 && <p className="text-sm text-slate-600">Nenhuma solicitação aprovada disponível para esta data.</p>}
+                <div className="flex flex-wrap gap-2">
+                  <button type="submit" disabled={!selectedRequest || addingPassenger || loadingRequests} className="rounded-lg bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{addingPassenger ? 'Incluindo...' : 'Confirmar inclusão'}</button>
+                  <button type="button" onClick={() => setShowAddPassenger(false)} disabled={addingPassenger} className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm">Cancelar</button>
+                </div>
+              </form>
+            )}
             <div className="divide-y">
               {passengers.map((passenger) => (
                 <div key={passenger.id} className="flex flex-col gap-3 px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
