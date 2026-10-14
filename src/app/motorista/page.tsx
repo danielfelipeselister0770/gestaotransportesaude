@@ -17,6 +17,8 @@ type Trip = {
   observations?: string | null;
 };
 
+type TripOccurrence = { id: string; date: string; type: string; description: string; status: string };
+
 type Passenger = {
   id: string;
   boarding_status: string;
@@ -41,6 +43,8 @@ export default function DriverPortalPage() {
   const [selectedTrip, setSelectedTrip] = useState<string | null>(null);
   const selectedTripRef = useRef<string | null>(null);
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [occurrences, setOccurrences] = useState<TripOccurrence[]>([]);
+  const [occurrencesError, setOccurrencesError] = useState(false);
   const [noShowReason, setNoShowReason] = useState<Record<string,string>>({});
   const [passengersLoading, setPassengersLoading] = useState(false);
   const [passengersError, setPassengersError] = useState(false);
@@ -62,6 +66,25 @@ export default function DriverPortalPage() {
   const [expandedDates, setExpandedDates] = useState<Record<string, boolean>>({});
   const [occurrenceType,setOccurrenceType]=useState('ATRASO');
   const [occurrenceDescription,setOccurrenceDescription]=useState('');
+
+  async function refreshOccurrences(tripId: string) {
+    const { data, error } = await supabase.from('occurrences')
+      .select('id,date,type,description,status').eq('trip_id',tripId)
+      .order('date',{ascending:false}).limit(100);
+    if (selectedTripRef.current !== tripId) return;
+    if (error) { setOccurrencesError(true); return; }
+    setOccurrences((data ?? []) as TripOccurrence[]);
+    setOccurrencesError(false);
+  }
+
+  useEffect(() => {
+    if (!selectedTrip) return;
+    void refreshOccurrences(selectedTrip);
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void refreshOccurrences(selectedTrip);
+    }, 15000);
+    return () => window.clearInterval(interval);
+  }, [selectedTrip]);
 
   async function copyPendingTripId() {
     if (!pendingTripId) return;
@@ -177,6 +200,7 @@ export default function DriverPortalPage() {
         setPassengersLoading(false);
         setSelectedTrip(null);
         setPassengers([]);
+        setOccurrences([]);
         setFinishMileage('');
       }
     }
@@ -196,7 +220,7 @@ export default function DriverPortalPage() {
     const switchingTrip = selectedTripRef.current !== tripId;
     selectedTripRef.current = tripId;
     setSelectedTrip(tripId);
-    if (switchingTrip) setPassengers([]);
+    if (switchingTrip) { setPassengers([]); setOccurrences([]); }
     const recoveringPassengers = passengersError;
     setPassengersLoading(true);
     setPassengersError(false);
@@ -305,6 +329,7 @@ export default function DriverPortalPage() {
         setOccurrenceDescription('');
         setMessageTone('success');
         setMessage('Ocorrência registrada e enviada para a gestão.');
+        void refreshOccurrences(selectedTripData.id);
       }
     } catch {
       setMessage('Falha de conexão ao registrar a ocorrência. Verifique sua internet e tente novamente.');
@@ -668,6 +693,21 @@ export default function DriverPortalPage() {
             <div className="mb-4 flex items-center gap-2"><AlertTriangle size={19}/><h2 className="font-semibold">Registrar ocorrência</h2></div>
             <div className="grid gap-3 md:grid-cols-[180px_minmax(0,1fr)_auto]"><select aria-label="Tipo de ocorrência" disabled={actionLoading!==null||loading||syncWarning} value={occurrenceType} onChange={e=>setOccurrenceType(e.target.value)} className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"><option value="ATRASO">Atraso</option><option value="AVARIA">Avaria</option><option value="ACIDENTE">Acidente</option><option value="COMPORTAMENTO">Comportamento</option><option value="OUTROS">Outros</option></select><input aria-label="Descrição da ocorrência" disabled={actionLoading!==null||loading||syncWarning} value={occurrenceDescription} onChange={e=>setOccurrenceDescription(e.target.value)} maxLength={1000} minLength={1} required placeholder="Descreva o ocorrido (até 1.000 caracteres)..." className="min-w-0 rounded-xl border border-slate-200 px-3 py-3 text-sm focus:border-teal-500 focus:ring-2 focus:ring-teal-100"/><button disabled={actionLoading!==null||loading||syncWarning} className="rounded-xl bg-teal-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-60">{actionLoading==='occurrence' ? 'Registrando...' : 'Registrar'}</button></div>
           </form>
+        )}
+
+        {selectedTripData && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" aria-live="polite">
+            <div className="mb-3 flex items-center gap-2"><AlertTriangle size={19}/><h2 className="font-semibold">Ocorrências registradas ({occurrences.length})</h2></div>
+            {occurrencesError && <p className="text-sm text-amber-800">Não foi possível atualizar as ocorrências. Nova tentativa automática em instantes.</p>}
+            {!occurrencesError && occurrences.length === 0 && <p className="text-sm text-slate-500">Nenhuma ocorrência registrada nesta viagem.</p>}
+            <div className="space-y-3">
+              {occurrences.map(item => <article key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+                <p className="font-semibold">{item.type} · {new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date(item.date))}</p>
+                <p className="mt-1 whitespace-pre-wrap break-words">{item.description}</p>
+                <p className="mt-1 text-xs text-slate-500">Situação: {item.status}</p>
+              </article>)}
+            </div>
+          </section>
         )}
 
       </section>
