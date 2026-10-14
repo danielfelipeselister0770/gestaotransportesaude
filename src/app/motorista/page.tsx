@@ -670,8 +670,8 @@ export default function DriverPortalPage() {
         )}
 
       </section>
-      <div className="mx-auto max-w-5xl px-4 pb-8">
-        <Link href="/servicos-externos" className="inline-flex rounded-xl border border-teal-700 bg-white px-4 py-3 text-sm font-semibold text-teal-700 hover:bg-teal-50">Serviços externos e expediente →</Link>
+      <div className="mx-auto flex max-w-5xl flex-wrap gap-3 px-4 pb-8">
+        <Link href="/motorista/historico" className="inline-flex rounded-xl border border-teal-700 bg-white px-4 py-3 text-sm font-semibold text-teal-700 hover:bg-teal-50">Meu histórico de viagens →</Link>\n        <Link href="/servicos-externos" className="inline-flex rounded-xl border border-teal-700 bg-white px-4 py-3 text-sm font-semibold text-teal-700 hover:bg-teal-50">Serviços externos e expediente →</Link>
       </div>
     </main>
   );
