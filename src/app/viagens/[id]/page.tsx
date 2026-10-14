@@ -18,6 +18,8 @@ type Passenger = {
   patient: { name: string } | null;
 };
 
+type TripOccurrence = { id: string; date: string; type: string; description: string; responsible: string | null; status: string };
+
 type AvailableRequest = { id: string; patient_id: string; needs_companion: boolean; patient: { name: string } | null };
 
 type TripHistory = { id:string; action:string; old_status:Trip['status']|null; new_status:Trip['status']|null; note:string|null; changed_at:string };
@@ -63,6 +65,8 @@ export default function TripDetailPage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [history, setHistory] = useState<TripHistory[]>([]);
+  const [occurrences, setOccurrences] = useState<TripOccurrence[]>([]);
+  const [occurrencesError, setOccurrencesError] = useState(false);
   const [idCopied, setIdCopied] = useState(false);
   const [availableRequests, setAvailableRequests] = useState<AvailableRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState('');
@@ -76,9 +80,10 @@ export default function TripDetailPage() {
     setTrip(null);
     setPassengers([]);
     setHistory([]);
+    setOccurrencesError(false);
     setPassengersLoadError(false);
     try {
-    const [tripResult, passengersResult, historyResult] = await Promise.all([
+    const [tripResult, passengersResult, historyResult, occurrenceResult] = await Promise.all([
       supabase.from('trips')
         .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
         .eq('id', tripId).single(),
@@ -86,6 +91,7 @@ export default function TripDetailPage() {
         .select('id,patient_id,request_id,companion,boarding_status,boarding_reason,boarding_recorded_at,observations,patient:patients(name)')
         .eq('trip_id', tripId).order('created_at'),
       supabase.from('trip_history').select('id,action,old_status,new_status,note,changed_at').eq('trip_id',tripId).order('changed_at',{ascending:false}),
+      supabase.from('occurrences').select('id,date,type,description,responsible,status').eq('trip_id',tripId).order('date',{ascending:false}).limit(100),
     ]);
 
     if (tripResult.error) setMessage(`Erro ao carregar viagem: ${tripResult.error.message}`);
@@ -115,6 +121,8 @@ export default function TripDetailPage() {
       setPassengers(normalized);
     }
     if (!historyResult.error) setHistory((historyResult.data ?? []) as TripHistory[]);
+    if (occurrenceResult.error) setOccurrencesError(true);
+    else setOccurrences((occurrenceResult.data ?? []) as TripOccurrence[]);
     } catch {
       setTrip(null);
       setPassengers([]);
@@ -179,13 +187,16 @@ export default function TripDetailPage() {
       if (busy || document.visibilityState !== 'visible' || updatingPassengerRef.current) return;
       busy = true;
       try {
-        const [passengerResult, tripResult] = await Promise.all([
+        const [passengerResult, tripResult, occurrenceResult] = await Promise.all([
           supabase.from('trip_passengers')
             .select('id,patient_id,request_id,companion,boarding_status,boarding_reason,boarding_recorded_at,observations,patient:patients(name)')
             .eq('trip_id', tripId).order('created_at'),
           supabase.from('trips').select('status,initial_mileage,final_mileage').eq('id', tripId).maybeSingle(),
+          supabase.from('occurrences').select('id,date,type,description,responsible,status').eq('trip_id',tripId).order('date',{ascending:false}).limit(100),
         ]);
         if (!active) return;
+        if (!occurrenceResult.error) { setOccurrences((occurrenceResult.data ?? []) as TripOccurrence[]); setOccurrencesError(false); }
+        else setOccurrencesError(true);
         if (!passengerResult.error && passengerResult.data) {
           const updated = passengerResult.data.map((row) => ({
             ...row,
@@ -522,6 +533,8 @@ export default function TripDetailPage() {
       if (error) setMessage(`Não foi possível registrar a ocorrência: ${error.message}`);
       else {
         setOccurrenceDescription('');
+        const refreshed = await supabase.from('occurrences').select('id,date,type,description,responsible,status').eq('trip_id',tripId).order('date',{ascending:false}).limit(100);
+        if (!refreshed.error) setOccurrences((refreshed.data ?? []) as TripOccurrence[]);
         setMessage('Ocorrência registrada.');
       }
     } catch {
@@ -636,6 +649,19 @@ export default function TripDetailPage() {
             </div>
           </section>
         </div>
+
+        <section className="mt-5 rounded-xl border border-slate-200 bg-white shadow-sm" aria-live="polite">
+          <div className="flex items-center gap-2 border-b px-5 py-4"><AlertTriangle size={18}/><h2 className="font-semibold">Ocorrências da viagem ({occurrences.length})</h2></div>
+          <div className="space-y-3 p-4 sm:p-5">
+            {occurrencesError && <p className="text-sm text-amber-800">Não foi possível atualizar as ocorrências. Tentaremos novamente automaticamente.</p>}
+            {!occurrencesError && occurrences.length === 0 && <p className="text-sm text-slate-500">Nenhuma ocorrência registrada nesta viagem.</p>}
+            {occurrences.map(item => <article key={item.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm">
+              <div className="font-semibold text-slate-800">{item.type} · {new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short',timeZone:'America/Sao_Paulo'}).format(new Date(item.date))}</div>
+              <p className="mt-1 whitespace-pre-wrap break-words text-slate-700">{item.description}</p>
+              <p className="mt-1 text-xs text-slate-500">{item.responsible ? 'Responsável: ' + item.responsible + ' · ' : ''}Situação: {item.status}</p>
+            </article>)}
+          </div>
+        </section>
 
         <div className="mt-5 rounded-xl border bg-white shadow-sm">
           <div className="flex items-center gap-2 border-b px-5 py-4"><History size={18}/><h2 className="font-semibold">Histórico da viagem</h2></div>
