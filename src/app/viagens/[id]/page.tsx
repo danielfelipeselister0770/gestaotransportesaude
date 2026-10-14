@@ -74,6 +74,7 @@ export default function TripDetailPage() {
   const [showAddPassenger, setShowAddPassenger] = useState(false);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [addingPassenger, setAddingPassenger] = useState(false);
+  const [cancellingPassenger, setCancellingPassenger] = useState(false);
 
   async function loadData() {
     setLoading(true);
@@ -132,6 +133,32 @@ export default function TripDetailPage() {
       setMessage('Não foi possível carregar a viagem. Verifique a conexão e tente novamente.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function cancelPassenger(passenger: Passenger) {
+    if (!trip || trip.status !== 'SCHEDULED' || passenger.boarding_status !== 'EXPECTED' || !passenger.request_id || cancellingPassenger) return;
+    const reasonInput = window.prompt('Motivo do cancelamento de ' + (passenger.patient?.name ?? 'paciente') + ' nesta viagem:');
+    if (reasonInput === null) return;
+    const reason = reasonInput.trim();
+    if (reason.length < 3 || reason.length > 500) {
+      setMessage('Informe um motivo de 3 a 500 caracteres para cancelar a participação.');
+      return;
+    }
+    if (!window.confirm('Confirma o cancelamento da participação deste paciente? A viagem dos demais passageiros continuará agendada.')) return;
+    setCancellingPassenger(true);
+    setMessage('');
+    try {
+      const { error } = await supabase.rpc('cancel_scheduled_trip_passenger', {
+        p_trip_id: trip.id, p_passenger_id: passenger.id, p_reason: reason,
+      });
+      if (error) { setMessage('Não foi possível cancelar a participação: ' + error.message); return; }
+      await loadData();
+      setMessage('Participação cancelada. Os demais passageiros permanecem na viagem.');
+    } catch {
+      setMessage('Falha de conexão. Atualize a viagem antes de tentar novamente.');
+    } finally {
+      setCancellingPassenger(false);
     }
   }
 
@@ -629,8 +656,12 @@ export default function TripDetailPage() {
                       {passenger.boarding_recorded_at && ' · ' + new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Sao_Paulo' }).format(new Date(passenger.boarding_recorded_at))}
                     </div>
                     {passenger.boarding_status === 'NO_SHOW' && <div className="mt-1 text-xs text-amber-800">Motivo: {passenger.boarding_reason || 'Não informado'}</div>}
+                    {passenger.boarding_status === 'CANCELLED' && <div className="mt-1 text-xs text-amber-800">Motivo do cancelamento: {passenger.boarding_reason || 'Não informado'}</div>}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                    {trip.status === 'SCHEDULED' && passenger.boarding_status === 'EXPECTED' && passenger.request_id && (
+                      <button type="button" onClick={() => void cancelPassenger(passenger)} disabled={cancellingPassenger || saving || addingPassenger} className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50">Cancelar participação</button>
+                    )}
                     <button type="button" disabled={saving || updatingPassengerId !== null || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
                     <button type="button" disabled={saving || updatingPassengerId !== null || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
                   </div>
