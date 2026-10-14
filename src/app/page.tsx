@@ -23,11 +23,11 @@ export default async function Home() {
 
   const [{ data: profile }, trips, passengers, requests, vehicles, maintenances, occurrences, upcomingTripsResult, todayRequests, vehicleTotal, maintenanceVehicles, documentAlerts] = await Promise.all([
     userId ? supabase.from('profiles').select('name, role').eq('id', userId).maybeSingle() : Promise.resolve({ data: null }),
-    supabase.from('trips').select('id', { count: 'exact', head: true }).eq('date', today),
+    supabase.from('trips').select('id', { count: 'exact', head: true }).eq('date', today).in('status', ['SCHEDULED', 'IN_PROGRESS']),
     supabase
       .from('trip_passengers')
       .select('id, trips!inner(status)', { count: 'exact', head: true })
-      .in('trips.status', ['SCHEDULED', 'IN_PROGRESS']),
+      .in('trips.status', ['SCHEDULED', 'IN_PROGRESS']).neq('boarding_status', 'CANCELLED'),
     supabase.from('transport_requests').select('id', { count: 'exact', head: true }).in('status', ['REQUESTED', 'APPROVED']),
     supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('status', 'AVAILABLE'),
     supabase.from('maintenances').select('id', { count: 'exact', head: true }).in('status', ['SCHEDULED', 'IN_PROGRESS']),
@@ -69,7 +69,7 @@ export default async function Home() {
   const alerts=[...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
 
   const cards: Array<[string, number, LucideIcon, string, string]> = [
-    ['Viagens hoje', trips.count ?? 0, Route, '/viagens', 'Programadas para hoje'],
+    ['Viagens hoje', trips.count ?? 0, Route, '/viagens', 'Agendadas ou em andamento'],
     ['Passageiros em viagens', passengers.count ?? 0, Users, '/viagens', 'Em viagens ativas'],
     ['Solicitações pendentes', requests.count ?? 0, ClipboardList, '/solicitacoes', 'Aguardando andamento'],
     ['Veículos disponíveis', vehicles.count ?? 0, CarFront, '/veiculos', 'Prontos para operação'],
