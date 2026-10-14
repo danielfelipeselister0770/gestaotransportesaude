@@ -58,6 +58,11 @@ type Municipality = {
   state: string | null;
 };
 
+type TransportRecord = {
+  id: string; trip_id: string; boarding_status: string; boarding_reason: string | null;
+  trip: { date: string; departure_time: string | null; origin: string; destination: string; status: string; driver: { name: string } | null; vehicle: { plate: string } | null } | null;
+};
+
 type CancellationRecord = { id:string; date:string; destination:string; cancellation_reason:string|null; cancelled_at:string|null; cancelled_by:string|null; responsible:string|null };
 
 type PatientHistory = {
@@ -118,6 +123,8 @@ export default function PatientsPage() {
   const [history, setHistory] = useState<PatientHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [cancellations, setCancellations] = useState<CancellationRecord[]>([]);
+  const [transports, setTransports] = useState<TransportRecord[]>([]);
+  const [transportError, setTransportError] = useState('');
   const [cancellationError, setCancellationError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -165,6 +172,19 @@ export default function PatientsPage() {
     setHistory([]);
     setCancellations([]);
     setCancellationError('');
+    setTransports([]);
+    setTransportError('');
+    const { data: passengerRows, error: passengerError } = await supabase.from('trip_passengers')
+      .select('id,trip_id,boarding_status,boarding_reason,trip:trips(date,departure_time,origin,destination,status,driver:drivers(name),vehicle:vehicles(plate))')
+      .eq('patient_id', patient.id).eq('municipality_id', patient.municipality_id);
+    if (passengerError) setTransportError('Não foi possível carregar o histórico de viagens.');
+    else setTransports((passengerRows ?? []).map(row => {
+      const rawTrip = Array.isArray(row.trip) ? row.trip[0] : row.trip;
+      return { ...row, trip: rawTrip ? { ...rawTrip,
+        driver: Array.isArray(rawTrip.driver) ? rawTrip.driver[0] ?? null : rawTrip.driver,
+        vehicle: Array.isArray(rawTrip.vehicle) ? rawTrip.vehicle[0] ?? null : rawTrip.vehicle,
+      } : null };
+    }) as TransportRecord[]);
     const { data: cancelledRequests, error: cancelledError } = await supabase.from('transport_requests')
       .select('id,date,destination,cancellation_reason,cancelled_at,cancelled_by')
       .eq('patient_id', patient.id).eq('municipality_id', patient.municipality_id).eq('status', 'CANCELLED')
@@ -551,6 +571,8 @@ export default function PatientsPage() {
           patient={selectedPatient}
           history={history}
           cancellations={cancellations}
+          transports={transports}
+          transportError={transportError}
           cancellationError={cancellationError}
           loadingHistory={loadingHistory}
           municipalityName={municipalityName(selectedPatient.municipality_id)}
@@ -657,6 +679,8 @@ function PatientDetail({
   patient,
   history,
   cancellations,
+  transports,
+  transportError,
   cancellationError,
   loadingHistory,
   municipalityName,
@@ -667,6 +691,8 @@ function PatientDetail({
   patient: Patient;
   history: PatientHistory[];
   cancellations: CancellationRecord[];
+  transports: TransportRecord[];
+  transportError: string;
   cancellationError: string;
   loadingHistory: boolean;
   municipalityName: string;
@@ -674,6 +700,17 @@ function PatientDetail({
   onEdit: () => void;
   onToggleActive: () => void;
 }) {
+  const [transportFilter, setTransportFilter] = useState('ALL');
+  const transportStatus = (item: TransportRecord) => item.boarding_status === 'CANCELLED' || item.trip?.status === 'CANCELLED' ? 'CANCELLED'
+    : item.boarding_status === 'NO_SHOW' ? 'NO_SHOW'
+    : item.trip?.status === 'COMPLETED' && item.boarding_status === 'BOARDED' ? 'COMPLETED'
+    : item.trip?.status === 'SCHEDULED' ? 'SCHEDULED' : 'OTHER';
+  const sortedTransports = [...transports].filter(item => item.trip && (transportFilter === 'ALL' || transportStatus(item) === transportFilter))
+    .sort((a,b) => (b.trip?.date ?? '').localeCompare(a.trip?.date ?? '') || (b.trip?.departure_time ?? '').localeCompare(a.trip?.departure_time ?? ''));
+  const transportCounts = { completed: transports.filter(item => transportStatus(item) === 'COMPLETED').length,
+    scheduled: transports.filter(item => transportStatus(item) === 'SCHEDULED').length,
+    cancelled: transports.filter(item => transportStatus(item) === 'CANCELLED').length,
+    noShow: transports.filter(item => transportStatus(item) === 'NO_SHOW').length };
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const onCloseRef = useRef(onClose);
@@ -768,6 +805,31 @@ function PatientDetail({
                   <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">Existem dados pendentes.</div>
                   <ul className="mt-3 space-y-1 text-xs text-slate-600">{susMissingFields(patient).map((item) => <li key={item}>• {item}</li>)}</ul>
                 </>
+              )}
+            </div>
+
+            <div className="rounded-xl border p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800"><History size={16} /> Histórico de transportes</div>
+              <div className="mb-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <div className="rounded-lg bg-emerald-50 p-2">Realizadas: <b>{transportCounts.completed}</b></div>
+                <div className="rounded-lg bg-violet-50 p-2">Agendadas: <b>{transportCounts.scheduled}</b></div>
+                <div className="rounded-lg bg-slate-100 p-2">Canceladas: <b>{transportCounts.cancelled}</b></div>
+                <div className="rounded-lg bg-orange-50 p-2">Não compareceu: <b>{transportCounts.noShow}</b></div>
+              </div>
+              <select aria-label="Filtrar histórico de transportes" value={transportFilter} onChange={event => setTransportFilter(event.target.value)} className="mb-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm">
+                <option value="ALL">Todos os transportes</option><option value="COMPLETED">Realizadas (embarcou)</option>
+                <option value="SCHEDULED">Agendadas</option><option value="CANCELLED">Canceladas</option><option value="NO_SHOW">Não compareceu</option>
+              </select>
+              {transportError && <p role="alert" className="text-xs text-amber-700">{transportError}</p>}
+              {loadingHistory ? <p className="text-sm text-slate-500">Carregando viagens...</p> : sortedTransports.length === 0 && !transportError ? <p className="text-sm text-slate-500">Nenhuma viagem nesta categoria.</p> : (
+                <div className="max-h-80 space-y-3 overflow-y-auto">{sortedTransports.map(item => <div key={item.id} className="border-l-2 border-teal-200 pl-3 text-xs text-slate-600">
+                  <div className="font-semibold text-slate-800">{item.trip?.date} · {item.trip?.destination}</div>
+                  <div>{item.trip?.origin} → {item.trip?.destination} · {item.trip?.departure_time?.slice(0,5) ?? 'Sem horário'}</div>
+                  <div>Situação: {({ COMPLETED: 'Realizada — embarcou', SCHEDULED: 'Agendada', CANCELLED: 'Cancelada', NO_SHOW: 'Não compareceu', OTHER: 'Em andamento / pendente' } as Record<string,string>)[transportStatus(item)]}</div>
+                  <div>Motorista: {item.trip?.driver?.name ?? 'Não informado'} · Veículo: {item.trip?.vehicle?.plate ?? 'Não informado'}</div>
+                  {item.boarding_reason && <div>Motivo: {item.boarding_reason}</div>}
+                  <Link href={`/viagens/${item.trip_id}`} className="font-semibold text-teal-700 underline">Ver viagem</Link>
+                </div>)}</div>
               )}
             </div>
 
