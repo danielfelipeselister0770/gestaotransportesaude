@@ -13,6 +13,7 @@ export default function ExternalServicesPage(){
  const [user,setUser]=useState('');const [role,setRole]=useState('');const [municipality,setMunicipality]=useState('');const [ownDriver,setOwnDriver]=useState('');
  const [drivers,setDrivers]=useState<Driver[]>([]);const [vehicles,setVehicles]=useState<Vehicle[]>([]);
  const [shifts,setShifts]=useState<Shift[]>([]);const [services,setServices]=useState<Service[]>([]);
+ const [exporting,setExporting]=useState(false);
  const [summary,setSummary]=useState({total_km:0,completed_shifts:0});
  const [selected,setSelected]=useState('');const [busy,setBusy]=useState(false);const [loading,setLoading]=useState(true);
  const [error,setError]=useState('');const [message,setMessage]=useState('');
@@ -112,6 +113,50 @@ export default function ExternalServicesPage(){
   }catch{setError('Não foi possível encerrar o expediente. Atualize a tela e tente novamente.');}
   finally{setBusy(false);}
  }
+
+ async function printReport(){
+  if(exporting||!municipality)return;
+  const popup=window.open('','_blank');
+  if(!popup){setError('Permita pop-ups para abrir o relatório em PDF.');return;}
+  setExporting(true);setError('');
+  try{
+   const all:Shift[]=[];
+   for(let offset=0;;offset+=500){
+    let q=db.from('driver_work_shifts').select('id,driver_id,vehicle_id,started_at,ended_at,initial_mileage,final_mileage').eq('municipality_id',municipality);
+    if(role==='MOTORISTA')q=q.eq('driver_id',ownDriver);
+    else if(filterDriver)q=q.eq('driver_id',filterDriver);
+    if(filterVehicle)q=q.eq('vehicle_id',filterVehicle);
+    if(dateFrom)q=q.gte('started_at',new Date(dateFrom+'T00:00:00-03:00').toISOString());
+    if(dateTo)q=q.lt('started_at',new Date(new Date(dateTo+'T00:00:00-03:00').getTime()+86400000).toISOString());
+    const {data,error:e}=await q.order('started_at',{ascending:false}).range(offset,offset+499);
+    if(e)throw new Error(e.message);
+    all.push(...((data??[]) as Shift[]));
+    if((data??[]).length<500)break;
+   }
+   const entries:Service[]=[];
+   for(let i=0;i<all.length;i+=100){
+    const ids=all.slice(i,i+100).map(s=>s.id);
+    const {data,error:e}=await db.from('driver_external_services').select('id,shift_id,service_type,description,created_at').in('shift_id',ids).order('created_at',{ascending:true});
+    if(e)throw new Error(e.message);
+    entries.push(...((data??[]) as Service[]));
+   }
+   const escape=(v:unknown)=>String(v??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]??ch));
+   const formatKm=(n:number)=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
+   const formatDate=(s:string)=>new Date(s).toLocaleString('pt-BR');
+   const km=all.reduce((sum,s)=>sum+(s.ended_at&&s.final_mileage!==null?Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage)):0),0);
+   const rows=all.map(s=>{
+    const name=drivers.find(d=>d.id===s.driver_id)?.name??'Motorista não identificado';
+    const plate=vehicles.find(v=>v.id===s.vehicle_id)?.plate??'Veículo não identificado';
+    const related=entries.filter(e=>e.shift_id===s.id);
+    const details=related.map(e=>'<li>'+escape(labels[e.service_type]??e.service_type)+' — '+escape(e.description)+' ('+escape(formatDate(e.created_at))+')</li>').join('');
+    return '<section class="entry"><h3>'+escape(name)+' · '+escape(plate)+'</h3><p><b>Entrada:</b> '+escape(formatDate(s.started_at))+' | <b>Saída:</b> '+(s.ended_at?escape(formatDate(s.ended_at)):'Em andamento')+'</p><p><b>KM inicial:</b> '+escape(formatKm(Number(s.initial_mileage)))+' | <b>KM final:</b> '+(s.final_mileage!==null?escape(formatKm(Number(s.final_mileage))):'—')+' | <b>Percorrido:</b> '+(s.ended_at&&s.final_mileage!==null?escape(formatKm(Math.max(0,Number(s.final_mileage)-Number(s.initial_mileage))))+' km':'Aguardando encerramento')+'</p><p><b>Serviços:</b> '+related.length+'</p>'+(details?'<ul>'+details+'</ul>':'<p>Nenhum serviço registrado.</p>')+'</section>';
+   }).join('');
+   const period=(dateFrom||'Início')+' até '+(dateTo||'Hoje');
+   const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>VitaRota - Relatório de Serviços Externos</title><style>body{font:12px Arial,sans-serif;color:#172a35;margin:28px}h1{color:#087e76;margin-bottom:4px}h2{font-size:14px}.meta{color:#475569}.entry{border-top:1px solid #cbd5e1;padding:10px 0;break-inside:avoid}.entry h3{margin:0 0 8px;font-size:13px}.entry p{margin:5px 0}li{margin:4px 0}.summary{background:#edf8f6;padding:12px;margin:16px 0}button{padding:10px 16px;background:#087e76;color:white;border:0;border-radius:6px}@media print{button{display:none}body{margin:0}@page{size:A4;margin:16mm}}</style></head><body><button onclick="window.print()">Imprimir / Salvar em PDF</button><h1>VitaRota</h1><h2>Relatório de Serviços Externos</h2><p class="meta">Período: '+escape(period)+' | Emitido em: '+escape(new Date().toLocaleString('pt-BR'))+'</p><p class="meta">Motorista: '+escape(role==='MOTORISTA'?drivers.find(d=>d.id===ownDriver)?.name??'Meu histórico':drivers.find(d=>d.id===filterDriver)?.name??'Todos')+' | Veículo: '+escape(vehicles.find(v=>v.id===filterVehicle)?.plate??'Todos')+'</p><div class="summary"><b>'+all.length+' expedientes · '+all.filter(s=>s.ended_at).length+' encerrados · '+escape(formatKm(km))+' km percorridos</b></div>'+(rows||'<p>Nenhum expediente encontrado.</p>')+'</body></html>';
+   popup.document.open();popup.document.write(html);popup.document.close();
+  }catch(err){popup.close();setError(err instanceof Error?err.message:'Falha ao preparar relatório.');}
+  finally{setExporting(false);}
+ }
  const totalPages=Math.max(1,Math.ceil(totalCount/10));
  const currentPage=page;
  const visibleShifts=shifts;
@@ -160,7 +205,7 @@ export default function ExternalServicesPage(){
     </div>
    </section>
    <section className="rounded-2xl border bg-white p-5">
-    <h2 className="mb-3 font-semibold">Consultar expedientes e serviços</h2><p className="mb-4 text-sm text-slate-600">Filtre o histórico, confira os serviços e encerre um expediente em andamento diretamente no cartão correspondente.</p>
+    <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="font-semibold">Consultar expedientes e serviços</h2><button type="button" disabled={exporting} onClick={()=>void printReport()} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{exporting?"Preparando relatório...":"Relatório / Salvar PDF"}</button></div><p className="mb-4 text-sm text-slate-600">Filtre o histórico, confira os serviços e encerre um expediente em andamento diretamente no cartão correspondente.</p>
     <div className="mb-4 grid gap-3 sm:grid-cols-2">
      <label className="text-sm">Motorista<select value={filterDriver} onChange={e=>setFilterDriver(e.target.value)} className={input}><option value="">Todos os motoristas</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label>
      <label className="text-sm">Veículo<select value={filterVehicle} onChange={e=>setFilterVehicle(e.target.value)} className={input}><option value="">Todos os veículos</option>{vehicles.map(v=><option key={v.id} value={v.id}>{v.plate}</option>)}</select></label>
