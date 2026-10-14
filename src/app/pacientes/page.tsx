@@ -704,7 +704,7 @@ function PatientDetail({
   const transportStatus = (item: TransportRecord) => item.boarding_status === 'CANCELLED' || item.trip?.status === 'CANCELLED' ? 'CANCELLED'
     : item.boarding_status === 'NO_SHOW' ? 'NO_SHOW'
     : item.trip?.status === 'COMPLETED' && item.boarding_status === 'BOARDED' ? 'COMPLETED'
-    : item.trip?.status === 'SCHEDULED' ? 'SCHEDULED' : 'OTHER';
+    : item.trip?.status === 'SCHEDULED' && item.boarding_status === 'EXPECTED' ? 'SCHEDULED' : 'OTHER';
   const sortedTransports = [...transports].filter(item => item.trip && (transportFilter === 'ALL' || transportStatus(item) === transportFilter))
     .sort((a,b) => (b.trip?.date ?? '').localeCompare(a.trip?.date ?? '') || (b.trip?.departure_time ?? '').localeCompare(a.trip?.departure_time ?? ''));
   const transportCounts = { completed: transports.filter(item => transportStatus(item) === 'COMPLETED').length,
