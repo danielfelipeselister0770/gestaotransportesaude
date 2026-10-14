@@ -103,7 +103,7 @@ export default function TripsPage() {
         const tripIds = normalizedTrips.map((trip) => trip.id);
         const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id,companion,boarding_status').in('trip_id', tripIds);
         if ((passengerCountError || !passengers) && !errors.length) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError?.message ?? 'a consulta não retornou dados'}`);
-        const counts = (passengers ?? []).reduce<Record<string, number>>((acc, item) => {
+        const counts = (passengers ?? []).filter(item => item.boarding_status !== 'CANCELLED').reduce<Record<string, number>>((acc, item) => {
           acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1 + (item.companion ? 1 : 0);
           return acc;
         }, {});
@@ -112,7 +112,7 @@ export default function TripsPage() {
           const assigned = passengers.filter(p => p.trip_id === trip.id);
           trip.boarded_count = assigned.filter(p => p.boarding_status === 'BOARDED').length;
           trip.no_show_count = assigned.filter(p => p.boarding_status === 'NO_SHOW').length;
-          trip.pending_count = assigned.filter(p => p.boarding_status !== 'BOARDED' && p.boarding_status !== 'NO_SHOW').length;
+          trip.pending_count = assigned.filter(p => p.boarding_status === 'EXPECTED').length;
         });
       }
 
@@ -664,10 +664,11 @@ export default function TripsPage() {
                         <span>{trip.vehicle?.plate ?? 'Veículo não informado'}</span>
                         <span className="flex items-center gap-1"><Users size={13}/>{trip.passenger_count === null ? 'Contagem indisponível' : `${trip.passenger_count} ocupante(s)`}</span>
                         {trip.passenger_count !== null && <span className="font-medium text-teal-700">✓ {trip.boarded_count} embarcaram · {trip.no_show_count} não embarcaram · {trip.pending_count} pendentes</span>}
+                        {trip.status === 'SCHEDULED' && trip.passenger_count === 0 && <span className="font-semibold text-amber-700">⚠ Sem pacientes ativos — adicione um paciente ou cancele a viagem</span>}
                       </div>
                     </Link>
                     <div className="flex gap-2">
-                      {trip.status === 'SCHEDULED' && <button onClick={() => updateTripStatus(trip.id, 'IN_PROGRESS')} className="rounded-xl bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800">Iniciar</button>}
+                      {trip.status === 'SCHEDULED' && <button onClick={() => updateTripStatus(trip.id, 'IN_PROGRESS')} disabled={trip.passenger_count === null || trip.pending_count === 0} title={trip.pending_count === 0 ? 'Adicione um paciente antes de iniciar' : undefined} className="rounded-xl bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40">Iniciar</button>}
                       
                       {(trip.status === 'SCHEDULED' || trip.status === 'IN_PROGRESS') && <button onClick={() => updateTripStatus(trip.id, 'CANCELLED')} className="rounded-lg border px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">Cancelar viagem</button>}
                     </div>
