@@ -91,18 +91,42 @@ export default function OcorrenciasPage() {
       return;
     }
 
-    const result = editing
-      ? await supabase.from('occurrences').update(payload).eq('id', editing.id)
-      : await supabase.from('occurrences').insert(payload);
+    if (payload.status === 'RESOLVED' && !payload.resolution) {
+      setMessage('Informe a resolução antes de marcar a ocorrência como resolvida.');
+      setSaving(false);
+      return;
+    }
 
-    if (result.error) setMessage(`Não foi possível salvar: ${result.error.message}`);
-    else {
+    try {
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError || !authData.user) {
+        setMessage('Sessão expirada. Entre novamente para salvar a ocorrência.');
+        return;
+      }
+      const wasResolved = editing?.status === 'RESOLVED';
+      const isResolved = payload.status === 'RESOLVED';
+      const changes = {
+        ...payload,
+        ...(isResolved && !wasResolved ? { resolved_at: new Date().toISOString(), resolved_by: authData.user.id } : {}),
+        ...(!isResolved && wasResolved ? { resolved_at: null, resolved_by: null } : {}),
+      };
+      const result = editing
+        ? await supabase.from('occurrences').update(changes).eq('id', editing.id).select('id').single()
+        : await supabase.from('occurrences').insert({ ...changes, created_by: authData.user.id }).select('id').single();
+
+      if (result.error) {
+        setMessage(`Não foi possível salvar: ${result.error.message}`);
+        return;
+      }
       setShowForm(false);
       setEditing(null);
-      setMessage(editing ? 'Ocorrência atualizada.' : 'Ocorrência registrada.');
       await loadData();
+      setMessage(editing ? 'Ocorrência atualizada.' : 'Ocorrência registrada.');
+    } catch {
+      setMessage('Não foi possível salvar a ocorrência. Tente novamente.');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }
 
   const filtered = rows.filter((row) => {
@@ -153,7 +177,7 @@ export default function OcorrenciasPage() {
           </div>
 
           {showForm && (
-            <form onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <form key={editing?.id ?? "new"} onSubmit={save} className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="font-semibold">{editing ? 'Editar ocorrência' : 'Nova ocorrência'}</h2>
                 <button type="button" onClick={() => setShowForm(false)}><X size={20} /></button>
