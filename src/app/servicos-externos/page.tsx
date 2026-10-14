@@ -81,11 +81,24 @@ export default function ExternalServicesPage(){
   void act(()=>db.from('driver_external_services').insert({shift_id:shift.id,municipality_id:municipality,service_type:String(f.get('type')),description,created_by:user}), 'Serviço registrado.');
   form.reset();
  }
- function finish(e:FormEvent<HTMLFormElement>,shiftId:string){
-  e.preventDefault();const shift=shifts.find(s=>s.id===shiftId&&!s.ended_at);if(!shift)return;
-  const km=Number(new FormData(e.currentTarget).get('km'));const vehicle=vehicles.find(v=>v.id===shift.vehicle_id);
+ async function finish(e:FormEvent<HTMLFormElement>,shiftId:string){
+  e.preventDefault();if(busy)return;
+  const shift=shifts.find(s=>s.id===shiftId&&!s.ended_at);
+  if(!shift){setError('Este expediente já não está disponível para encerramento.');return;}
+  const km=Number(new FormData(e.currentTarget).get('km'));
+  const vehicle=vehicles.find(v=>v.id===shift.vehicle_id);
   if(!Number.isFinite(km)||km<Number(shift.initial_mileage)||km<Number(vehicle?.current_mileage??0)){setError('KM final inválido ou menor que o já registrado.');return;}
-  void act(()=>db.from('driver_work_shifts').update({final_mileage:km,ended_at:new Date().toISOString()}).eq('id',shift.id).is('ended_at',null),'Expediente encerrado.');
+  setBusy(true);setError('');setMessage('');
+  try{
+   const {data,error:closeError}=await db.from('driver_work_shifts')
+    .update({final_mileage:km,ended_at:new Date().toISOString()})
+    .eq('id',shift.id).is('ended_at',null).select('id');
+   if(closeError)setError(closeError.message);
+   else if(!data?.length)setMessage('Este expediente já foi encerrado por outro usuário. A lista foi atualizada.');
+   else setMessage('Expediente encerrado com sucesso. Responsável registrado.');
+   await reload(municipality,ownDriver,role);
+  }catch{setError('Não foi possível encerrar o expediente. Atualize a tela e tente novamente.');}
+  finally{setBusy(false);}
  }
  const totalPages=Math.max(1,Math.ceil(totalCount/10));
  const currentPage=page;
