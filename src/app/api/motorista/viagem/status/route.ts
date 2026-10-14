@@ -15,11 +15,11 @@ export async function POST(request: Request) {
 
   const { data: profile } = await server
     .from('profiles')
-    .select('id,role,municipality_id')
+    .select('id,role,municipality_id,active')
     .eq('id', userId)
     .maybeSingle();
 
-  if (!profile || profile.role !== 'MOTORISTA') {
+  if (!profile || profile.role !== 'MOTORISTA' || !profile.active || !profile.municipality_id) {
     return NextResponse.json({ error: 'Apenas motoristas podem executar esta ação.' }, { status: 403 });
   }
 
@@ -53,11 +53,11 @@ export async function POST(request: Request) {
 
   const { data: driver } = await admin
     .from('drivers')
-    .select('id,municipality_id')
+    .select('id,municipality_id,active')
     .eq('profile_id', userId)
     .maybeSingle();
 
-  if (!driver || driver.municipality_id !== profile.municipality_id) {
+  if (!driver || !driver.active || driver.municipality_id !== profile.municipality_id) {
     return NextResponse.json({ error: 'Motorista não vinculado corretamente.' }, { status: 403 });
   }
 
