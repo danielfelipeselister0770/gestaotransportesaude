@@ -34,6 +34,8 @@ export default function OcorrenciasPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  const [formError, setFormError] = useState('');
+  const [formStatus, setFormStatus] = useState<Status>('OPEN');
 
   async function loadData() {
     setLoading(true);
@@ -65,13 +67,14 @@ export default function OcorrenciasPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  function openNew() { setEditing(null); setShowForm(true); setMessage(''); }
-  function openEdit(row: Occurrence) { setEditing(row); setShowForm(true); setMessage(''); }
+  function openNew() { setEditing(null); setFormStatus('OPEN'); setFormError(''); setShowForm(true); setMessage(''); }
+  function openEdit(row: Occurrence) { setEditing(row); setFormStatus(row.status); setFormError(''); setShowForm(true); setMessage(''); }
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
     setMessage('');
+    setFormError('');
     const form = new FormData(event.currentTarget);
     const payload = {
       vehicle_id: String(form.get('vehicle_id') ?? ''),
@@ -86,13 +89,13 @@ export default function OcorrenciasPage() {
     };
 
     if (!payload.vehicle_id || !payload.date || !payload.type || !payload.description) {
-      setMessage('Informe veículo, data, tipo e descrição.');
+      setFormError('Informe veículo, data, tipo e descrição.');
       setSaving(false);
       return;
     }
 
     if (payload.status === 'RESOLVED' && !payload.resolution) {
-      setMessage('Informe a resolução antes de marcar a ocorrência como resolvida.');
+      setFormError('Para marcar como resolvida, descreva no campo Resolução o que foi feito para solucionar a ocorrência.');
       setSaving(false);
       return;
     }
@@ -100,7 +103,7 @@ export default function OcorrenciasPage() {
     try {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData.user) {
-        setMessage('Sessão expirada. Entre novamente para salvar a ocorrência.');
+        setFormError('Sessão expirada. Entre novamente para salvar a ocorrência.');
         return;
       }
       const wasResolved = editing?.status === 'RESOLVED';
@@ -115,7 +118,7 @@ export default function OcorrenciasPage() {
         : await supabase.from('occurrences').insert({ ...changes, created_by: authData.user.id }).select('id').single();
 
       if (result.error) {
-        setMessage(`Não foi possível salvar: ${result.error.message}`);
+        setFormError(`Não foi possível salvar: ${result.error.message}`);
         return;
       }
       setShowForm(false);
@@ -123,7 +126,7 @@ export default function OcorrenciasPage() {
       await loadData();
       setMessage(editing ? 'Ocorrência atualizada.' : 'Ocorrência registrada.');
     } catch {
-      setMessage('Não foi possível salvar a ocorrência. Tente novamente.');
+      setFormError('Não foi possível salvar a ocorrência. Tente novamente.');
     } finally {
       setSaving(false);
     }
@@ -182,15 +185,16 @@ export default function OcorrenciasPage() {
                 <h2 className="font-semibold">{editing ? 'Editar ocorrência' : 'Nova ocorrência'}</h2>
                 <button type="button" onClick={() => setShowForm(false)}><X size={20} /></button>
               </div>
+              {formError && <div role="alert" className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm font-medium text-red-700">{formError}</div>}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <label className="text-sm">Veículo<select name="vehicle_id" required defaultValue={editing?.vehicle_id ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Selecione</option>{vehicles.map((v) => <option key={v.id} value={v.id}>{v.plate} {[v.brand, v.model].filter(Boolean).join(' ')}</option>)}</select></label>
                 <label className="text-sm">Viagem relacionada<select name="trip_id" defaultValue={editing?.trip_id ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Nenhuma</option>{trips.map((t) => <option key={t.id} value={t.id}>{t.date} • {t.origin} → {t.destination}</option>)}</select></label>
                 <label className="text-sm">Motorista<select name="driver_id" defaultValue={editing?.driver_id??''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Não informado</option>{drivers.map(d=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><label className="text-sm">Paciente<select name="patient_id" defaultValue={editing?.patient_id??''} className="mt-1 w-full rounded-lg border px-3 py-2"><option value="">Não relacionado</option>{patients.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label><label className="text-sm">Data<input name="date" type="datetime-local" required defaultValue={editing?.date?.slice(0,16) ?? new Date().toISOString().slice(0,16)} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
                 <label className="text-sm">Tipo<input name="type" required placeholder="Atraso, acidente, pane..." defaultValue={editing?.type ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
                 <label className="text-sm sm:col-span-2 lg:col-span-4">Descrição<textarea name="description" required rows={3} defaultValue={editing?.description ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                <label className="text-sm">Status<select name="status" defaultValue={editing?.status ?? 'OPEN'} className="mt-1 w-full rounded-lg border px-3 py-2">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                <label className="text-sm">Status<select name="status" value={formStatus} onChange={(event) => { setFormStatus(event.target.value as Status); setFormError(''); }} className="mt-1 w-full rounded-lg border px-3 py-2">{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
                 <label className="text-sm">Responsável<input name="responsible" defaultValue={editing?.responsible ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
-                <label className="text-sm sm:col-span-2">Resolução<textarea name="resolution" rows={2} placeholder="Obrigatória ao marcar como resolvida" defaultValue={editing?.resolution??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm sm:col-span-2">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
+                <label className="text-sm sm:col-span-2">Resolução<textarea name="resolution" rows={2} placeholder="Descreva como a ocorrência foi solucionada" required={formStatus === 'RESOLVED'} aria-required={formStatus === 'RESOLVED'} defaultValue={editing?.resolution??''} className="mt-1 w-full rounded-lg border px-3 py-2"/></label><label className="text-sm sm:col-span-2">Observações<textarea name="observations" rows={2} defaultValue={editing?.observations ?? ''} className="mt-1 w-full rounded-lg border px-3 py-2" /></label>
               </div>
               <div className="mt-4 flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="rounded-lg border px-4 py-2 text-sm">Cancelar</button><button disabled={saving} className="rounded-xl bg-teal-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-800 disabled:opacity-60">{saving ? 'Salvando...' : 'Salvar'}</button></div>
             </form>
