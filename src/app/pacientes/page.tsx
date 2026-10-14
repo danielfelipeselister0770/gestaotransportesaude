@@ -58,6 +58,8 @@ type Municipality = {
   state: string | null;
 };
 
+type CancellationRecord = { id:string; date:string; destination:string; cancellation_reason:string|null; cancelled_at:string|null; cancelled_by:string|null; responsible:string|null };
+
 type PatientHistory = {
   id: string;
   action: 'CREATED' | 'UPDATED' | 'DEACTIVATED' | 'REACTIVATED';
@@ -115,6 +117,8 @@ export default function PatientsPage() {
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [history, setHistory] = useState<PatientHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [cancellations, setCancellations] = useState<CancellationRecord[]>([]);
+  const [cancellationError, setCancellationError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -159,6 +163,22 @@ export default function PatientsPage() {
     setSelectedPatient(patient);
     setLoadingHistory(true);
     setHistory([]);
+    setCancellations([]);
+    setCancellationError('');
+    const { data: cancelledRequests, error: cancelledError } = await supabase.from('transport_requests')
+      .select('id,date,destination,cancellation_reason,cancelled_at,cancelled_by')
+      .eq('patient_id', patient.id).eq('municipality_id', patient.municipality_id).eq('status', 'CANCELLED')
+      .order('cancelled_at', { ascending: false });
+    if (cancelledError) setCancellationError('Não foi possível consultar os cancelamentos.');
+    else {
+      const actorIds = [...new Set((cancelledRequests ?? []).map(row => row.cancelled_by).filter((id): id is string => Boolean(id)))];
+      const { data: actors, error: actorsError } = actorIds.length
+        ? await supabase.from('profiles').select('id,name').in('id', actorIds)
+        : { data: [] as { id: string; name: string }[], error: null };
+      if (actorsError) setCancellationError('Não foi possível identificar todos os responsáveis.');
+      const names = new Map((actors ?? []).map(actor => [actor.id, actor.name]));
+      setCancellations((cancelledRequests ?? []).map(row => ({ ...row, responsible: row.cancelled_by ? names.get(row.cancelled_by) ?? null : null })));
+    }
 
     const { data, error } = await supabase
       .from('patient_history')
@@ -530,6 +550,8 @@ export default function PatientsPage() {
         <PatientDetail
           patient={selectedPatient}
           history={history}
+          cancellations={cancellations}
+          cancellationError={cancellationError}
           loadingHistory={loadingHistory}
           municipalityName={municipalityName(selectedPatient.municipality_id)}
           onClose={() => setSelectedPatient(null)}
@@ -634,6 +656,8 @@ function PatientForm({
 function PatientDetail({
   patient,
   history,
+  cancellations,
+  cancellationError,
   loadingHistory,
   municipalityName,
   onClose,
@@ -642,6 +666,8 @@ function PatientDetail({
 }: {
   patient: Patient;
   history: PatientHistory[];
+  cancellations: CancellationRecord[];
+  cancellationError: string;
   loadingHistory: boolean;
   municipalityName: string;
   onClose: () => void;
@@ -742,6 +768,20 @@ function PatientDetail({
                   <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">Existem dados pendentes.</div>
                   <ul className="mt-3 space-y-1 text-xs text-slate-600">{susMissingFields(patient).map((item) => <li key={item}>• {item}</li>)}</ul>
                 </>
+              )}
+            </div>
+
+            <div className="rounded-xl border p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800"><History size={16} /> Cancelamentos de transporte</div>
+              {cancellationError && <p role="alert" className="mb-2 text-xs text-amber-700">{cancellationError}</p>}
+              {loadingHistory ? <p className="text-sm text-slate-500">Carregando cancelamentos...</p> : cancellations.length === 0 && !cancellationError ? <p className="text-sm text-slate-500">Nenhum cancelamento registrado.</p> : (
+                <div className="space-y-3">{cancellations.map(item => <div key={item.id} className="border-l-2 border-amber-300 pl-3 text-sm">
+                  <div className="font-medium text-slate-800">{item.destination || 'Destino não informado'}</div>
+                  <div className="text-xs text-slate-500">Data da solicitação: {item.date} · Cancelado em: {item.cancelled_at ? formatDateTime(item.cancelled_at) : 'Data não registrada'}</div>
+                  <div className="text-xs text-slate-700">Motivo: {item.cancellation_reason || 'Não informado'}</div>
+                  <div className="text-xs text-slate-700">Responsável: {item.responsible || 'Não identificado'}</div>
+                  <Link href={`/solicitacoes?request=${item.id}`} className="text-xs font-semibold text-teal-700 underline">Ver solicitação</Link>
+                </div>)}</div>
               )}
             </div>
 
