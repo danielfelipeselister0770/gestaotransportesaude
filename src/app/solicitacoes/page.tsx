@@ -40,7 +40,7 @@ export default function RequestsPage(){
   if(!b.error)setPatients((b.data??[]) as unknown as Patient[]);
   if(!c.error)setUnits((c.data??[]) as unknown as HealthUnit[]);
   const requestedId=typeof window!=='undefined'?new URLSearchParams(window.location.search).get('request'):null;
-  if(requestedId&&a.data){const found=(a.data??[]).map(normalize).find((x:any)=>x.id===requestedId);if(found){setEditing(found as RequestRow);setShowForm(true);}}
+  if(requestedId&&a.data){const found=(a.data??[]).map(normalize).find((x:any)=>x.id===requestedId);if(found){await openDetail(found as RequestRow);}else{setMessage('A solicitação indicada não foi encontrada ou não está disponível para seu acesso.');}}
   setLoading(false);
  }
  useEffect(()=>{load();},[]);
