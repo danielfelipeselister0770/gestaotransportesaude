@@ -65,13 +65,17 @@ export default function ExternalServicesPage(){
   if(v?.current_mileage!=null&&km<Number(v.current_mileage)){setError('KM inicial menor que o registrado no veículo.');return;}
   setBusy(true);setError('');setMessage('');
   try{
-   const {data:shift,error:shiftError}=await db.from('driver_work_shifts').insert({municipality_id:municipality,driver_id:driver,vehicle_id:vehicle,initial_mileage:km,created_by:user}).select('id').single();
-   if(shiftError||!shift){setError(shiftError?.message??'Não foi possível iniciar o expediente.');return;}
-   const {error:serviceError}=await db.from('driver_external_services').insert({shift_id:shift.id,municipality_id:municipality,service_type:type,description,created_by:user});
-   if(serviceError){
-    setError('Expediente iniciado, mas o primeiro serviço não foi registrado: '+serviceError.message+' Registre o serviço no expediente aberto antes de prosseguir.');
-   }else{setMessage('Expediente iniciado e primeiro serviço registrado.');}
-   setSelected(shift.id);await reload(municipality,ownDriver,role);
+   const {data:shiftId,error:startError}=await db.rpc('start_external_shift_with_service',{
+    p_municipality_id:municipality,
+    p_driver_id:driver,
+    p_vehicle_id:vehicle,
+    p_initial_mileage:km,
+    p_service_type:type,
+    p_description:description
+   });
+   if(startError||!shiftId){setError(startError?.message??'Não foi possível iniciar o expediente. Nenhum registro foi criado.');return;}
+   setMessage('Expediente iniciado e primeiro serviço registrado.');
+   setSelected(shiftId);await reload(municipality,ownDriver,role);
   }catch{setError('Não foi possível concluir a operação. Confira os expedientes antes de tentar novamente.');}
   finally{setBusy(false);}
  }
