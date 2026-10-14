@@ -45,7 +45,7 @@ export default function OcorrenciasPage() {
   async function openHistory(row:Occurrence) {
     setHistoryFor(row);setHistoryRows([]);setHistoryError('');setHistoryLoading(true);
     const {data,error}=await supabase.from('occurrence_history')
-      .select('id,changed_at,user_id,action,old_status,new_status,old_data,new_data,new_observations')
+      .select('id,changed_at,user_id,action,old_status,new_status,old_data,new_data')
       .eq('occurrence_id',row.id).order('changed_at',{ascending:false});
     if(error){setHistoryError('Não foi possível consultar o histórico: '+error.message);setHistoryLoading(false);return;}
     const entries=(data??[]) as OccurrenceHistory[];
