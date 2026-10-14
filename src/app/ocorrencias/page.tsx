@@ -8,7 +8,7 @@ type Vehicle = { id: string; plate: string; brand: string | null; model: string 
 type Trip = { id: string; date: string; origin: string; destination: string; driver_id:string; driver?:{name:string}|null };
 type Driver={id:string;name:string}; type Patient={id:string;name:string};
 type Status = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CANCELLED';
-type OccurrenceHistory = { id:string; changed_at:string; user_id:string|null; action:string; old_status:string|null; new_status:string|null; old_data:Record<string,unknown>|null; new_data:Record<string,unknown>|null; actor_name?:string|null };
+type OccurrenceHistory = { id:string; changed_at:string; user_id:string|null; action:string; old_status:string|null; new_status:string|null; old_data:Record<string,string|null>|null; new_data:Record<string,string|null>|null; actor_name?:string|null };
 type Occurrence = {
   id: string; vehicle_id: string; trip_id: string | null; date: string; type: string;
   description: string; status: Status; responsible: string | null; observations: string | null;
