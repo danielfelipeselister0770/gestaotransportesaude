@@ -33,6 +33,7 @@ type Trip = {
   initial_mileage: number | null;
   final_mileage: number | null;
   status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  cancellation_reason: string | null;
   observations: string | null;
   driver: { name: string } | null;
   vehicle: { id: string; plate: string; brand: string | null; model: string | null; current_mileage: number } | null;
@@ -85,7 +86,7 @@ export default function TripDetailPage() {
     try {
     const [tripResult, passengersResult, historyResult, occurrenceResult] = await Promise.all([
       supabase.from('trips')
-        .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
+        .select('id,date,departure_time,origin,destination,initial_mileage,final_mileage,status,cancellation_reason,observations,driver:drivers(name),vehicle:vehicles(id,plate,brand,model,current_mileage)')
         .eq('id', tripId).single(),
       supabase.from('trip_passengers')
         .select('id,patient_id,request_id,companion,boarding_status,boarding_reason,boarding_recorded_at,observations,patient:patients(name)')
@@ -665,7 +666,7 @@ export default function TripDetailPage() {
 
         <div className="mt-5 rounded-xl border bg-white shadow-sm">
           <div className="flex items-center gap-2 border-b px-5 py-4"><History size={18}/><h2 className="font-semibold">Histórico da viagem</h2></div>
-          <div className="p-5">{history.length===0?<p className="text-sm text-slate-500">Sem movimentações registradas.</p>:history.map(h=><div key={h.id} className="mb-3 border-l-2 pl-3 text-sm"><b>{h.action==='CREATED'?'Viagem criada':h.action==='STATUS_CHANGED'?(h.old_status?statusLabels[h.old_status]+' → ':'')+(h.new_status?statusLabels[h.new_status]:''):'Viagem atualizada'}</b><div className="text-xs text-slate-500">{new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(h.changed_at))}{h.note?' · '+h.note:''}</div></div>)}</div>
+          <div className="p-5">{history.length===0?<p className="text-sm text-slate-500">Sem movimentações registradas.</p>:history.map(h=><div key={h.id} className="mb-3 border-l-2 pl-3 text-sm"><b>{h.action==='CREATED'?'Viagem criada':h.action==='STATUS_CHANGED'?(h.old_status?statusLabels[h.old_status]+' → ':'')+(h.new_status?statusLabels[h.new_status]:''):'Viagem atualizada'}</b><div className="text-xs text-slate-500">{new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(h.changed_at))}{h.new_status === 'CANCELLED' && trip.cancellation_reason ? ' · Motivo: ' + trip.cancellation_reason : h.note ? ' · ' + h.note : ''}</div></div>)}</div>
         </div>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
