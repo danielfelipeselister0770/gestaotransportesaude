@@ -427,6 +427,21 @@ export default function DriverPortalPage() {
     loadData();
   }, [viewMode]);
 
+  // Mantém a programação sincronizada com cancelamentos e novas viagens.
+  // Não interrompe ações em andamento e não limpa mensagens de confirmação.
+  useEffect(() => {
+    const syncTrips = () => {
+      if (document.visibilityState !== 'visible' || actionInProgressRef.current) return;
+      void loadData(true);
+    };
+    const interval = window.setInterval(syncTrips, 15000);
+    document.addEventListener('visibilitychange', syncTrips);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener('visibilitychange', syncTrips);
+    };
+  }, [viewMode]);
+
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = '/login';
