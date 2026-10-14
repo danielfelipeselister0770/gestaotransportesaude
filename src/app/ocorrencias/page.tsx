@@ -8,7 +8,7 @@ type Vehicle = { id: string; plate: string; brand: string | null; model: string 
 type Trip = { id: string; date: string; origin: string; destination: string; driver_id:string; driver?:{name:string}|null };
 type Driver={id:string;name:string}; type Patient={id:string;name:string};
 type Status = 'OPEN' | 'IN_REVIEW' | 'RESOLVED' | 'CANCELLED';
-type OccurrenceHistory = { id:string; changed_at:string; changed_by:string|null; action:string; old_status:string|null; new_status:string|null; old_resolution:string|null; new_resolution:string|null; old_responsible:string|null; new_responsible:string|null; old_observations:string|null; new_observations:string|null; actor_name?:string|null };
+type OccurrenceHistory = { id:string; changed_at:string; user_id:string|null; action:string; old_status:string|null; new_status:string|null; old_data:Record<string,unknown>|null; new_data:Record<string,unknown>|null; actor_name?:string|null };
 type Occurrence = {
   id: string; vehicle_id: string; trip_id: string | null; date: string; type: string;
   description: string; status: Status; responsible: string | null; observations: string | null;
@@ -45,14 +45,14 @@ export default function OcorrenciasPage() {
   async function openHistory(row:Occurrence) {
     setHistoryFor(row);setHistoryRows([]);setHistoryError('');setHistoryLoading(true);
     const {data,error}=await supabase.from('occurrence_history')
-      .select('id,changed_at,changed_by,action,old_status,new_status,old_resolution,new_resolution,old_responsible,new_responsible,old_observations,new_observations')
+      .select('id,changed_at,user_id,action,old_status,new_status,old_data,new_data,new_observations')
       .eq('occurrence_id',row.id).order('changed_at',{ascending:false});
     if(error){setHistoryError('Não foi possível consultar o histórico: '+error.message);setHistoryLoading(false);return;}
     const entries=(data??[]) as OccurrenceHistory[];
-    const ids=[...new Set(entries.map(item=>item.changed_by).filter((id):id is string=>Boolean(id)))];
+    const ids=[...new Set(entries.map(item=>item.user_id).filter((id):id is string=>Boolean(id)))];
     const {data:actors}=ids.length?await supabase.from('profiles').select('id,name').in('id',ids):{data:[] as {id:string;name:string}[]};
     const names=new Map((actors??[]).map(actor=>[actor.id,actor.name]));
-    setHistoryRows(entries.map(item=>({...item,actor_name:item.changed_by?names.get(item.changed_by)??null:null})));
+    setHistoryRows(entries.map(item=>({...item,actor_name:item.user_id?names.get(item.user_id)??null:null})));
     setHistoryLoading(false);
   }
 
@@ -253,9 +253,9 @@ export default function OcorrenciasPage() {
                   <div className="font-semibold text-slate-800">{item.action==='CREATED'?'Ocorrência criada':item.action==='STATUS_CHANGED'?'Status alterado':'Informações atualizadas'}</div>
                   <div className="text-xs text-slate-500">{new Date(item.changed_at).toLocaleString('pt-BR')} · {item.actor_name??'Usuário não identificado'}</div>
                   {item.old_status!==item.new_status && <div>Status: {item.old_status ? statusLabels[item.old_status as Status]??item.old_status : '—'} → {item.new_status ? statusLabels[item.new_status as Status]??item.new_status : '—'}</div>}
-                  {item.old_resolution!==item.new_resolution && <div>Resolução: {item.new_resolution??'Removida'}</div>}
-                  {item.old_responsible!==item.new_responsible && <div>Responsável: {item.new_responsible??'Não informado'}</div>}
-                  {item.old_observations!==item.new_observations && <div>Observações: {item.new_observations??'Removidas'}</div>}
+                  {item.old_data?.resolution!==item.new_data?.resolution && <div>Resolução: {item.new_data?.resolution??'Removida'}</div>}
+                  {item.old_data?.responsible!==item.new_data?.responsible && <div>Responsável: {item.new_data?.responsible??'Não informado'}</div>}
+                  {item.old_data?.observations!==item.new_data?.observations && <div>Observações: {item.new_data?.observations??'Removidas'}</div>}
                 </div>)}</div>}
             </div>
           </div>}
