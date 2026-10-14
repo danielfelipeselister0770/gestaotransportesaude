@@ -157,11 +157,14 @@ export default function OcorrenciasPage() {
       (row.vehicle?.plate ?? '').toLowerCase().includes(q) ||
       row.type.toLowerCase().includes(q) ||
       row.description.toLowerCase().includes(q) ||
-      (row.responsible ?? '').toLowerCase().includes(q);
+      (row.responsible ?? '').toLowerCase().includes(q) ||
+      (row.patient?.name ?? '').toLowerCase().includes(q) ||
+      (row.driver?.name ?? '').toLowerCase().includes(q) ||
+      (row.resolution ?? '').toLowerCase().includes(q);
     return matchesSearch && (status === 'ALL' || row.status === status);
   });
 
-  const counts={total:rows.length,open:rows.filter(r=>r.status==='OPEN').length,review:rows.filter(r=>r.status==='IN_REVIEW').length,resolved:rows.filter(r=>r.status==='RESOLVED').length};
+  const counts={total:rows.length,open:rows.filter(r=>r.status==='OPEN').length,review:rows.filter(r=>r.status==='IN_REVIEW').length,resolved:rows.filter(r=>r.status==='RESOLVED').length,cancelled:rows.filter(r=>r.status==='CANCELLED').length};
 
   function statusClass(value: Status) {
     return value === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700' :
@@ -186,11 +189,11 @@ export default function OcorrenciasPage() {
 
           {message && <div className="mb-4 rounded-lg border bg-white px-4 py-3 text-sm">{message}</div>}
 
-          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><Stat icon={<ClipboardList size={18}/>} label="Total" value={counts.total}/><Stat icon={<AlertCircle size={18}/>} label="Abertas" value={counts.open} attention={counts.open > 0}/><Stat icon={<Search size={18}/>} label="Em análise" value={counts.review}/><Stat icon={<CheckCircle2 size={18}/>} label="Resolvidas" value={counts.resolved}/></div>
+          <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5"><Stat icon={<ClipboardList size={18}/>} label="Total" value={counts.total}/><Stat icon={<AlertCircle size={18}/>} label="Abertas" value={counts.open} attention={counts.open > 0}/><Stat icon={<Search size={18}/>} label="Em análise" value={counts.review}/><Stat icon={<CheckCircle2 size={18}/>} label="Resolvidas" value={counts.resolved}/><Stat icon={<X size={18}/>} label="Canceladas" value={counts.cancelled}/></div>
           <div className="mb-5 grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-[1fr_180px]">
             <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:border-teal-400 focus-within:ring-2 focus-within:ring-teal-100">
               <Search size={18} className="text-slate-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por placa, tipo, descrição ou responsável" className="w-full outline-none text-sm" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por placa, paciente, motorista, resolução..." className="w-full outline-none text-sm" />
             </div>
             <select value={status} onChange={(e) => setStatus(e.target.value as 'ALL' | Status)} className="rounded-xl border bg-white px-3 py-2 text-sm">
               <option value="ALL">Todos os status</option>
@@ -229,6 +232,7 @@ export default function OcorrenciasPage() {
                     <div>
                       <div className="font-semibold text-slate-900">{row.vehicle?.plate ?? 'Veículo'} • {row.type}</div>
                       <div className="text-sm text-slate-600">{row.description}</div>
+                      {row.status === 'RESOLVED' && row.resolution && <div className="mt-1 text-xs text-emerald-700"><strong>Resolução:</strong> {row.resolution}{row.resolved_at ? ` · ${new Date(row.resolved_at).toLocaleString('pt-BR')}` : ''}</div>}
                       <div className="text-xs text-slate-500">{new Date(row.date).toLocaleString('pt-BR')}{row.trip ? ` • Viagem ${row.trip.origin} → ${row.trip.destination}` : ''}{row.driver ? ` • Motorista: ${row.driver.name}` : ''}{row.patient ? ` • Paciente: ${row.patient.name}` : ''}{row.responsible ? ` • Resp.: ${row.responsible}` : ''}</div>
                     </div>
                   </div>
