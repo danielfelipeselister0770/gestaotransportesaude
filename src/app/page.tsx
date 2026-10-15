@@ -233,7 +233,7 @@ export default async function Home() {
             <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 lg:p-6">
               <div className="flex items-center gap-2 font-bold text-amber-950"><AlertTriangle size={19}/> Atenção da gestão</div>
               <div className="mt-4 grid gap-2 md:grid-cols-2">
-                {alerts.slice(0, 6).map((alert, index) => (
+                {alerts.map((alert, index) => (
                   <Link key={index} href={alert.href} className="group flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950 transition hover:bg-white">
                     <span>{alert.message}</span>
                     <span className="shrink-0 font-semibold text-teal-800 group-hover:underline">{alert.action} →</span>
