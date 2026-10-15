@@ -528,8 +528,12 @@ export default function TripsPage() {
         .maybeSingle();
 
       if (vehicleError || !updatedVehicle) {
+        // A viagem já foi iniciada. Não tente desfazer automaticamente: outro operador
+        // pode ter alterado o veículo enquanto esta requisição estava em andamento.
         await loadData();
-        setMessage(vehicleError ? `Viagem ${id} iniciada, mas não foi possível atualizar o veículo: ${vehicleError.message}` : `Viagem ${id} iniciada, mas o veículo deixou de estar disponível. Confira a situação antes de continuar.`);
+        setMessage(vehicleError
+          ? `ATENÇÃO: a viagem ${id} foi iniciada, mas houve falha ao reservar o veículo: ${vehicleError.message}. Confira a situação do veículo antes de prosseguir.`
+          : `ATENÇÃO: a viagem ${id} foi iniciada, mas o veículo não pôde ser reservado. Não inicie outra viagem com ele antes de conferir a situação.`);
         return;
       }
     } else if (status === 'CANCELLED') {
