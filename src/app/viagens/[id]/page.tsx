@@ -387,45 +387,6 @@ export default function TripDetailPage() {
       return;
     }
 
-    if (status === 'COMPLETED') {
-      const { data: linkedPassengers, error: passengersError } = await supabase
-        .from('trip_passengers')
-        .select('request_id,boarding_status')
-        .eq('trip_id', trip.id)
-        .not('request_id', 'is', null);
-
-      if (passengersError || !linkedPassengers) {
-        await loadData();
-        setMessage(passengersError ? `Viagem concluída, mas não foi possível localizar as solicitações vinculadas: ${passengersError.message}` : `Viagem ${trip.id} concluída, mas não foi possível confirmar a consulta das solicitações vinculadas. Avise a gestão para conferir os registros.`);
-        setSaving(false);
-        return;
-      }
-
-      // Solicitações de pacientes cancelados já possuem seu próprio desfecho.
-      // Não tente concluí-las nem trate sua ausência na atualização como erro.
-      const requestIds = [...new Set((linkedPassengers ?? [])
-        .filter((item) => item.boarding_status !== 'CANCELLED')
-        .map((item) => item.request_id)
-        .filter((id): id is string => Boolean(id)))];
-
-      if (requestIds.length > 0) {
-        const { data: updatedRequests, error: requestsError } = await supabase
-          .from('transport_requests')
-          .update({ status: 'COMPLETED' })
-          .in('id', requestIds)
-          .eq('status', 'SCHEDULED')
-          .select('id');
-
-        const updatedRequestIds = new Set((updatedRequests ?? []).map((request) => request.id));
-        if (requestsError || updatedRequestIds.size !== requestIds.length || requestIds.some((id) => !updatedRequestIds.has(id))) {
-          await loadData();
-          setMessage(requestsError ? `Viagem concluída, mas não foi possível atualizar as solicitações para Concluída: ${requestsError.message}` : `Viagem concluída, mas somente ${updatedRequestIds.size} de ${requestIds.length} solicitações vinculadas tiveram a atualização confirmada. Avise a gestão para conferir os registros.`);
-          setSaving(false);
-          return;
-        }
-      }
-    }
-
     if (trip.initial_mileage === null && initial !== null && trip.vehicle?.id) {
       const { data: initialRecord, error: mileageError } = await supabase.from('mileage_records').insert({
         vehicle_id: trip.vehicle.id,
@@ -450,7 +411,7 @@ export default function TripDetailPage() {
       const { data: updatedVehicle, error: vehicleError } = await supabase.from('vehicles')
         .update({
           current_mileage: final,
-          ...(status === 'COMPLETED' ? { status: 'AVAILABLE' } : {}),
+          
         })
         .eq('id', trip.vehicle.id)
         .select('id,current_mileage,status')
@@ -463,52 +424,18 @@ export default function TripDetailPage() {
         return;
       }
 
-      if (!updatedVehicle || Number(updatedVehicle.current_mileage) !== final || (status === 'COMPLETED' && updatedVehicle.status !== 'AVAILABLE')) {
+      if (!updatedVehicle || Number(updatedVehicle.current_mileage) !== final) {
         await loadData();
         setMessage('A viagem foi salva, mas a atualização do veículo não foi confirmada (quilometragem ou disponibilidade). Confira o cadastro do veículo e avise a gestão.');
         setSaving(false);
         return;
       }
 
-      if (status === 'COMPLETED') {
-        const { data: existingFinalRecord, error: finalRecordLookupError } = await supabase.from('mileage_records')
-          .select('id')
-          .eq('trip_id', trip.id)
-          .eq('source', 'TRIP')
-          .eq('observations', 'Quilometragem final da viagem')
-          .maybeSingle();
 
-        if (finalRecordLookupError) {
-          setMessage(`Viagem concluída, mas não foi possível conferir o registro de KM final: ${finalRecordLookupError.message}. Avise a gestão antes de tentar novamente.`);
-          setSaving(false);
-          await loadData();
-          return;
-        }
-
-        const mileagePayload = {
-          vehicle_id: trip.vehicle.id,
-          trip_id: trip.id,
-          date: new Date().toISOString(),
-          mileage: final,
-          source: 'TRIP',
-          observations: 'Quilometragem final da viagem',
-        };
-
-        const mileageResult = existingFinalRecord
-          ? await supabase.from('mileage_records').update(mileagePayload).eq('id', existingFinalRecord.id).select('id').maybeSingle()
-          : await supabase.from('mileage_records').insert(mileagePayload).select('id').maybeSingle();
-
-        if (mileageResult.error || !mileageResult.data) {
-          setMessage(mileageResult.error ? `Viagem concluída, mas não foi possível registrar o KM final: ${mileageResult.error.message}` : 'Viagem concluída, mas o registro de KM final não foi confirmado. Avise a gestão para conferir os dados.');
-          setSaving(false);
-          await loadData();
-          return;
-        }
-      }
     }
 
     await loadData();
-    setMessage(status === 'COMPLETED' ? 'Viagem concluída com sucesso.' : 'Dados da viagem salvos.');
+    setMessage('Dados da viagem salvos.');
     setSaving(false);
   }
 
