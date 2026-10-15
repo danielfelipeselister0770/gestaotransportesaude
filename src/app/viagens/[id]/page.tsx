@@ -378,7 +378,7 @@ export default function TripDetailPage() {
       initial_mileage: initial,
       final_mileage: final,
       observations: observation.trim() || null,
-      ...(status ? { status, ...(status === 'COMPLETED' ? { completed_at: new Date().toISOString() } : {}) } : {}),
+      ...(status ? { status } : {}),
     }).eq('id', trip.id).eq('status', trip.status).select('id').maybeSingle();
 
     if (error || !updatedTrip) {
