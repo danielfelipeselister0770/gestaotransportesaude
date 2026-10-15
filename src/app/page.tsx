@@ -119,6 +119,20 @@ export default async function Home() {
     }
   }
 
+  // Viagens em andamento sem passageiros ativos: apenas sinalizar, nunca cancelar automaticamente.
+  let emptyActiveTripIds: string[] = [];
+  if (!activeTripsError && activeTrips && activeTrips.length > 0 && activeTrips.length < 500) {
+    const { data: activeTripPassengers, error: activeTripPassengersError } = await supabase
+      .from('trip_passengers')
+      .select('trip_id')
+      .in('trip_id', activeTrips.map(trip => trip.id))
+      .neq('boarding_status', 'CANCELLED');
+    if (!activeTripPassengersError && activeTripPassengers) {
+      const occupied = new Set(activeTripPassengers.map(passenger => passenger.trip_id));
+      emptyActiveTripIds = activeTrips.filter(trip => !occupied.has(trip.id)).map(trip => trip.id);
+    }
+  }
+
   const requestRows=(todayRequests.data??[]) as {id:string;status:string}[];
   const todayPending=requestRows.filter(r=>['REQUESTED','APPROVED'].includes(r.status)).length;
   const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
