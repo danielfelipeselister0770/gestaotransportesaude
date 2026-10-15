@@ -200,7 +200,7 @@ export default async function Home() {
                 {pendingBoardingTripIds.slice(0,8).map(tripId => {
                   const trip = activeTrips?.find(item => item.id === tripId);
                   const driver = trip?.driver;
-                  const driverName = Array.isArray(driver) ? driver[0]?.name : driver?.name;
+                  const driverName = driver?.[0]?.name;
                   return (
                     <Link key={tripId} href={`/viagens/${tripId}`} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-teal-800 hover:bg-amber-100">
                       <span className="min-w-0">
