@@ -26,8 +26,10 @@ export default async function Home() {
     supabase.from('trips').select('id', { count: 'exact', head: true }).eq('date', today).in('status', ['SCHEDULED', 'IN_PROGRESS']),
     supabase
       .from('trip_passengers')
-      .select('id, trips!inner(status)', { count: 'exact', head: true })
-      .in('trips.status', ['SCHEDULED', 'IN_PROGRESS']).neq('boarding_status', 'CANCELLED'),
+      .select('id, trips!inner(status,date)', { count: 'exact', head: true })
+      .eq('trips.date', today)
+      .in('trips.status', ['SCHEDULED', 'IN_PROGRESS'])
+      .neq('boarding_status', 'CANCELLED'),
     supabase.from('transport_requests').select('id', { count: 'exact', head: true }).in('status', ['REQUESTED', 'APPROVED']),
     supabase.from('vehicles').select('id', { count: 'exact', head: true }).eq('status', 'AVAILABLE'),
     supabase.from('maintenances').select('id', { count: 'exact', head: true }).in('status', ['SCHEDULED', 'IN_PROGRESS']),
@@ -94,7 +96,7 @@ export default async function Home() {
 
   const cards: Array<[string, number, LucideIcon, string, string]> = [
     ['Viagens hoje', trips.count ?? 0, Route, '/viagens', 'Agendadas ou em andamento'],
-    ['Passageiros em viagens', passengers.count ?? 0, Users, '/viagens', 'Em viagens ativas'],
+    ['Passageiros previstos hoje', passengers.count ?? 0, Users, '/viagens', 'Viagens de hoje, sem cancelados'],
     ['Solicitações pendentes', requests.count ?? 0, ClipboardList, '/solicitacoes', 'Aguardando andamento'],
     ['Veículos disponíveis', vehicles.count ?? 0, CarFront, '/veiculos', 'Prontos para operação'],
     ['Manutenções abertas', maintenances.count ?? 0, Wrench, '/manutencoes', 'Programadas ou ativas'],
