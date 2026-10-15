@@ -63,10 +63,34 @@ export default async function Home() {
     vehicle: Array.isArray(row.vehicle) ? row.vehicle[0] ?? null : row.vehicle,
   })) as UpcomingTrip[];
 
+  // Alertar a gestão sobre viagens futuras agendadas sem passageiros ativos.
+  const { data: scheduledTrips, error: scheduledTripsError } = await supabase
+    .from('trips')
+    .select('id')
+    .gte('date', today)
+    .eq('status', 'SCHEDULED')
+    .limit(500);
+  let emptyScheduledTripCount: number | null = null;
+  if (!scheduledTripsError && scheduledTrips) {
+    if (scheduledTrips.length === 0) {
+      emptyScheduledTripCount = 0;
+    } else if (scheduledTrips.length < 500) {
+      const { data: activePassengers, error: activePassengersError } = await supabase
+        .from('trip_passengers')
+        .select('trip_id')
+        .in('trip_id', scheduledTrips.map(trip => trip.id))
+        .neq('boarding_status', 'CANCELLED');
+      if (!activePassengersError && activePassengers) {
+        const occupiedTripIds = new Set(activePassengers.map(passenger => passenger.trip_id));
+        emptyScheduledTripCount = scheduledTrips.filter(trip => !occupiedTripIds.has(trip.id)).length;
+      }
+    }
+  }
+
   const requestRows=(todayRequests.data??[]) as {id:string;status:string}[];
   const todayPending=requestRows.filter(r=>['REQUESTED','APPROVED'].includes(r.status)).length;
   const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
-  const alerts=[...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
+  const alerts=[...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
 
   const cards: Array<[string, number, LucideIcon, string, string]> = [
     ['Viagens hoje', trips.count ?? 0, Route, '/viagens', 'Agendadas ou em andamento'],
