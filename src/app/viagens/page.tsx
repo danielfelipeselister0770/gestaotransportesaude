@@ -671,7 +671,7 @@ export default function TripsPage() {
                 Procurando uma viagem pelo ID? <Link href={`/viagens/${tripSearch.trim()}`} className="font-semibold underline underline-offset-2 hover:text-teal-700">Abrir viagem diretamente</Link>, mesmo que não esteja entre as 100 mais recentes.
               </div>
             )}
-            {filteredTrips.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">Nenhuma viagem cadastrada.</div> :
+            {filteredTrips.length === 0 ? <div className="p-8 text-center text-sm text-slate-500">{trips.length === 0 ? "Nenhuma viagem carregada na agenda." : "Nenhuma viagem corresponde aos filtros selecionados."}</div> :
               <div className="divide-y">
                 {filteredTrips.map((trip) => (
                   <div key={trip.id} className="flex flex-col gap-3 px-5 py-4 transition hover:bg-slate-50/70 md:flex-row md:items-center md:justify-between">
