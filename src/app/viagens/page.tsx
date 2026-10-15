@@ -62,6 +62,7 @@ export default function TripsPage() {
   const [dateFilter, setDateFilter] = useState('');
   const [tripSearch, setTripSearch] = useState('');
   const [tripStatusFilter, setTripStatusFilter] = useState<'ALL' | TripRow['status']>('ALL');
+  const [onlyEmptyScheduled, setOnlyEmptyScheduled] = useState(false);
 
   async function loadData(silent = false) {
     if (!silent) setLoading(true);
@@ -401,14 +402,15 @@ export default function TripsPage() {
   const filteredTrips = useMemo(() => trips.filter((trip) => {
     const q = tripSearch.trim().toLowerCase();
     const hit = !q || trip.id.toLowerCase().includes(q) || trip.origin.toLowerCase().includes(q) || trip.destination.toLowerCase().includes(q) || (trip.driver?.name ?? '').toLowerCase().includes(q) || (trip.vehicle?.plate ?? '').toLowerCase().includes(q);
-    return hit && (tripStatusFilter === 'ALL' || trip.status === tripStatusFilter);
-  }), [trips, tripSearch, tripStatusFilter]);
+    return hit && (tripStatusFilter === 'ALL' || trip.status === tripStatusFilter) && (!onlyEmptyScheduled || (trip.status === 'SCHEDULED' && trip.passenger_count === 0));
+  }), [trips, tripSearch, tripStatusFilter, onlyEmptyScheduled]);
 
   const tripCounts = useMemo(() => ({
     total: trips.length,
     scheduled: trips.filter(t => t.status === 'SCHEDULED').length,
     progress: trips.filter(t => t.status === 'IN_PROGRESS').length,
     completed: trips.filter(t => t.status === 'COMPLETED').length,
+    emptyScheduled: trips.filter(t => t.status === 'SCHEDULED' && t.passenger_count === 0).length,
   }), [trips]);
 
   async function updateTripStatus(id: string, status: TripRow['status']) {
@@ -639,6 +641,7 @@ export default function TripsPage() {
           <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat label="Total de viagens" value={tripCounts.total} icon={<Route size={18}/>}/><Stat label="Agendadas" value={tripCounts.scheduled} icon={<CalendarCheck2 size={18}/>}/><Stat label="Em andamento" value={tripCounts.progress} icon={<Clock3 size={18}/>}/><Stat label="Concluídas" value={tripCounts.completed} icon={<CheckCircle2 size={18}/>}/>
           </div>
+          {tripCounts.emptyScheduled > 0 && <button type="button" onClick={() => setOnlyEmptyScheduled(value => !value)} aria-pressed={onlyEmptyScheduled} className={`mb-4 flex w-full flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition ${onlyEmptyScheduled ? 'border-amber-400 bg-amber-100 text-amber-950' : 'border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100'}`}><span>⚠ {tripCounts.emptyScheduled} viagem(ns) agendada(s) sem pacientes ativos entre as viagens carregadas</span><span className="underline underline-offset-2">{onlyEmptyScheduled ? 'Mostrar todas' : 'Filtrar essas viagens →'}</span></button>}
           <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <div className="flex flex-col gap-3 border-b px-5 py-4 md:flex-row md:items-center md:justify-between">
               <h2 className="font-semibold">Viagens cadastradas</h2>
