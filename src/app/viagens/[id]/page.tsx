@@ -355,6 +355,25 @@ export default function TripDetailPage() {
       }
     }
 
+    if (status === 'COMPLETED') {
+      const { error: completionError } = await supabase.rpc('complete_trip_safely', {
+        p_trip_id: trip.id,
+        p_initial_mileage: initial,
+        p_final_mileage: final,
+        p_observations: observation.trim(),
+      });
+      if (completionError) {
+        await loadData();
+        setMessage(`Não foi possível concluir a viagem. Nenhuma alteração da conclusão foi confirmada: ${completionError.message}`);
+        setSaving(false);
+        return;
+      }
+      await loadData();
+      setMessage('Viagem concluída com sucesso. Solicitações, quilometragem e veículo atualizados.');
+      setSaving(false);
+      return;
+    }
+
     const { data: updatedTrip, error } = await supabase.from('trips').update({
       initial_mileage: initial,
       final_mileage: final,
