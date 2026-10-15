@@ -93,12 +93,13 @@ export default async function Home() {
   // Não contar viagens apenas agendadas como se fossem atrasos operacionais.
   const { data: activeTrips, error: activeTripsError } = await supabase
     .from('trips')
-    .select('id')
+    .select('id,destination,driver:drivers(name)')
     .eq('date', today)
     .eq('status', 'IN_PROGRESS')
     .limit(500);
   let tripsWithPendingBoarding: number | null = null;
   let pendingBoardingTripIds: string[] = [];
+  const pendingPassengerCounts: Record<string, number> = {};
   if (!activeTripsError && activeTrips) {
     if (activeTrips.length === 0) {
       tripsWithPendingBoarding = 0;
@@ -109,7 +110,10 @@ export default async function Home() {
         .in('trip_id', activeTrips.map(trip => trip.id))
         .eq('boarding_status', 'EXPECTED');
       if (!pendingPassengersError && pendingPassengers) {
-        pendingBoardingTripIds = [...new Set(pendingPassengers.map(passenger => passenger.trip_id))];
+        for (const passenger of pendingPassengers) {
+          pendingPassengerCounts[passenger.trip_id] = (pendingPassengerCounts[passenger.trip_id] ?? 0) + 1;
+        }
+        pendingBoardingTripIds = Object.keys(pendingPassengerCounts);
         tripsWithPendingBoarding = pendingBoardingTripIds.length;
       }
     }
@@ -193,11 +197,20 @@ export default async function Home() {
               <div className="flex items-center gap-2 font-bold text-slate-900"><AlertTriangle size={18} className="text-amber-600"/> Viagens em andamento com embarques pendentes</div>
               <p className="mt-1 text-sm text-slate-500">Abra a viagem para conferir os passageiros que ainda precisam de confirmação.</p>
               <div className="mt-4 grid gap-2 md:grid-cols-2">
-                {pendingBoardingTripIds.slice(0,8).map((tripId, index) => (
-                  <Link key={tripId} href={`/viagens/${tripId}`} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-teal-800 hover:bg-amber-100">
-                    <span>Viagem pendente {index + 1}</span><span>Ver viagem →</span>
-                  </Link>
-                ))}
+                {pendingBoardingTripIds.slice(0,8).map(tripId => {
+                  const trip = activeTrips?.find(item => item.id === tripId);
+                  const driver = trip?.driver;
+                  const driverName = Array.isArray(driver) ? driver[0]?.name : driver?.name;
+                  return (
+                    <Link key={tripId} href={`/viagens/${tripId}`} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-teal-800 hover:bg-amber-100">
+                      <span className="min-w-0">
+                        <span className="block font-semibold">Destino: {trip?.destination || 'Não informado'}</span>
+                        <span className="block text-xs text-slate-600">Motorista: {driverName || 'Não informado'} · {pendingPassengerCounts[tripId]} passageiro(s) pendente(s)</span>
+                      </span>
+                      <span className="shrink-0 font-semibold">Ver viagem →</span>
+                    </Link>
+                  );
+                })}
               </div>
               {pendingBoardingTripIds.length > 8 && <p className="mt-3 text-xs text-slate-500">Exibindo 8 de {pendingBoardingTripIds.length} viagens. Consulte a lista completa de viagens.</p>}
             </section>
