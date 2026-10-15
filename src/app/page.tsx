@@ -212,7 +212,7 @@ export default async function Home() {
                   );
                 })}
               </div>
-              {pendingBoardingTripIds.length > 8 && <p className="mt-3 text-xs text-slate-500">Exibindo 8 de {pendingBoardingTripIds.length} viagens. Consulte a lista completa de viagens.</p>}
+              {pendingBoardingTripIds.length > 8 && <p className="mt-3 text-xs text-slate-500">Exibindo 8 de {pendingBoardingTripIds.length} viagens. <Link href="/viagens" className="font-semibold text-teal-700 underline underline-offset-2 hover:text-teal-900">Ver todas as viagens →</Link></p>}
             </section>
           )}
 
