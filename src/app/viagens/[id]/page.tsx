@@ -371,7 +371,7 @@ export default function TripDetailPage() {
     if (status === 'COMPLETED') {
       const { data: linkedPassengers, error: passengersError } = await supabase
         .from('trip_passengers')
-        .select('request_id')
+        .select('request_id,boarding_status')
         .eq('trip_id', trip.id)
         .not('request_id', 'is', null);
 
@@ -382,7 +382,10 @@ export default function TripDetailPage() {
         return;
       }
 
+      // Solicitações de pacientes cancelados já possuem seu próprio desfecho.
+      // Não tente concluí-las nem trate sua ausência na atualização como erro.
       const requestIds = [...new Set((linkedPassengers ?? [])
+        .filter((item) => item.boarding_status !== 'CANCELLED')
         .map((item) => item.request_id)
         .filter((id): id is string => Boolean(id)))];
 
