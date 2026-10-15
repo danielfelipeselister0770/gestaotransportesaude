@@ -136,7 +136,7 @@ export default async function Home() {
   const requestRows=(todayRequests.data??[]) as {id:string;status:string}[];
   const todayPending=requestRows.filter(r=>['REQUESTED','APPROVED'].includes(r.status)).length;
   const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
-  const alerts=[...(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? [`${tripsWithPendingBoarding} viagem(ns) em andamento hoje com embarques pendentes. Confira os passageiros e acompanhe o motorista.`] : []),...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
+  const alerts=[...(emptyActiveTripIds.length > 0 ? [`${emptyActiveTripIds.length} viagem(ns) em andamento hoje sem pacientes ativos. Avalie incluir pacientes ou encerrar a viagem conforme o procedimento; nenhuma ação será automática.`] : []),...(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? [`${tripsWithPendingBoarding} viagem(ns) em andamento hoje com embarques pendentes. Confira os passageiros e acompanhe o motorista.`] : []),...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
 
   // Contagens independentes: incluem viagens concluídas hoje e nunca confundem
   // ausência, cancelamento e embarque com o status geral da viagem.
@@ -205,6 +205,25 @@ export default async function Home() {
           </section>
 
           {alerts.length>0&&<section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 lg:p-6"><div className="flex items-center gap-2 font-bold text-amber-950"><AlertTriangle size={19}/> Atenção da gestão</div><div className="mt-4 grid gap-2 md:grid-cols-2">{alerts.slice(0,6).map((a,i)=>((i===0 && tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0) || (i===(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? 1 : 0) && emptyScheduledTripCount !== null && emptyScheduledTripCount > 0)) ? <Link key={i} href="/viagens" className="group flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950 transition hover:bg-white"><span>{a}</span><span className="shrink-0 font-semibold text-teal-800 group-hover:underline">Ver viagens →</span></Link> : <div key={i} className="rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950">{a}</div>)}</div></section>}
+
+          {emptyActiveTripIds.length > 0 && (
+            <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 lg:p-6">
+              <div className="flex items-center gap-2 font-bold text-rose-950"><AlertTriangle size={18}/> Viagens em andamento sem pacientes ativos</div>
+              <p className="mt-1 text-sm text-rose-900">Verifique cada viagem antes de decidir. O sistema não cancela viagens automaticamente.</p>
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {emptyActiveTripIds.slice(0,8).map(tripId => {
+                  const trip = activeTrips?.find(item => item.id === tripId);
+                  return (
+                    <Link key={tripId} href={`/viagens/${tripId}`} className="flex items-center justify-between gap-3 rounded-xl border border-rose-100 bg-white px-4 py-3 text-sm text-rose-950 transition hover:border-rose-300">
+                      <span className="min-w-0 font-semibold">Destino: {trip?.destination || 'Não informado'}</span>
+                      <span className="shrink-0 font-semibold">Ver viagem →</span>
+                    </Link>
+                  );
+                })}
+              </div>
+              {emptyActiveTripIds.length > 8 && <Link href="/viagens" className="mt-3 inline-block text-sm font-semibold text-teal-800 underline">Ver todas as viagens →</Link>}
+            </section>
+          )}
 
           {pendingBoardingTripIds.length > 0 && (
             <section className="rounded-2xl border border-amber-200 bg-white p-5 lg:p-6">
