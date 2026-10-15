@@ -578,6 +578,7 @@ export default function TripsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs text-slate-500" aria-live="polite">{refreshing ? 'Atualizando agenda...' : lastUpdatedAt ? `Atualizada às ${lastUpdatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : 'Aguardando primeira atualização'}</span>
+            <span className="text-xs text-slate-400" title="A agenda atualiza automaticamente enquanto esta aba está visível">Atualização automática: 15 s</span>
             <button type="button" disabled={refreshing} onClick={() => void loadData(true)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-50"><RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/> Atualizar agora</button>
             <button onClick={() => setShowForm(true)} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18}/> Nova viagem</button>
           </div>
