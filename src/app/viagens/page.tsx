@@ -135,8 +135,16 @@ export default function TripsPage() {
 
   useEffect(() => {
     void loadData();
-    const interval = window.setInterval(() => { if (document.visibilityState === 'visible') void loadData(true); }, 15000);
-    return () => window.clearInterval(interval);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void loadData(true);
+    };
+    // Atualiza imediatamente ao voltar para a aba, sem aguardar o próximo intervalo.
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+    const interval = window.setInterval(refreshWhenVisible, 15000);
+    return () => {
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      window.clearInterval(interval);
+    };
   }, []);
 
   const selectedRequests = useMemo(
