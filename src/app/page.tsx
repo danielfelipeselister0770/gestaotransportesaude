@@ -205,7 +205,7 @@ export default async function Home() {
                     <Link key={tripId} href={`/viagens/${tripId}`} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-teal-800 hover:bg-amber-100">
                       <span className="min-w-0">
                         <span className="block font-semibold">Destino: {trip?.destination || 'Não informado'}</span>
-                        <span className="block text-xs text-slate-600">Motorista: {driverName || 'Não informado'} · {pendingPassengerCounts[tripId]} passageiro(s) pendente(s)</span>
+                        <span className="block text-xs text-slate-600">Motorista: {driverName || 'Não informado'} · {pendingPassengerCounts[tripId]} {pendingPassengerCounts[tripId] === 1 ? 'passageiro pendente' : 'passageiros pendentes'}</span>
                       </span>
                       <span className="shrink-0 font-semibold">Ver viagem →</span>
                     </Link>
