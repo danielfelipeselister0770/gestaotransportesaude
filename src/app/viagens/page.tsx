@@ -453,6 +453,21 @@ export default function TripsPage() {
         return;
       }
 
+      // Revalida os passageiros no banco: a contagem exibida pode estar desatualizada.
+      const { data: currentPassengers, error: passengerCheckError } = await supabase
+        .from('trip_passengers')
+        .select('boarding_status')
+        .eq('trip_id', id);
+      if (passengerCheckError || !currentPassengers) {
+        setMessage(`Não foi possível conferir os passageiros desta viagem: ${passengerCheckError?.message ?? 'consulta indisponível'}.`);
+        return;
+      }
+      if (!currentPassengers.some(passenger => passenger.boarding_status === 'EXPECTED')) {
+        await loadData(true);
+        setMessage('Esta viagem não possui pacientes aguardando embarque. Atualize os passageiros antes de iniciar.');
+        return;
+      }
+
       const { data: vehicle, error: vehicleLoadError } = await supabase.from('vehicles')
         .select('id,current_mileage,status')
         .eq('id', currentTrip.vehicle_id)
