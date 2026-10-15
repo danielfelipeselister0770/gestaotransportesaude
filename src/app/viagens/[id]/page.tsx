@@ -322,8 +322,8 @@ export default function TripDetailPage() {
       return;
     }
 
-    if (status === 'COMPLETED' && passengers.some((passenger) => !['BOARDED', 'NO_SHOW'].includes(passenger.boarding_status))) {
-      setMessage('Antes de concluir a viagem, registre Embarcou ou Não compareceu para todos os passageiros.');
+    if (status === 'COMPLETED' && passengers.some((passenger) => !['BOARDED', 'NO_SHOW', 'CANCELLED'].includes(passenger.boarding_status))) {
+      setMessage('Antes de concluir a viagem, registre Embarcou ou Não compareceu para os passageiros que ainda aguardam embarque. Os cancelados já estão resolvidos.');
       setSaving(false);
       return;
     }
@@ -348,7 +348,7 @@ export default function TripDetailPage() {
 
       const knownStatuses = new Map(passengers.map((passenger) => [passenger.id, passenger.boarding_status]));
       const passengerListChanged = currentPassengers.length !== passengers.length || currentPassengers.some((passenger) => knownStatuses.get(passenger.id) !== passenger.boarding_status);
-      if (passengerListChanged || currentPassengers.some((passenger) => !['BOARDED', 'NO_SHOW'].includes(passenger.boarding_status))) {
+      if (passengerListChanged || currentPassengers.some((passenger) => !['BOARDED', 'NO_SHOW', 'CANCELLED'].includes(passenger.boarding_status))) {
         setMessage('A lista ou a situação dos passageiros mudou desde a última consulta. Recarregue a viagem, confira os embarques e tente novamente.');
         setSaving(false);
         return;
