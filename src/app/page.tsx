@@ -98,6 +98,7 @@ export default async function Home() {
     .eq('status', 'IN_PROGRESS')
     .limit(500);
   let tripsWithPendingBoarding: number | null = null;
+  let pendingBoardingTripIds: string[] = [];
   if (!activeTripsError && activeTrips) {
     if (activeTrips.length === 0) {
       tripsWithPendingBoarding = 0;
@@ -108,7 +109,8 @@ export default async function Home() {
         .in('trip_id', activeTrips.map(trip => trip.id))
         .eq('boarding_status', 'EXPECTED');
       if (!pendingPassengersError && pendingPassengers) {
-        tripsWithPendingBoarding = new Set(pendingPassengers.map(passenger => passenger.trip_id)).size;
+        pendingBoardingTripIds = [...new Set(pendingPassengers.map(passenger => passenger.trip_id))];
+        tripsWithPendingBoarding = pendingBoardingTripIds.length;
       }
     }
   }
@@ -184,7 +186,22 @@ export default async function Home() {
             </div>
           </section>
 
-          {alerts.length>0&&<section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 lg:p-6"><div className="flex items-center gap-2 font-bold text-amber-950"><AlertTriangle size={19}/> Atenção da gestão</div><div className="mt-4 grid gap-2 md:grid-cols-2">{alerts.slice(0,6).map((a,i)=>i===0 && emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? <Link key={i} href="/viagens" className="group flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950 transition hover:bg-white"><span>{a}</span><span className="shrink-0 font-semibold text-teal-800 group-hover:underline">Ver viagens →</span></Link> : <div key={i} className="rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950">{a}</div>)}</div></section>}
+          {alerts.length>0&&<section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 lg:p-6"><div className="flex items-center gap-2 font-bold text-amber-950"><AlertTriangle size={19}/> Atenção da gestão</div><div className="mt-4 grid gap-2 md:grid-cols-2">{alerts.slice(0,6).map((a,i)=>((i===0 && tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0) || (i===(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? 1 : 0) && emptyScheduledTripCount !== null && emptyScheduledTripCount > 0)) ? <Link key={i} href="/viagens" className="group flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950 transition hover:bg-white"><span>{a}</span><span className="shrink-0 font-semibold text-teal-800 group-hover:underline">Ver viagens →</span></Link> : <div key={i} className="rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950">{a}</div>)}</div></section>}
+
+          {pendingBoardingTripIds.length > 0 && (
+            <section className="rounded-2xl border border-amber-200 bg-white p-5 lg:p-6">
+              <div className="flex items-center gap-2 font-bold text-slate-900"><AlertTriangle size={18} className="text-amber-600"/> Viagens em andamento com embarques pendentes</div>
+              <p className="mt-1 text-sm text-slate-500">Abra a viagem para conferir os passageiros que ainda precisam de confirmação.</p>
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {pendingBoardingTripIds.slice(0,8).map((tripId, index) => (
+                  <Link key={tripId} href={`/viagens/${tripId}`} className="flex items-center justify-between gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm font-semibold text-teal-800 hover:bg-amber-100">
+                    <span>Viagem pendente {index + 1}</span><span>Ver viagem →</span>
+                  </Link>
+                ))}
+              </div>
+              {pendingBoardingTripIds.length > 8 && <p className="mt-3 text-xs text-slate-500">Exibindo 8 de {pendingBoardingTripIds.length} viagens. Consulte a lista completa de viagens.</p>}
+            </section>
+          )}
 
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_1px_2px_rgba(15,23,42,.04)]">
             <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-5 py-5 lg:px-6"><div><div className="flex items-center gap-2"><CalendarClock size={18} className="text-teal-700"/><h2 className="font-bold text-slate-900">Próximas viagens</h2></div><p className="mt-1 text-sm text-slate-500">Agenda operacional a partir de hoje.</p></div><Link href="/viagens" className="flex items-center gap-1 text-sm font-semibold text-teal-700 hover:text-teal-900">Ver agenda <ArrowRight size={15}/></Link></div>
