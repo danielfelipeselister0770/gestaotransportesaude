@@ -94,9 +94,24 @@ export default async function Home() {
   const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
   const alerts=[...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
 
+  // Contagens independentes: incluem viagens concluídas hoje e nunca confundem
+  // ausência, cancelamento e embarque com o status geral da viagem.
+  const boardingStatuses = ['BOARDED', 'NO_SHOW', 'CANCELLED'] as const;
+  const boardingCounts = await Promise.all(boardingStatuses.map(status =>
+    supabase.from('trip_passengers')
+      .select('id, trips!inner(date,status)', { count: 'exact', head: true })
+      .eq('trips.date', today)
+      .in('trips.status', ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'])
+      .eq('boarding_status', status)
+  ));
+  const [boardedCount, noShowCount, cancelledCount] = boardingCounts.map(result => result.count ?? 0);
+
   const cards: Array<[string, number, LucideIcon, string, string]> = [
     ['Viagens hoje', trips.count ?? 0, Route, '/viagens', 'Agendadas ou em andamento'],
     ['Passageiros previstos hoje', passengers.count ?? 0, Users, '/viagens', 'Viagens de hoje, sem cancelados'],
+    ['Embarcaram hoje', boardedCount, CheckCircle2, '/viagens', 'Embarques registrados nas viagens de hoje'],
+    ['Não embarcaram hoje', noShowCount, AlertTriangle, '/viagens', 'Ausências registradas nas viagens de hoje'],
+    ['Cancelados hoje', cancelledCount, Users, '/viagens', 'Participações canceladas em viagens de hoje'],
     ['Solicitações pendentes', requests.count ?? 0, ClipboardList, '/solicitacoes', 'Aguardando andamento'],
     ['Veículos disponíveis', vehicles.count ?? 0, CarFront, '/veiculos', 'Prontos para operação'],
     ['Manutenções abertas', maintenances.count ?? 0, Wrench, '/manutencoes', 'Programadas ou ativas'],
