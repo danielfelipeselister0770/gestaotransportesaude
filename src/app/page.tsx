@@ -113,7 +113,7 @@ export default async function Home() {
         for (const passenger of pendingPassengers) {
           pendingPassengerCounts[passenger.trip_id] = (pendingPassengerCounts[passenger.trip_id] ?? 0) + 1;
         }
-        pendingBoardingTripIds = Object.keys(pendingPassengerCounts);
+        pendingBoardingTripIds = Object.keys(pendingPassengerCounts).sort((a, b) => pendingPassengerCounts[b] - pendingPassengerCounts[a]);
         tripsWithPendingBoarding = pendingBoardingTripIds.length;
       }
     }
