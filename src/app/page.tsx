@@ -96,7 +96,7 @@ export default async function Home() {
 
   // Contagens independentes: incluem viagens concluídas hoje e nunca confundem
   // ausência, cancelamento e embarque com o status geral da viagem.
-  const boardingStatuses = ['BOARDED', 'NO_SHOW', 'CANCELLED'] as const;
+  const boardingStatuses = ['EXPECTED', 'BOARDED', 'NO_SHOW', 'CANCELLED'] as const;
   const boardingCounts = await Promise.all(boardingStatuses.map(status =>
     supabase.from('trip_passengers')
       .select('id, trips!inner(date,status)', { count: 'exact', head: true })
@@ -104,11 +104,12 @@ export default async function Home() {
       .in('trips.status', ['SCHEDULED', 'IN_PROGRESS', 'COMPLETED'])
       .eq('boarding_status', status)
   ));
-  const [boardedCount, noShowCount, cancelledCount] = boardingCounts.map(result => result.count ?? 0);
+  const [pendingBoardingCount, boardedCount, noShowCount, cancelledCount] = boardingCounts.map(result => result.count ?? 0);
 
   const cards: Array<[string, number, LucideIcon, string, string]> = [
     ['Viagens hoje', trips.count ?? 0, Route, '/viagens', 'Agendadas ou em andamento'],
     ['Passageiros previstos hoje', passengers.count ?? 0, Users, '/viagens', 'Viagens de hoje, sem cancelados'],
+    ['Aguardando embarque', pendingBoardingCount, CalendarClock, '/viagens', 'Passageiros ainda sem registro de embarque hoje'],
     ['Embarcaram hoje', boardedCount, CheckCircle2, '/viagens', 'Embarques registrados nas viagens de hoje'],
     ['Não embarcaram hoje', noShowCount, AlertTriangle, '/viagens', 'Ausências registradas nas viagens de hoje'],
     ['Cancelados hoje', cancelledCount, Users, '/viagens', 'Participações canceladas em viagens de hoje'],
