@@ -353,6 +353,18 @@ export default function DriverPortalPage() {
 
     let mileage: number | undefined;
     if (action === 'FINISH') {
+      if (passengers.length === 0) {
+        setMessage('Carregue os passageiros desta viagem antes de finalizar.');
+        return;
+      }
+      if (passengers.some(p => !['BOARDED', 'NO_SHOW', 'CANCELLED'].includes(p.boarding_status))) {
+        setMessage('Existem passageiros com embarque pendente. Registre o embarque ou a ausência antes de finalizar.');
+        return;
+      }
+      if (passengers.some(p => p.boarding_status === 'NO_SHOW' && !p.boarding_reason?.trim())) {
+        setMessage('Há paciente marcado como Não embarcou sem motivo salvo. Informe o motivo e salve novamente.');
+        return;
+      }
       if (selectedTripRef.current !== trip.id) {
         setMessage('Selecione a viagem e informe a quilometragem final antes de finalizar.');
         return;
@@ -395,6 +407,10 @@ export default function DriverPortalPage() {
           return;
         }
         setMessage(result.error ?? 'Não foi possível atualizar a viagem.');
+        if (action === 'FINISH') {
+          // Recarrega dados após rejeição para refletir cancelamentos feitos pela gestão.
+          await loadData(true);
+        }
         return;
       }
 
