@@ -464,76 +464,12 @@ export default function TripsPage() {
         return;
       }
 
-      // Revalida os passageiros no banco: a contagem exibida pode estar desatualizada.
-      const { data: currentPassengers, error: passengerCheckError } = await supabase
-        .from('trip_passengers')
-        .select('boarding_status')
-        .eq('trip_id', id);
-      if (passengerCheckError || !currentPassengers) {
-        setMessage(`Não foi possível conferir os passageiros desta viagem: ${passengerCheckError?.message ?? 'consulta indisponível'}.`);
-        return;
-      }
-      if (!currentPassengers.some(passenger => passenger.boarding_status === 'EXPECTED')) {
+      // A função do banco bloqueia a viagem e o veículo na mesma transação.
+      // Se qualquer validação falhar, nenhuma das duas alterações é confirmada.
+      const { error: startError } = await supabase.rpc('start_trip_safely', { p_trip_id: id });
+      if (startError) {
         await loadData(true);
-        setMessage('Esta viagem não possui pacientes aguardando embarque. Atualize os passageiros antes de iniciar.');
-        return;
-      }
-
-      const { data: vehicle, error: vehicleLoadError } = await supabase.from('vehicles')
-        .select('id,current_mileage,status')
-        .eq('id', currentTrip.vehicle_id)
-        .single();
-
-      if (vehicleLoadError || !vehicle) {
-        setMessage(vehicleLoadError ? `Não foi possível consultar o veículo: ${vehicleLoadError.message}` : 'Não foi possível localizar o veículo da viagem.');
-        return;
-      }
-
-      if (vehicle.status !== 'AVAILABLE') {
-        setMessage('O veículo não está disponível para iniciar esta viagem.');
-        return;
-      }
-
-      if (typeof vehicle.current_mileage !== 'number' || !Number.isFinite(vehicle.current_mileage) || vehicle.current_mileage < 0) {
-        setMessage(`Não foi possível iniciar a viagem ${id}: a quilometragem atual do veículo é inválida. Confira o cadastro antes de continuar.`);
-        return;
-      }
-
-      const initialMileage = currentTrip.initial_mileage ?? vehicle.current_mileage;
-      if (typeof initialMileage !== 'number' || !Number.isFinite(initialMileage) || initialMileage < 0) {
-        setMessage(`Não foi possível iniciar a viagem ${id}: a quilometragem inicial do veículo é inválida. Confira o cadastro antes de continuar.`);
-        return;
-      }
-
-      if (initialMileage < vehicle.current_mileage) {
-        setMessage(`Não foi possível iniciar a viagem ${id}: a quilometragem inicial é menor que a quilometragem atual do veículo. Confira o registro antes de continuar.`);
-        return;
-      }
-
-      const { data: startedTrip, error } = await supabase.from('trips').update({
-        status,
-        initial_mileage: initialMileage,
-      }).eq('id', id).eq('status', 'SCHEDULED').select('id').maybeSingle();
-
-      if (error || !startedTrip) {
-        setMessage(error ? `Não foi possível iniciar a viagem ${id}: ${error.message}` : `A viagem ${id} foi alterada por outro usuário. Atualize a agenda antes de tentar novamente.`);
-        return;
-      }
-
-      const { data: updatedVehicle, error: vehicleError } = await supabase.from('vehicles')
-        .update({ status: 'IN_USE' })
-        .eq('id', vehicle.id)
-        .eq('status', 'AVAILABLE')
-        .select('id')
-        .maybeSingle();
-
-      if (vehicleError || !updatedVehicle) {
-        // A viagem já foi iniciada. Não tente desfazer automaticamente: outro operador
-        // pode ter alterado o veículo enquanto esta requisição estava em andamento.
-        await loadData();
-        setMessage(vehicleError
-          ? `ATENÇÃO: a viagem ${id} foi iniciada, mas houve falha ao reservar o veículo: ${vehicleError.message}. Confira a situação do veículo antes de prosseguir.`
-          : `ATENÇÃO: a viagem ${id} foi iniciada, mas o veículo não pôde ser reservado. Não inicie outra viagem com ele antes de conferir a situação.`);
+        setMessage(`Não foi possível iniciar a viagem ${id}: ${startError.message}`);
         return;
       }
     } else if (status === 'CANCELLED') {
