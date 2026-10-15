@@ -485,44 +485,14 @@ export default function TripsPage() {
         setMessage(`Não foi possível cancelar a viagem ${id}: informe um motivo para o cancelamento.`);
         return;
       }
-      const { data: cancelledTrip, error } = await supabase.from('trips')
-        .update({ status, cancellation_reason: reason, cancelled_at: new Date().toISOString() })
-        .eq('id', id)
-        .eq('status', currentTrip.status)
-        .select('id')
-        .maybeSingle();
-      if (error || !cancelledTrip) {
-        setMessage(error ? `Não foi possível cancelar a viagem ${id}: ${error.message}` : `A situação da viagem ${id} mudou. Atualize a agenda antes de tentar novamente.`);
+      const { error: cancelError } = await supabase.rpc('cancel_trip_safely', {
+        p_trip_id: id,
+        p_reason: reason,
+      });
+      if (cancelError) {
+        await loadData(true);
+        setMessage(`Não foi possível cancelar a viagem ${id}: ${cancelError.message}`);
         return;
-      }
-
-      if (currentTrip.status === 'IN_PROGRESS' && currentTrip.vehicle_id) {
-        const { data: activeTrip, error: activeTripError } = await supabase.from('trips')
-          .select('id')
-          .eq('vehicle_id', currentTrip.vehicle_id)
-          .in('status', ['SCHEDULED', 'IN_PROGRESS'])
-          .neq('id', id)
-          .limit(1);
-  
-        if (activeTripError || !activeTrip) {
-          await loadData();
-          setMessage(activeTripError ? `Viagem ${id} cancelada, mas não foi possível conferir outras viagens do veículo: ${activeTripError.message}` : `Viagem ${id} cancelada, mas não foi possível confirmar a disponibilidade do veículo.`);
-          return;
-        }
-  
-        if (activeTrip.length === 0) {
-          const { data: releasedVehicle, error: releaseError } = await supabase.from('vehicles')
-            .update({ status: 'AVAILABLE' })
-            .eq('id', currentTrip.vehicle_id)
-            .eq('status', 'IN_USE')
-            .select('id')
-            .maybeSingle();
-          if (releaseError || !releasedVehicle) {
-            await loadData();
-            setMessage(releaseError ? `Viagem ${id} cancelada, mas não foi possível liberar o veículo: ${releaseError.message}` : `Viagem ${id} cancelada, mas o veículo não estava mais em uso. Confira a disponibilidade dele.`);
-            return;
-          }
-        }
       }
     } else {
       setMessage('Esta mudança de situação deve ser realizada pelo fluxo específico da viagem.');
