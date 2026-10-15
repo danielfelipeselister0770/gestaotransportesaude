@@ -136,7 +136,32 @@ export default async function Home() {
   const requestRows=(todayRequests.data??[]) as {id:string;status:string}[];
   const todayPending=requestRows.filter(r=>['REQUESTED','APPROVED'].includes(r.status)).length;
   const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
-  const alerts=[...(emptyActiveTripIds.length > 0 ? [`${emptyActiveTripIds.length} viagem(ns) em andamento hoje sem pacientes ativos. Avalie incluir pacientes ou encerrar a viagem conforme o procedimento; nenhuma ação será automática.`] : []),...(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? [`${tripsWithPendingBoarding} viagem(ns) em andamento hoje com embarques pendentes. Confira os passageiros e acompanhe o motorista.`] : []),...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
+  const alerts: Array<{ message: string; href: string; action: string }> = [
+    ...(emptyActiveTripIds.length > 0 ? [{
+      message: `${emptyActiveTripIds.length} viagem(ns) em andamento hoje sem pacientes ativos. Avalie incluir pacientes ou encerrar a viagem conforme o procedimento; nenhuma ação será automática.`,
+      href: '/viagens', action: 'Ver viagens',
+    }] : []),
+    ...(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? [{
+      message: `${tripsWithPendingBoarding} viagem(ns) em andamento hoje com embarques pendentes. Confira os passageiros e acompanhe o motorista.`,
+      href: '/viagens', action: 'Ver viagens',
+    }] : []),
+    ...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [{
+      message: `${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`,
+      href: '/viagens', action: 'Ver viagens',
+    }] : []),
+    ...((occurrences.count ?? 0) > 0 ? [{
+      message: `${occurrences.count} ocorrência(s) aguardando acompanhamento.`,
+      href: '/ocorrencias', action: 'Ver ocorrências',
+    }] : []),
+    ...((maintenances.count ?? 0) > 0 ? [{
+      message: `${maintenances.count} manutenção(ões) programada(s) ou em andamento.`,
+      href: '/manutencoes', action: 'Ver manutenções',
+    }] : []),
+    ...((documentAlerts.data ?? []) as { plate: string; licensing_expiry: string | null; insurance_expiry: string | null }[]).map(vehicle => ({
+      message: `Veículo ${vehicle.plate} possui documento vencido ou vencendo nos próximos 30 dias.`,
+      href: '/veiculos', action: 'Ver veículos',
+    })),
+  ];
 
   // Contagens independentes: incluem viagens concluídas hoje e nunca confundem
   // ausência, cancelamento e embarque com o status geral da viagem.
@@ -204,7 +229,19 @@ export default async function Home() {
             </div>
           </section>
 
-          {alerts.length>0&&<section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 lg:p-6"><div className="flex items-center gap-2 font-bold text-amber-950"><AlertTriangle size={19}/> Atenção da gestão</div><div className="mt-4 grid gap-2 md:grid-cols-2">{alerts.slice(0,6).map((a,i)=>((i===0 && tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0) || (i===(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? 1 : 0) && emptyScheduledTripCount !== null && emptyScheduledTripCount > 0)) ? <Link key={i} href="/viagens" className="group flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950 transition hover:bg-white"><span>{a}</span><span className="shrink-0 font-semibold text-teal-800 group-hover:underline">Ver viagens →</span></Link> : <div key={i} className="rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950">{a}</div>)}</div></section>}
+          {alerts.length > 0 && (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/70 p-5 lg:p-6">
+              <div className="flex items-center gap-2 font-bold text-amber-950"><AlertTriangle size={19}/> Atenção da gestão</div>
+              <div className="mt-4 grid gap-2 md:grid-cols-2">
+                {alerts.slice(0, 6).map((alert, index) => (
+                  <Link key={index} href={alert.href} className="group flex items-center justify-between gap-3 rounded-xl bg-white/70 px-4 py-3 text-sm text-amber-950 transition hover:bg-white">
+                    <span>{alert.message}</span>
+                    <span className="shrink-0 font-semibold text-teal-800 group-hover:underline">{alert.action} →</span>
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
 
           {emptyActiveTripIds.length > 0 && (
             <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-5 lg:p-6">
