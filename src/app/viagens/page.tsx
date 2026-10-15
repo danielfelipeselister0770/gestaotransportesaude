@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { CalendarCheck2, CalendarDays, CheckCircle2, Clock3, Plus, Route, Search, Users, X } from 'lucide-react';
+import { CalendarCheck2, CalendarDays, CheckCircle2, Clock3, Plus, RefreshCw, Route, Search, Users, X } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type RequestRow = {
@@ -63,9 +63,13 @@ export default function TripsPage() {
   const [tripSearch, setTripSearch] = useState('');
   const [tripStatusFilter, setTripStatusFilter] = useState<'ALL' | TripRow['status']>('ALL');
   const [onlyEmptyScheduled, setOnlyEmptyScheduled] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   async function loadData(silent = false) {
     if (!silent) setLoading(true);
+    setRefreshing(true);
+    let refreshSucceeded = true;
     try {
       setMessage((current) => current.startsWith('Erro ao carregar agenda:') || current.startsWith('Não foi possível carregar a agenda:') || current.startsWith('Não foi possível conferir a quantidade de passageiros:') ? '' : current);
       const [requestsResult, driversResult, vehiclesResult, tripsResult] = await Promise.all([
@@ -82,6 +86,7 @@ export default function TripsPage() {
 
       const errors = [requestsResult.error, driversResult.error, vehiclesResult.error, tripsResult.error].filter(Boolean);
       if (errors.length) {
+        refreshSucceeded = false;
         setMessage(`Erro ao carregar agenda: ${errors[0]?.message ?? 'erro desconhecido'}`);
       }
 
@@ -103,6 +108,7 @@ export default function TripsPage() {
       if (!tripsResult.error && normalizedTrips.length) {
         const tripIds = normalizedTrips.map((trip) => trip.id);
         const { data: passengers, error: passengerCountError } = await supabase.from('trip_passengers').select('trip_id,companion,boarding_status').in('trip_id', tripIds);
+        if (passengerCountError || !passengers) refreshSucceeded = false;
         if ((passengerCountError || !passengers) && !errors.length) setMessage(`Não foi possível conferir a quantidade de passageiros: ${passengerCountError?.message ?? 'a consulta não retornou dados'}`);
         const counts = (passengers ?? []).filter(item => item.boarding_status !== 'CANCELLED').reduce<Record<string, number>>((acc, item) => {
           acc[item.trip_id] = (acc[item.trip_id] ?? 0) + 1 + (item.companion ? 1 : 0);
@@ -125,10 +131,12 @@ export default function TripsPage() {
       if (!driversResult.error) setDrivers((driversResult.data ?? []) as Driver[]);
       if (!vehiclesResult.error) setVehicles((vehiclesResult.data ?? []) as Vehicle[]);
       if (!tripsResult.error) setTrips(normalizedTrips);
+      if (refreshSucceeded) setLastUpdatedAt(new Date());
 
     } catch (error) {
       setMessage(`Não foi possível carregar a agenda: ${error instanceof Error ? error.message : 'erro inesperado'}`);
     } finally {
+      setRefreshing(false);
       if (!silent) setLoading(false);
     }
   }
@@ -568,9 +576,11 @@ export default function TripsPage() {
             <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 lg:text-3xl">Agenda / Viagens</h1>
             <p className="mt-1 text-sm text-slate-500">Monte a agenda, agrupe passageiros e acompanhe a execução das viagens.</p>
           </div>
-          <button onClick={() => setShowForm(true)} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800">
-            <Plus size={18}/> Nova viagem
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs text-slate-500" aria-live="polite">{refreshing ? 'Atualizando agenda...' : lastUpdatedAt ? `Atualizada às ${lastUpdatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}` : 'Aguardando primeira atualização'}</span>
+            <button type="button" disabled={refreshing} onClick={() => void loadData(true)} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-50"><RefreshCw size={16} className={refreshing ? 'animate-spin' : ''}/> Atualizar agora</button>
+            <button onClick={() => setShowForm(true)} className="flex items-center justify-center gap-2 rounded-xl bg-teal-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-teal-800"><Plus size={18}/> Nova viagem</button>
+          </div>
         </header>
 
         <div className="p-5 lg:p-8">
