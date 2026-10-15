@@ -143,13 +143,18 @@ export async function POST(request: Request) {
   // Não concluir uma viagem com embarques ainda sem decisão.
   const { data: boardingRows, error: boardingReadError } = await admin
     .from('trip_passengers')
-    .select('id,boarding_status,request_id')
+    .select('id,boarding_status,boarding_reason,request_id')
     .eq('trip_id', trip.id);
   if (boardingReadError) {
     return NextResponse.json({ error: 'Não foi possível conferir os embarques. A viagem permanece em andamento.' }, { status: 500 });
   }
   if ((boardingRows ?? []).some(row => !['BOARDED', 'NO_SHOW'].includes(row.boarding_status))) {
     return NextResponse.json({ error: 'Registre Embarcou ou Não embarcou para todos os passageiros antes de finalizar.' }, { status: 409 });
+  }
+  if ((boardingRows ?? []).some(row => row.boarding_status === 'NO_SHOW' && !row.boarding_reason?.trim())) {
+    return NextResponse.json({
+      error: 'Há paciente marcado como Não embarcou sem motivo registrado. Abra os passageiros da viagem, selecione o motivo e salve novamente o Não embarcou antes de finalizar.',
+    }, { status: 409 });
   }
   // A solicitação pode já ter sido sincronizada durante o embarque.
   // A função transacional valida o status final esperado para cada solicitação,
