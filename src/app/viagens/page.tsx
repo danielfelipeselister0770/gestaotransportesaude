@@ -65,6 +65,7 @@ export default function TripsPage() {
   const [onlyEmptyScheduled, setOnlyEmptyScheduled] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [tripActionId, setTripActionId] = useState<string | null>(null);
 
   async function loadData(silent = false) {
     if (!silent) setLoading(true);
@@ -430,6 +431,16 @@ export default function TripsPage() {
   }), [trips]);
 
   async function updateTripStatus(id: string, status: TripRow['status']) {
+    if (tripActionId !== null) return;
+    setTripActionId(id);
+    try {
+      await performTripStatusUpdate(id, status);
+    } finally {
+      setTripActionId(null);
+    }
+  }
+
+  async function performTripStatusUpdate(id: string, status: TripRow['status']) {
     setMessage('');
 
     const { data: currentTrip, error: tripLoadError } = await supabase.from('trips')
@@ -705,9 +716,9 @@ export default function TripsPage() {
                       </div>
                     </Link>
                     <div className="flex gap-2">
-                      {trip.status === 'SCHEDULED' && <button onClick={() => updateTripStatus(trip.id, 'IN_PROGRESS')} disabled={trip.passenger_count === null || trip.pending_count === 0} title={trip.pending_count === 0 ? 'Adicione um paciente antes de iniciar' : undefined} className="rounded-xl bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40">Iniciar</button>}
+                      {trip.status === 'SCHEDULED' && <button onClick={() => updateTripStatus(trip.id, 'IN_PROGRESS')} disabled={tripActionId !== null || trip.passenger_count === null || trip.pending_count === 0} title={trip.pending_count === 0 ? 'Adicione um paciente antes de iniciar' : undefined} className="rounded-xl bg-teal-700 px-3 py-2 text-xs font-semibold text-white hover:bg-teal-800 disabled:cursor-not-allowed disabled:opacity-40">Iniciar</button>}
                       
-                      {(trip.status === 'SCHEDULED' || trip.status === 'IN_PROGRESS') && <button onClick={() => updateTripStatus(trip.id, 'CANCELLED')} className="rounded-lg border px-3 py-2 text-xs text-slate-600 hover:bg-slate-50">Cancelar viagem</button>}
+                      {(trip.status === 'SCHEDULED' || trip.status === 'IN_PROGRESS') && <button disabled={tripActionId !== null} onClick={() => updateTripStatus(trip.id, 'CANCELLED')} className="rounded-lg border px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 disabled:cursor-wait disabled:opacity-50">Cancelar viagem</button>}
                     </div>
                   </div>
                 ))}
