@@ -137,7 +137,7 @@ export default function TripDetailPage() {
   }
 
   async function cancelPassenger(passenger: Passenger) {
-    if (!trip || trip.status !== 'SCHEDULED' || passenger.boarding_status !== 'EXPECTED' || !passenger.request_id || cancellingPassenger) return;
+    if (!trip || !['SCHEDULED', 'IN_PROGRESS'].includes(trip.status) || passenger.boarding_status !== 'EXPECTED' || !passenger.request_id || cancellingPassenger) return;
     const reasonInput = window.prompt('Motivo do cancelamento de ' + (passenger.patient?.name ?? 'paciente') + ' nesta viagem:');
     if (reasonInput === null) return;
     const reason = reasonInput.trim();
@@ -145,7 +145,7 @@ export default function TripDetailPage() {
       setMessage('Informe um motivo de 3 a 500 caracteres para cancelar a participação.');
       return;
     }
-    if (!window.confirm('Confirma o cancelamento da participação deste paciente? A viagem dos demais passageiros continuará agendada.')) return;
+    if (!window.confirm('Confirma o cancelamento da participação deste paciente? A viagem dos demais passageiros continuará normalmente.')) return;
     setCancellingPassenger(true);
     setMessage('');
     try {
@@ -619,11 +619,11 @@ export default function TripDetailPage() {
                     {passenger.boarding_status === 'CANCELLED' && <div className="mt-1 text-xs text-amber-800">Motivo do cancelamento: {passenger.boarding_reason || 'Não informado'}</div>}
                   </div>
                   <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                    {trip.status === 'SCHEDULED' && passenger.boarding_status === 'EXPECTED' && passenger.request_id && (
+                    {['SCHEDULED', 'IN_PROGRESS'].includes(trip.status) && passenger.boarding_status === 'EXPECTED' && passenger.request_id && (
                       <button type="button" onClick={() => void cancelPassenger(passenger)} disabled={cancellingPassenger || saving || addingPassenger} className="rounded-lg border border-rose-300 px-3 py-2 text-xs font-medium text-rose-700 hover:bg-rose-50 disabled:opacity-50">Cancelar participação</button>
                     )}
-                    <button type="button" disabled={saving || updatingPassengerId !== null || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
-                    <button type="button" disabled={saving || updatingPassengerId !== null || trip.status === 'COMPLETED' || trip.status === 'CANCELLED'} aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
+                    <button type="button" disabled={saving || updatingPassengerId !== null || passenger.boarding_status === 'CANCELLED' || trip.status !== 'IN_PROGRESS'} aria-pressed={passenger.boarding_status === 'BOARDED'} onClick={() => updatePassenger(passenger.id, 'BOARDED')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'BOARDED' ? 'bg-emerald-600 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> Embarcou</button>
+                    <button type="button" disabled={saving || updatingPassengerId !== null || passenger.boarding_status === 'CANCELLED' || trip.status !== 'IN_PROGRESS'} aria-pressed={passenger.boarding_status === 'NO_SHOW'} onClick={() => updatePassenger(passenger.id, 'NO_SHOW')} className={`rounded-lg px-3 py-2 text-xs font-medium ${passenger.boarding_status === 'NO_SHOW' ? 'bg-orange-500 text-white' : 'border text-slate-700 hover:bg-slate-50'}`}>Não compareceu</button>
                   </div>
                 </div>
               ))}
