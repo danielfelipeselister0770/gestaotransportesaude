@@ -253,8 +253,20 @@ export default function DriverPortalPage() {
         setMessage('Há passageiros sem identificação. Solicite à gestão a correção do vínculo antes de registrar embarques.');
         return;
       }
-      setPassengers(data ?? []);
-      if (recoveringPassengers && !preserveMessage) {
+      const previousPassengers = passengers;
+      const updatedPassengers = data ?? [];
+      const newlyCancelled = updatedPassengers.filter(current =>
+        current.boarding_status === 'CANCELLED' &&
+        previousPassengers.some(previous => previous.id === current.id && previous.boarding_status !== 'CANCELLED')
+      );
+      setPassengers(updatedPassengers);
+      if (newlyCancelled.length > 0) {
+        setMessageTone('warning');
+        setMessage(newlyCancelled.length === 1
+          ? `A gestão cancelou a participação de ${newlyCancelled[0].patient?.name ?? 'um paciente'}. O embarque foi bloqueado.`
+          : `A gestão cancelou a participação de ${newlyCancelled.length} pacientes. Os embarques foram bloqueados.`);
+      }
+      if (newlyCancelled.length === 0 && recoveringPassengers && !preserveMessage) {
         setMessageTone('success');
         setMessage('Lista de passageiros atualizada com sucesso. Você já pode continuar as operações.');
       }
@@ -683,7 +695,7 @@ export default function DriverPortalPage() {
                       {passengers.map((passenger) => (
                         <li key={passenger.id} className="flex flex-col gap-1 py-3 sm:flex-row sm:items-center sm:justify-between">
                           <span className="font-medium">{passenger.patient?.name ?? 'Paciente não informado'}</span>
-                          <span className="text-xs">{passenger.boarding_status === 'BOARDED' ? 'Embarcou (não confirmado)' : passenger.boarding_status === 'NO_SHOW' ? 'Faltou (não confirmado)' : 'Embarque pendente (não confirmado)'}</span>
+                          <span className="text-xs">{passenger.boarding_status === 'BOARDED' ? 'Embarcou (não confirmado)' : passenger.boarding_status === 'NO_SHOW' ? 'Faltou (não confirmado)' : passenger.boarding_status === 'CANCELLED' ? 'Cancelado pela gestão (não confirmado)' : 'Embarque pendente (não confirmado)'}</span>
                         </li>
                       ))}
                     </ul>
