@@ -89,10 +89,34 @@ export default async function Home() {
     }
   }
 
+  // Alerta somente para viagens em andamento hoje com embarques ainda pendentes.
+  // Não contar viagens apenas agendadas como se fossem atrasos operacionais.
+  const { data: activeTrips, error: activeTripsError } = await supabase
+    .from('trips')
+    .select('id')
+    .eq('date', today)
+    .eq('status', 'IN_PROGRESS')
+    .limit(500);
+  let tripsWithPendingBoarding: number | null = null;
+  if (!activeTripsError && activeTrips) {
+    if (activeTrips.length === 0) {
+      tripsWithPendingBoarding = 0;
+    } else if (activeTrips.length < 500) {
+      const { data: pendingPassengers, error: pendingPassengersError } = await supabase
+        .from('trip_passengers')
+        .select('trip_id')
+        .in('trip_id', activeTrips.map(trip => trip.id))
+        .eq('boarding_status', 'EXPECTED');
+      if (!pendingPassengersError && pendingPassengers) {
+        tripsWithPendingBoarding = new Set(pendingPassengers.map(passenger => passenger.trip_id)).size;
+      }
+    }
+  }
+
   const requestRows=(todayRequests.data??[]) as {id:string;status:string}[];
   const todayPending=requestRows.filter(r=>['REQUESTED','APPROVED'].includes(r.status)).length;
   const fleetUnavailable=Math.max(0,(vehicleTotal.count??0)-(vehicles.count??0));
-  const alerts=[...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
+  const alerts=[...(tripsWithPendingBoarding !== null && tripsWithPendingBoarding > 0 ? [`${tripsWithPendingBoarding} viagem(ns) em andamento hoje com embarques pendentes. Confira os passageiros e acompanhe o motorista.`] : []),...(emptyScheduledTripCount !== null && emptyScheduledTripCount > 0 ? [`${emptyScheduledTripCount} viagem(ns) agendada(s) sem pacientes ativos. Confira a agenda para incluir pacientes ou cancelar a viagem.`] : []),...(occurrences.count??0)>0?[`${occurrences.count} ocorrência(s) aguardando acompanhamento.`]:[],...(maintenances.count??0)>0?[`${maintenances.count} manutenção(ões) programada(s) ou em andamento.`]:[],...((documentAlerts.data??[]) as {plate:string;licensing_expiry:string|null;insurance_expiry:string|null}[]).map(v=>`Veículo ${v.plate} possui documento vencido ou vencendo nos próximos 30 dias.`)];
 
   // Contagens independentes: incluem viagens concluídas hoje e nunca confundem
   // ausência, cancelamento e embarque com o status geral da viagem.
