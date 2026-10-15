@@ -724,6 +724,7 @@ export default function DriverPortalPage() {
                         </div>
                       )}
                       {passenger.boarding_status !== 'CANCELLED' && (
+                        <>
                       <select aria-label={`Motivo de não embarque de ${passenger.patient?.name ?? 'passageiro'}`} value={noShowReason[passenger.id] ?? ''} onChange={e => setNoShowReason(s => ({ ...s, [passenger.id]: e.target.value }))} disabled={actionLoading!==null || selectedTripData?.status!=='IN_PROGRESS'} className="w-full max-w-xs rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs sm:w-64">
                         <option value="">Motivo do não embarque...</option>
                         <option value="Não compareceu">Não compareceu</option>
@@ -732,6 +733,7 @@ export default function DriverPortalPage() {
                         <option value="Outro motivo informado à gestão">Outro motivo informado à gestão</option>
                       </select>
                     <div className="flex flex-wrap gap-2 sm:justify-end"><button type="button" aria-pressed={passenger.boarding_status==='BOARDED'} disabled={actionLoading!==null||loading||passengersLoading||passengersError||syncWarning||passenger.boarding_status==='CANCELLED'||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'BOARDED')} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='BOARDED'?'bg-emerald-600 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><Check size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Embarcou'}</button><button type="button" disabled={actionLoading!==null||loading||passengersLoading||passengersError||syncWarning||passenger.boarding_status==='CANCELLED'||selectedTripData?.status!=='IN_PROGRESS'} onClick={()=>updatePassenger(passenger,'NO_SHOW')} aria-pressed={passenger.boarding_status==='NO_SHOW'} className={`rounded-xl px-4 py-2.5 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-600 disabled:cursor-not-allowed disabled:opacity-50 ${passenger.boarding_status==='NO_SHOW'?'bg-orange-500 text-white':'border border-slate-200 text-slate-700 hover:bg-slate-50'}`}><X size={13} className="mr-1 inline"/> {actionLoading===passenger.id ? 'Salvando...' : 'Não embarcou'}</button></div>
+                        </>
                       )}
                     </div>
                   </div>
